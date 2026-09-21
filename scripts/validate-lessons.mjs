@@ -62,6 +62,23 @@ for(const entry of catalog.production_lessons||[]){
     if(section.layer==='retention'&&(!Array.isArray(section.schedule)||section.schedule.length<3)) fail(`${entry.id}/${section.id}: retention needs >=3 checkpoints`);
   }
 
+  const labRequiredSections=(lesson.sections||[]).filter(section=>section.requires_lab_pass);
+  if(lesson.lab){
+    if(!lesson.lab.id?.trim()) fail(`${entry.id}: lab id required`);
+    if(!lesson.lab.title_tr?.trim()||!lesson.lab.title_en?.trim()) fail(`${entry.id}: bilingual lab title required`);
+    if(!lesson.lab.task_tr?.trim()||lesson.lab.task_tr.trim().length<100) fail(`${entry.id}: lab task_tr too shallow`);
+    if(!lesson.lab.task_en?.trim()||lesson.lab.task_en.trim().length<80) fail(`${entry.id}: lab task_en too shallow`);
+    if(!lesson.lab.schema?.trim()) fail(`${entry.id}: lab schema required`);
+    if(!/^SELECT\b/i.test(lesson.lab.starter_sql?.trim()||'')) fail(`${entry.id}: lab starter_sql must be SELECT`);
+    if(!lesson.lab.engine_note_tr?.trim()||!lesson.lab.engine_note_en?.trim()) fail(`${entry.id}: bilingual engine note required`);
+    const requiredSection=(lesson.sections||[]).find(section=>section.id===lesson.lab.requires_for_section);
+    if(!requiredSection) fail(`${entry.id}: lab requires_for_section not found`);
+    else if(requiredSection.requires_lab_pass!==lesson.lab.id) fail(`${entry.id}: section lab gate does not match lesson lab id`);
+  }
+  for(const section of labRequiredSections){
+    if(!lesson.lab||section.requires_lab_pass!==lesson.lab.id) fail(`${entry.id}/${section.id}: invalid requires_lab_pass`);
+  }
+
   const evidence=new Set((lesson.mastery_evidence||[]).map(item=>item.dimension));
   for(const dimension of REQUIRED_EVIDENCE) if(!evidence.has(dimension)) fail(`${entry.id}: missing evidence ${dimension}`);
   for(const item of lesson.mastery_evidence||[]){
