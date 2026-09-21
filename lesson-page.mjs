@@ -1,11 +1,12 @@
 import {
   createLessonProgress,normalizeLessonProgress,completeSection,completionPercent,
-  sectionNeedsResponse,saveEvidenceDraft
+  sectionNeedsResponse,saveEvidenceDraft,recordLabAttempt,labPassed
 } from './lesson-runtime.mjs';
 
 const $=selector=>document.querySelector(selector);
 const params=new URLSearchParams(location.search);
 const state={lang:'tr',catalog:null,entry:null,lesson:null,sources:null,progress:null,sectionIndex:0};
+let sqlLabModulePromise=null;
 
 const labels={
   tr:{
@@ -21,7 +22,12 @@ const labels={
     noMastery:'Dersin bütün bölümleri tamamlandı. Bu durum mastery verilmiş olduğu anlamına gelmez.',
     due:'Vade',pending:'bekliyor',draftSaved:'Taslak kaydedildi',
     prevLesson:'Önceki production ders',nextLesson:'Sonraki production ders',
-    sequenceHint:'Ders sırası mastery yerine geçmez.',sequenceWord:'Ders'
+    sequenceHint:'Ders sırası mastery yerine geçmez.',sequenceWord:'Ders',
+    labIdle:'Çalıştırılmadı',labLoading:'Semantic lab hazırlanıyor…',
+    labRun:'Semantik testi çalıştır',labReset:'Sıfırla',
+    labPass:'Semantic test geçti: görünür ve edge-case fixture sonuçları referansla eşleşti.',
+    labFail:'Semantic test geçmedi.',labRequired:'Bu bağımsız üretim bölümü için önce Semantic SQL Lab’ı geçirmen gerekiyor.',
+    labError:'Lab çalıştırılamadı.',labPassed:'Semantik kanıt · geçti',labRows:'satır'
   },
   en:{
     loading:'Loading',progress:'Progress',estimate:'Estimated study',minutes:'min',
@@ -36,7 +42,12 @@ const labels={
     noMastery:'All lesson sections are complete. This does not mean mastery has been awarded.',
     due:'Due',pending:'pending',draftSaved:'Draft saved',
     prevLesson:'Previous production lesson',nextLesson:'Next production lesson',
-    sequenceHint:'Sequence order is not mastery.',sequenceWord:'Lesson'
+    sequenceHint:'Sequence order is not mastery.',sequenceWord:'Lesson',
+    labIdle:'Not run',labLoading:'Preparing semantic lab…',
+    labRun:'Run semantic test',labReset:'Reset',
+    labPass:'Semantic test passed: visible and edge-case fixture results match the reference.',
+    labFail:'Semantic test did not pass.',labRequired:'Pass the Semantic SQL Lab before completing this independent-production section.',
+    labError:'The lab could not be executed.',labPassed:'Semantic evidence · passed',labRows:'rows'
   }
 };
 
@@ -144,6 +155,103 @@ function renderSection(){
   $('#sectionFeedback').textContent=completed?l.saved:'';
 }
 
+
+function clearLessonSqlTable(){
+  $('#lessonSqlTable thead').replaceChildren();
+  $('#lessonSqlTable tbody').replaceChildren();
+  $('#lessonSqlTable').classList.add('hidden');
+  $('#lessonSqlEmpty').classList.remove('hidden');
+}
+
+function renderLessonSqlTable(result){
+  clearLessonSqlTable();
+  const head=$('#lessonSqlTable thead');
+  const body=$('#lessonSqlTable tbody');
+  const header=document.createElement('tr');
+  for(const column of result.columns){
+    const th=document.createElement('th');
+    th.textContent=column;
+    header.appendChild(th);
+  }
+  head.appendChild(header);
+
+  for(const row of result.rows){
+    const tr=document.createElement('tr');
+    for(const column of result.columns){
+      const td=document.createElement('td');
+      const value=row[column];
+      td.textContent=value===null?'NULL':String(value);
+      if(value===null)td.classList.add('null-value');
+      tr.appendChild(td);
+    }
+    body.appendChild(tr);
+  }
+  $('#lessonSqlTable').classList.remove('hidden');
+  $('#lessonSqlEmpty').classList.add('hidden');
+}
+
+function renderLessonSqlLab(){
+  const lab=state.lesson?.lab;
+  $('#lessonSqlLab').classList.toggle('hidden',!lab);
+  if(!lab)return;
+  const l=labels[state.lang];
+  $('#lessonSqlLabTitle').textContent=localText(lab,'title');
+  $('#lessonSqlLabTask').textContent=localText(lab,'task');
+  $('#lessonSqlSchema').textContent=lab.schema;
+  $('#lessonSqlEngineNote').textContent=localText(lab,'engine_note');
+  $('#runLessonSql').textContent=l.labRun;
+  $('#resetLessonSql').textContent=l.labReset;
+
+  const editor=$('#lessonSqlEditor');
+  if(editor.dataset.labId!==lab.id){
+    editor.dataset.labId=lab.id;
+    editor.value=lab.starter_sql||'';
+    clearLessonSqlTable();
+    $('#lessonSqlFeedback').textContent='';
+  }
+
+  $('#lessonSqlLabStatus').textContent=labPassed(state.progress,lab.id)?l.labPassed:l.labIdle;
+}
+
+async function getLessonSqlLabModule(){
+  if(!sqlLabModulePromise)sqlLabModulePromise=import('./lesson-sql-lab.mjs');
+  return sqlLabModulePromise;
+}
+
+async function runLessonSqlLab(){
+  const lab=state.lesson?.lab;
+  if(!lab)return;
+  const l=labels[state.lang];
+  const button=$('#runLessonSql');
+  button.disabled=true;
+  $('#lessonSqlLabStatus').textContent=l.labLoading;
+  $('#lessonSqlFeedback').textContent='';
+
+  try{
+    const module=await getLessonSqlLabModule();
+    const info=await module.prepareLessonSqlLab(lab.id);
+    const evaluation=await module.evaluateLessonSql(lab.id,$('#lessonSqlEditor').value);
+    renderLessonSqlTable(evaluation.result);
+
+    const summary=Object.fromEntries(evaluation.tests.map(test=>[test.variant,test.passed]));
+    state.progress=recordLabAttempt(state.lesson,state.progress,lab.id,{passed:evaluation.passed,summary});
+    persistProgress();
+
+    const detail=evaluation.tests.map(test=>`${test.variant}: ${test.passed?'PASS':'FAIL'} (${test.actualRows}/${test.expectedRows} ${l.labRows})`).join(' · ');
+    $('#lessonSqlFeedback').textContent=`${evaluation.passed?l.labPass:l.labFail} ${detail}`;
+    $('#lessonSqlFeedback').style.color=evaluation.passed?'var(--green)':'var(--red)';
+    $('#lessonSqlLabStatus').textContent=evaluation.passed
+      ?`DuckDB ${info.version} · ${l.labPassed}`
+      :`DuckDB ${info.version} · ${l.labFail}`;
+  }catch(error){
+    $('#lessonSqlFeedback').textContent=`${l.labError} ${error instanceof Error?error.message:String(error)}`;
+    $('#lessonSqlFeedback').style.color='var(--red)';
+    $('#lessonSqlLabStatus').textContent=l.labError;
+  }finally{
+    button.disabled=false;
+  }
+}
+
 function renderEvidence(){
   const l=labels[state.lang];
   $('#evidenceTitle').textContent=l.evidenceTitle;
@@ -216,7 +324,7 @@ function renderSources(){
 
 function renderAll(){
   if(!state.lesson)return;
-  renderHero();renderOutline();renderSection();renderSequence();renderEvidence();renderRetention();renderSources();
+  renderHero();renderOutline();renderSection();renderLessonSqlLab();renderSequence();renderEvidence();renderRetention();renderSources();
 }
 
 function escapeHtml(value){
@@ -224,6 +332,15 @@ function escapeHtml(value){
 }
 
 $('#lessonLanguage').addEventListener('click',()=>setLanguage(state.lang==='tr'?'en':'tr'));
+$('#runLessonSql').addEventListener('click',runLessonSqlLab);
+$('#resetLessonSql').addEventListener('click',()=>{
+  const lab=state.lesson?.lab;
+  if(!lab)return;
+  $('#lessonSqlEditor').value=lab.starter_sql||'';
+  $('#lessonSqlFeedback').textContent='';
+  clearLessonSqlTable();
+  renderLessonSqlLab();
+});
 $('#prevSection').addEventListener('click',()=>{if(state.sectionIndex>0){state.sectionIndex--;renderOutline();renderSection();}});
 $('#nextSection').addEventListener('click',()=>{if(state.sectionIndex<state.lesson.sections.length-1){state.sectionIndex++;renderOutline();renderSection();}});
 $('#completeSection').addEventListener('click',()=>{
@@ -232,8 +349,13 @@ $('#completeSection').addEventListener('click',()=>{
   const result=completeSection(state.lesson,state.progress,section.id,response);
   const l=labels[state.lang];
   if(!result.ok){
-    $('#sectionFeedback').textContent=l.responseRequired;
-    $('#sectionResponse').focus();
+    if(result.reason==='lab_required'){
+      $('#sectionFeedback').textContent=l.labRequired;
+      $('#lessonSqlLab').scrollIntoView({behavior:'smooth',block:'start'});
+    }else{
+      $('#sectionFeedback').textContent=l.responseRequired;
+      $('#sectionResponse').focus();
+    }
     return;
   }
   state.progress=result.progress;
