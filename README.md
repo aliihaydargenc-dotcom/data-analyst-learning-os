@@ -1,86 +1,63 @@
 # Data Analyst Learning OS
 
-Kişisel, iki dilli (TR/EN), sınav ve proje odaklı ileri veri analizi öğrenme sistemi.
+Sıfır önkoşulla başlayabilen, fakat hızlı kavrayan öğrenciyi gereksiz tekrarlarla yavaşlatmayan; SQL, Qlik Sense, Python, Excel ve Technical English'i tek mastery sistemi altında birleştiren veri analisti akademisi.
 
-## Hedef
+## Academy kernel v0.3
 
-Dört teknik alanı birbirinden kopuk kurslar halinde değil, tek bir analist akışında geliştirmek:
+Bu repo artık yalnızca özellik listesiyle ilerlemez. İçerik ve seviye yapısı executable kalite kapılarıyla doğrulanır.
 
-- SQL Server / T-SQL
-- Qlik Sense
-- Python for Data Analysis
-- Advanced Excel
-- Technical English
+Mevcut çekirdek:
+- 60 curriculum module: 5 track × L1–Expert
+- prerequisite graph ve cross-tool dependency
+- Knowledge / Interpretation / Production / Transfer / Retention mastery engine
+- adaptive depth politikası
+- D+1 / D+3 / D+7 / D+14 / D+30 retention scheduler
+- her track için bir source-verified golden lesson candidate
+- 50 soruluk MCQ hızlı ön tarama
+- DuckDB-Wasm ile gerçek browser SQL Lab
+- 1.460 satırlık sentetik hotel dataset
+- gerçek Chromium smoke test
+- curriculum quality validator
 
-## MVP özellikleri
+## Eğitim kalite ilkesi
 
-- 50 soruluk başlangıç soru bankası
-- Her alandan 5 soru seçen 25 soruluk seviye tespit sınavı
-- L1–L5 yerleştirme
-- TR / EN arayüz
-- DuckDB-Wasm ile tarayıcı içinde gerçek SQL execution
-- `hotel_daily.csv` üzerinde çalışan Window Function laboratuvarı
-- Tek statement ve read-only SQL sandbox kuralı
-- 24 haftalık yol haritası
-- 1.460 satırlık sentetik otel veri seti
-- Kaynak ve müfredat dokümantasyonu
-- Core + gerçek Chromium browser smoke testleri
+Mevcut 50 MCQ nihai placement değildir. Production curriculum için knowledge, interpretation, independent production, debugging, transfer ve delayed retention kanıtları gerekir.
+
+24 haftalık plan yalnızca referans tempodur; Expert seviyesi süre ile verilmez.
+
+## Repo yapısı
+
+- `content/curriculum.json`: 5 track × L1–Expert prerequisite graph
+- `content/mastery-policy.json`: executable mastery thresholds
+- `content/golden-lessons.json`: katmanlı ders kalite örnekleri
+- `content/sources.json`: official/academic source catalog
+- `mastery-engine.mjs`: mastery, adaptive-depth ve retention mantığı
+- `scripts/validate-academy.mjs`: broken/circular prerequisite ve content gate
+- `duckdb-lab.mjs`: gerçek browser SQL execution
+- `data/question-bank.json`: starter MCQ bank
+- `data/roadmap.json`: 24 haftalık referans tempo
+- `tests/`: core, mastery ve browser smoke testleri
 
 ## Çalıştırma
-
-Statik sunucu yeterlidir:
 
 ```bash
 python -m http.server 8080
 ```
 
-Ardından:
-
 ```text
 http://localhost:8080/
 ```
 
-SQL Lab, DuckDB-Wasm'ın sabitlenmiş CDN sürümünü ilk sorguda yükler. CSV aynı origin'den tarayıcı belleğine alınır ve DuckDB içinde `hotel_daily` tablosuna aktarılır.
-
 ## Test
-
-Core:
 
 ```bash
 npm install
 npm test
-```
-
-Browser smoke testi için Chromium kurulmalıdır:
-
-```bash
 npx playwright install chromium
 python -m http.server 4173
 npm run test:browser
 ```
 
-GitHub Actions bu akışı otomatik olarak çalıştırır.
+`npm test` core testlerinin yanında mastery engine ve curriculum quality gate kontrollerini de çalıştırır.
 
-## Repo yapısı
-
-- `index.html`: uygulama ve import map
-- `styles.css`: responsive UI
-- `app.js`: sınav, dil ve SQL Lab arayüz mantığı
-- `duckdb-lab.mjs`: DuckDB-Wasm başlatma, CSV ingestion ve query execution
-- `core.mjs`: saf değerlendirme fonksiyonları
-- `data/question-bank.json`: 50 özgün soru
-- `data/roadmap.json`: 24 haftalık plan
-- `datasets/hotel_daily.csv`: sentetik otel verisi
-- `docs/`: müfredat, sınav tasarımı ve kaynaklar
-- `tests/`: core ve browser smoke testleri
-
-## Sonraki teknik dilimler
-
-1. SQL soru motorunda beklenen sonuç/rubric kontrolü
-2. Pyodide ile tarayıcı içi Python laboratuvarı
-3. Supabase ile kullanıcı, ilerleme ve sınav geçmişi
-4. Soru bazlı spaced repetition
-5. Qlik/Excel uygulama ödevleri ve rubric puanlama
-6. Case Study motoru: SQL → Python → Excel → Qlik
-
-İçerik üçüncü taraf eğitimlerden kopyalanmaz. Resmî dokümantasyon ve uygun lisanslı açık kaynak depolar referans olarak kullanılır; soru bankası ve vaka çalışmaları özgün hazırlanır.
+İçerik üçüncü taraf eğitimlerden kopyalanmaz. Resmî dokümantasyon ve akademik kaynaklar doğruluk/kapsam için kullanılır; öğrenme görevleri ve vakalar özgün hazırlanır.
