@@ -2,7 +2,7 @@
 
 Sıfır önkoşulla başlayabilen, fakat hızlı kavrayan öğrenciyi gereksiz tekrarlarla yavaşlatmayan; SQL, Qlik Sense, Python, Excel, HTML/Web Foundations ve Technical English'i tek mastery sistemi altında birleştiren veri analisti akademisi.
 
-## Academy kernel v0.9
+## Academy kernel v0.10
 
 Bu repo artık yalnızca özellik listesiyle ilerlemez. İçerik ve seviye yapısı executable kalite kapılarıyla doğrulanır.
 
@@ -82,7 +82,7 @@ HTML track'i front-end geliştirici eğitimi değildir. Veri analistinin üretti
 
 ## Production ders runtime
 
-İlk dört production-candidate ders `sql.relational-thinking.001`, `sql.select-null-filtering.001`, `sql.aggregation-grain.001` ve `sql.join-cardinality.001` üzerinden uçtan uca çalışır. Ders; mental model, worked example, guided practice, independent production, debugging, transfer ve retention katmanlarını ayrı bölümler halinde gösterir.
+İlk beş production-candidate ders `sql.relational-thinking.001`, `sql.select-null-filtering.001`, `sql.aggregation-grain.001`, `sql.join-cardinality.001` ve `sql.cte-subquery-sets.001` üzerinden uçtan uca çalışır. Ders; mental model, worked example, guided practice, independent production, debugging, transfer ve retention katmanlarını ayrı bölümler halinde gösterir.
 
 Practice bölümlerinde gerekçeli yanıt taslağı olmadan bölüm tamamlanamaz. SQL production görevlerinde gerekli olduğunda bölüm ayrıca semantic lab PASS ister. Evaluator keyword aramaz; aday sorgunun result set'ini referans sorguyla hem görünür fixture hem de farklı edge-case fixture üzerinde karşılaştırır. Bu yine tek başına mastery değildir; üretim kanıtının bir parçasıdır. Mastery evidence taslakları ayrı tutulur ve completion yüzdesine dahil edilmez.
 
@@ -93,4 +93,7 @@ Ders ilerlemesi şimdilik tarayıcı `localStorage` alanında saklanır. Hesapla
 
 ### SQL production yolu
 
-İlk üretim hattı relational grain → SELECT/NULL/filtering → GROUP BY/HAVING/aggregate grain → JOIN/cardinality/fan-out şeklinde ilerler. GROUP BY dersi aggregate grain'i; JOIN dersi ise 1:1 / 1:N / N:N multiplicity, zero-match LEFT JOIN davranışı, COUNT(*)/COUNT(column) farkı ve fact measure fan-out riskini görünür + edge-case fixture üzerinde kanıtlatır.
+İlk üretim hattı relational grain → SELECT/NULL/filtering → GROUP BY/HAVING/aggregate grain → JOIN/cardinality/fan-out → CTE/subquery/EXISTS/set semantics şeklinde ilerler. GROUP BY dersi aggregate grain'i; JOIN dersi ise 1:1 / 1:N / N:N multiplicity, zero-match LEFT JOIN davranışı, COUNT(*)/COUNT(column) farkı ve fact measure fan-out riskini görünür + edge-case fixture üzerinde kanıtlatır.
+
+
+CTE/subquery production dersi query block grain, correlated EXISTS/NOT EXISTS, NULL-duyarlı anti-filter düşüncesi ve UNION/UNION ALL/EXCEPT/INTERSECT duplicate sözleşmesini aynı kompozisyon modeli altında ele alır. Semantic lab, CTE ile başlayan gerçek sorguları görünür ve edge-case fixture üzerinde sonuç eşitliğiyle değerlendirir.

@@ -3,6 +3,66 @@ import {DUCKDB_VERSION,DUCKDB_BUNDLES} from './duckdb-config.mjs';
 import {compareResultSets} from './sql-result-evaluator.mjs';
 
 const FIXTURES=Object.freeze({
+  'sql-cte-exists-v1':{
+    table:'customer_dim',
+    visibleSetup:`
+      DROP TABLE IF EXISTS booking_fact;
+      DROP TABLE IF EXISTS customer_dim;
+      CREATE TABLE customer_dim(CUSTOMER_ID VARCHAR, CUSTOMER_NAME VARCHAR);
+      CREATE TABLE booking_fact(BOOKING_ID VARCHAR, CUSTOMER_ID VARCHAR, BUSINESS_DATE DATE, STATUS VARCHAR, REVENUE_EUR INTEGER);
+      INSERT INTO customer_dim VALUES ('C3','Cem'),('C1','Ada'),('C5','Ece'),('C2','Bora'),('C4','Deniz');
+      INSERT INTO booking_fact VALUES
+        ('B08','C5',DATE '2026-07-14','Completed',1000),
+        ('B02','C1',DATE '2026-07-03','Completed',500),
+        ('B06','C3',DATE '2026-07-07','Completed',300),
+        ('B03','C2',DATE '2026-07-04','Completed',1500),
+        ('B01','C1',DATE '2026-07-02','Completed',600),
+        ('B04','C2',DATE '2026-07-05','Cancelled',200),
+        ('B05','C3',DATE '2026-07-06','Completed',400),
+        ('B07','C4',DATE '2026-07-08','Cancelled',900),
+        ('B09','C1',DATE '2026-08-01','Cancelled',50);
+    `,
+    edgeSetup:`
+      DROP TABLE IF EXISTS booking_fact;
+      DROP TABLE IF EXISTS customer_dim;
+      CREATE TABLE customer_dim(CUSTOMER_ID VARCHAR, CUSTOMER_NAME VARCHAR);
+      CREATE TABLE booking_fact(BOOKING_ID VARCHAR, CUSTOMER_ID VARCHAR, BUSINESS_DATE DATE, STATUS VARCHAR, REVENUE_EUR INTEGER);
+      INSERT INTO customer_dim VALUES ('X6','Lina'),('X2','Mert'),('X4','Pelin'),('X1','Iris'),('X5','Rana'),('X3','Nora');
+      INSERT INTO booking_fact VALUES
+        ('E08','X6',DATE '2026-07-09','Completed',600),
+        ('E02','X1',DATE '2026-07-02','Completed',400),
+        ('E05','X3',DATE '2026-07-06','Completed',1000),
+        ('E03','X2',DATE '2026-07-03','Completed',2000),
+        ('E01','X1',DATE '2026-07-01','Completed',700),
+        ('E04','X2',DATE '2026-07-04','Cancelled',50),
+        ('E06','X4',DATE '2026-07-07','Completed',500),
+        ('E07','X4',DATE '2026-08-01','Completed',500),
+        ('E09','X6',DATE '2026-07-10','Completed',600),
+        ('E10','X6',DATE '2026-08-01','Cancelled',25);
+    `,
+    referenceSql:`
+      WITH completed AS (
+        SELECT CUSTOMER_ID, SUM(REVENUE_EUR) AS JULY_COMPLETED_REVENUE
+        FROM booking_fact
+        WHERE BUSINESS_DATE >= CAST('2026-07-01' AS DATE)
+          AND BUSINESS_DATE < CAST('2026-08-01' AS DATE)
+          AND STATUS = 'Completed'
+        GROUP BY CUSTOMER_ID
+        HAVING SUM(REVENUE_EUR) >= 1000
+      )
+      SELECT c.CUSTOMER_ID, c.CUSTOMER_NAME, x.JULY_COMPLETED_REVENUE
+      FROM customer_dim AS c
+      JOIN completed AS x ON x.CUSTOMER_ID = c.CUSTOMER_ID
+      WHERE NOT EXISTS (
+        SELECT 1 FROM booking_fact AS b
+        WHERE b.CUSTOMER_ID = c.CUSTOMER_ID
+          AND b.BUSINESS_DATE >= CAST('2026-07-01' AS DATE)
+          AND b.BUSINESS_DATE < CAST('2026-08-01' AS DATE)
+          AND b.STATUS = 'Cancelled'
+      )
+      ORDER BY c.CUSTOMER_ID
+    `
+  },
   'sql-join-cardinality-v1':{
     table:'booking_fact',
     visibleSetup:`
@@ -207,7 +267,7 @@ function normalizeCandidateSql(sql){
   if(!trimmed)throw new Error('SQL is empty.');
   const withoutTrailing=trimmed.replace(/;\s*$/,'').trim();
   if(withoutTrailing.includes(';'))throw new Error('Only one SELECT statement can be executed at a time.');
-  if(!/^select\b/i.test(withoutTrailing))throw new Error('This lesson lab accepts one SELECT statement.');
+  if(!/^(select|with)\b/i.test(withoutTrailing))throw new Error('This lesson lab accepts one SELECT statement, optionally beginning with WITH.');
   return withoutTrailing;
 }
 
