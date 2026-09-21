@@ -69,6 +69,41 @@ try{
 
   await page.locator('#lessonOutline .outline-item').nth(1).click();
   assert.match(await page.locator('#sectionBody').textContent(),/UNKNOWN/);
+  assert.equal(await page.locator('#lessonSqlLab').isVisible(),true);
+
+  await page.locator('#lessonOutline .outline-item').nth(4).click();
+  await page.locator('#sectionResponse').fill('NULL ile boş string aynı değildir; ayrıca hotel_daily için yarı-açık tarih aralığı ve deterministik ORDER BY kullanırım.');
+  await page.locator('#completeSection').click();
+  assert.match(await page.locator('#sectionFeedback').textContent(),/Semantic SQL Lab/i);
+
+  await page.locator('#lessonSqlEditor').fill(`SELECT BOOKING_ID, HOTEL, STATUS, CANCEL_REASON
+FROM reservation_filter_cases
+WHERE CANCEL_REASON = NULL
+  AND (STATUS = 'Active' OR STATUS = 'Pending')
+  AND HOTEL = 'A'
+ORDER BY STATUS, BOOKING_ID;`);
+  await page.locator('#runLessonSql').click();
+  await page.waitForFunction(()=>document.querySelector('#lessonSqlFeedback')?.textContent?.includes('Semantic test geçmedi'),{timeout:120000});
+  assert.match(await page.locator('#lessonSqlFeedback').textContent(),/visible: FAIL|edge: FAIL/);
+
+  await page.locator('#lessonSqlEditor').fill(`SELECT BOOKING_ID, HOTEL, STATUS, CANCEL_REASON
+FROM reservation_filter_cases
+WHERE CANCEL_REASON IS NULL
+  AND (STATUS = 'Active' OR STATUS = 'Pending')
+  AND HOTEL = 'A'
+ORDER BY STATUS, BOOKING_ID;`);
+  await page.locator('#runLessonSql').click();
+  await page.waitForFunction(()=>document.querySelector('#lessonSqlFeedback')?.textContent?.includes('Semantic test geçti'),{timeout:120000});
+  assert.equal(await page.locator('#lessonSqlTable tbody tr').count(),3);
+  const lessonRows=await page.locator('#lessonSqlTable tbody tr').allTextContents();
+  assert.match(lessonRows[0],/B001/);
+  assert.match(lessonRows[1],/B004/);
+  assert.match(lessonRows[2],/B007/);
+  assert.match(await page.locator('#lessonSqlFeedback').textContent(),/visible: PASS/);
+  assert.match(await page.locator('#lessonSqlFeedback').textContent(),/edge: PASS/);
+
+  await page.locator('#completeSection').click();
+  assert.match(await page.locator('#progressValue').textContent(),/13%/);
 
   await page.setViewportSize({width:390,height:844});
   await page.reload({waitUntil:'domcontentloaded'});
@@ -76,6 +111,9 @@ try{
   assert.equal(await page.locator('#lessonOutline').isVisible(),true);
   assert.equal(await page.locator('.lesson-reader').isVisible(),true);
   assert.equal(await page.locator('#lessonSequence').isVisible(),true);
+  assert.equal(await page.locator('#lessonSqlLab').isVisible(),true);
+  assert.match(await page.locator('#progressValue').textContent(),/13%/);
+  assert.match(await page.locator('#lessonSqlLabStatus').textContent(),/geçti/);
 
   assert.deepEqual(pageErrors,[]);
   assert.deepEqual(consoleErrors,[]);

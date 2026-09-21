@@ -40,7 +40,7 @@ export function lessonLayerSummary(lesson){
 
 export function createLessonProgress(lesson,now=new Date()){
   return {
-    version:1,
+    version:2,
     lessonId:lesson.id,
     startedAt:now.toISOString(),
     updatedAt:now.toISOString(),
@@ -48,6 +48,7 @@ export function createLessonProgress(lesson,now=new Date()){
     completedSections:[],
     responses:{},
     evidenceDrafts:{},
+    labEvidence:{},
     retentionDue:[]
   };
 }
@@ -60,11 +61,12 @@ export function normalizeLessonProgress(lesson,value,now=new Date()){
   return {
     ...base,
     ...value,
-    version:1,
+    version:2,
     lessonId:lesson.id,
     completedSections:completed,
     responses:{...(value.responses||{})},
     evidenceDrafts:{...(value.evidenceDrafts||{})},
+    labEvidence:{...(value.labEvidence||{})},
     retentionDue:Array.isArray(value.retentionDue)?value.retentionDue:[]
   };
 }
@@ -79,6 +81,26 @@ export function responseIsSubstantive(value){
 
 export function canCompleteSection(section,response=''){
   return !sectionNeedsResponse(section)||responseIsSubstantive(response);
+}
+
+export function labPassed(progress,labId){
+  return progress?.labEvidence?.[labId]?.passed===true;
+}
+
+export function recordLabAttempt(lesson,progress,labId,attempt,now=new Date()){
+  if(!lesson?.lab||lesson.lab.id!==labId) throw new Error(`Unknown lesson lab: ${labId}`);
+  const next=normalizeLessonProgress(lesson,progress,now);
+  const previous=next.labEvidence[labId]||{attempts:0,passed:false,passedAt:null,lastPassed:false,lastSummary:null};
+  const passedNow=attempt?.passed===true;
+  next.labEvidence[labId]={
+    attempts:Number(previous.attempts||0)+1,
+    passed:previous.passed===true||passedNow,
+    passedAt:previous.passedAt||(passedNow?now.toISOString():null),
+    lastPassed:passedNow,
+    lastSummary:attempt?.summary??null
+  };
+  next.updatedAt=now.toISOString();
+  return next;
 }
 
 export function completionPercent(lesson,progress){
@@ -106,6 +128,9 @@ export function completeSection(lesson,progress,sectionId,response='',now=new Da
   const section=(lesson.sections||[]).find(item=>item.id===sectionId);
   if(!section) throw new Error(`Unknown section: ${sectionId}`);
   if(!canCompleteSection(section,response)) return {ok:false,reason:'response_required',progress};
+  if(section.requires_lab_pass&&!labPassed(progress,section.requires_lab_pass)){
+    return {ok:false,reason:'lab_required',progress};
+  }
 
   const next=normalizeLessonProgress(lesson,progress,now);
   if(responseIsSubstantive(response)) next.responses[sectionId]=response.trim();

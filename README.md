@@ -2,7 +2,7 @@
 
 Sıfır önkoşulla başlayabilen, fakat hızlı kavrayan öğrenciyi gereksiz tekrarlarla yavaşlatmayan; SQL, Qlik Sense, Python, Excel, HTML/Web Foundations ve Technical English'i tek mastery sistemi altında birleştiren veri analisti akademisi.
 
-## Academy kernel v0.6
+## Academy kernel v0.7
 
 Bu repo artık yalnızca özellik listesiyle ilerlemez. İçerik ve seviye yapısı executable kalite kapılarıyla doğrulanır.
 
@@ -15,6 +15,7 @@ Mevcut çekirdek:
 - her track için bir source-verified golden lesson candidate
 - sabit üst limite bağlı olmayan, coverage-gated hızlı ön tarama bankası
 - DuckDB-Wasm ile gerçek browser SQL Lab
+- production derslerinde result-based semantic SQL evaluator: görünür fixture + farklı edge-case fixture
 - 1.460 satırlık sentetik hotel dataset
 - gerçek Chromium smoke test
 - production lesson runtime: section progress, practice-response gate, evidence drafts, lesson sequence ve retention planı
@@ -38,6 +39,8 @@ MCQ bankası nihai placement değildir ve belirli bir soru sayısına sabitlenme
 - `scripts/validate-lessons.mjs`: production lesson depth, source, evidence ve pedagogy gate
 - `lesson-runtime.mjs`: lesson progress, response gate ve retention runtime
 - `lesson.html` + `lesson-page.mjs`: tarayıcıda gerçek ders çalışma ekranı
+- `lesson-sql-lab.mjs`: production lesson semantic SQL execution + edge fixture evaluator
+- `sql-result-evaluator.mjs`: result-set equality grader
 - `duckdb-lab.mjs`: gerçek browser SQL execution
 - `data/question-bank.json`: starter MCQ bank
 - `data/roadmap.json`: 24 haftalık referans tempo
@@ -81,7 +84,7 @@ HTML track'i front-end geliştirici eğitimi değildir. Veri analistinin üretti
 
 İlk iki production-candidate ders `sql.relational-thinking.001` ve `sql.select-null-filtering.001` üzerinden uçtan uca çalışır. Ders; mental model, worked example, guided practice, independent production, debugging, transfer ve retention katmanlarını ayrı bölümler halinde gösterir.
 
-Practice bölümlerinde gerekçeli yanıt taslağı olmadan bölüm tamamlanamaz. Bu gate yalnızca çalışma disiplinidir; yanıtın doğru olduğunu veya mastery kazanıldığını iddia etmez. Mastery evidence taslakları ayrı tutulur ve completion yüzdesine dahil edilmez.
+Practice bölümlerinde gerekçeli yanıt taslağı olmadan bölüm tamamlanamaz. SQL production görevlerinde gerekli olduğunda bölüm ayrıca semantic lab PASS ister. Evaluator keyword aramaz; aday sorgunun result set'ini referans sorguyla hem görünür fixture hem de farklı edge-case fixture üzerinde karşılaştırır. Bu yine tek başına mastery değildir; üretim kanıtının bir parçasıdır. Mastery evidence taslakları ayrı tutulur ve completion yüzdesine dahil edilmez.
 
 Dersler production catalog içindeki açık sırayla önceki/sonraki navigasyona bağlanır. Sıra, mastery yerine geçmez; yalnızca öğrenme yolunu düzenler.
 

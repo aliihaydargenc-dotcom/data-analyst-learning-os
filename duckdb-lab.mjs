@@ -1,18 +1,5 @@
 import * as duckdb from '@duckdb/duckdb-wasm';
-
-const DUCKDB_VERSION='1.33.1-dev57.0';
-const DIST=`https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@${DUCKDB_VERSION}/dist/`;
-
-const BUNDLES={
-  mvp:{
-    mainModule:`${DIST}duckdb-mvp.wasm`,
-    mainWorker:`${DIST}duckdb-browser-mvp.worker.js`
-  },
-  eh:{
-    mainModule:`${DIST}duckdb-eh.wasm`,
-    mainWorker:`${DIST}duckdb-browser-eh.worker.js`
-  }
-};
+import {DUCKDB_VERSION,DUCKDB_BUNDLES} from './duckdb-config.mjs';
 
 let db=null;
 let conn=null;
@@ -42,7 +29,7 @@ export async function initializeSqlLab(datasetUrl='./datasets/hotel_daily.csv'){
   if(initPromise) return initPromise;
 
   initPromise=(async()=>{
-    const bundle=await duckdb.selectBundle(BUNDLES);
+    const bundle=await duckdb.selectBundle(DUCKDB_BUNDLES);
     if(!bundle?.mainWorker || !bundle?.mainModule) throw new Error('No compatible DuckDB-Wasm bundle was found.');
 
     const workerUrl=URL.createObjectURL(
