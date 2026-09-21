@@ -8,32 +8,63 @@ const REQUIRED_LAYERS=['mental_model','worked_example','guided_practice','indepe
 const REQUIRED_EVIDENCE=['knowledge','interpretation','production','transfer'];
 const errors=[];
 const fail=message=>errors.push(message);
+const ids=new Set();
+const paths=new Set();
 
 for(const entry of catalog.production_lessons||[]){
+  if(ids.has(entry.id)) fail(`Duplicate lesson id: ${entry.id}`);
+  if(paths.has(entry.path)) fail(`Duplicate lesson path: ${entry.path}`);
+  ids.add(entry.id); paths.add(entry.path);
+
   if(!fs.existsSync(entry.path)){fail(`Missing lesson file: ${entry.path}`);continue;}
   const lesson=JSON.parse(fs.readFileSync(entry.path,'utf8'));
+  const module=modules.get(lesson.module_id);
+
   if(lesson.id!==entry.id) fail(`${entry.id}: catalog/file id mismatch`);
   if(lesson.module_id!==entry.module_id) fail(`${entry.id}: module mismatch`);
-  if(!modules.has(lesson.module_id)) fail(`${entry.id}: unknown curriculum module ${lesson.module_id}`);
+  if(!module) fail(`${entry.id}: unknown curriculum module ${lesson.module_id}`);
+  if(module&&lesson.track!==module.track) fail(`${entry.id}: lesson/module track mismatch`);
+  if(module&&lesson.level!==module.level) fail(`${entry.id}: lesson/module level mismatch`);
   if(lesson.status!=='production-candidate'&&lesson.status!=='production') fail(`${entry.id}: invalid status`);
-  if(!Array.isArray(lesson.learning_objectives)||lesson.learning_objectives.length<3) fail(`${entry.id}: needs >=3 learning objectives`);
+
+  if(!lesson.title_tr?.trim()||!lesson.title_en?.trim()) fail(`${entry.id}: bilingual title required`);
+  if(!lesson.subtitle_tr?.trim()||!lesson.subtitle_en?.trim()) fail(`${entry.id}: bilingual subtitle required`);
+  if(!lesson.why_it_matters_tr?.trim()||lesson.why_it_matters_tr.trim().length<120) fail(`${entry.id}: why_it_matters_tr too shallow`);
+  if(!Array.isArray(lesson.estimated_minutes_range)||lesson.estimated_minutes_range.length!==2||lesson.estimated_minutes_range[0]<15||lesson.estimated_minutes_range[1]<lesson.estimated_minutes_range[0]) fail(`${entry.id}: invalid estimated_minutes_range`);
+  if(!Array.isArray(lesson.learning_objectives)||lesson.learning_objectives.length<4) fail(`${entry.id}: needs >=4 learning objectives`);
   if(!Array.isArray(lesson.sections)||lesson.sections.length<7) fail(`${entry.id}: needs layered sections`);
 
+  const sectionIds=new Set();
   const layers=new Set((lesson.sections||[]).map(section=>section.layer));
   for(const layer of REQUIRED_LAYERS) if(!layers.has(layer)) fail(`${entry.id}: missing ${layer}`);
 
   for(const section of lesson.sections||[]){
-    if(!section.title_tr?.trim()) fail(`${entry.id}/${section.id}: title_tr required`);
+    if(sectionIds.has(section.id)) fail(`${entry.id}: duplicate section id ${section.id}`);
+    sectionIds.add(section.id);
+    if(!section.title_tr?.trim()||!section.title_en?.trim()) fail(`${entry.id}/${section.id}: bilingual title required`);
     if(!section.body_tr?.trim()||section.body_tr.trim().length<120) fail(`${entry.id}/${section.id}: body_tr too shallow`);
+    if(!section.body_en?.trim()||section.body_en.trim().length<90) fail(`${entry.id}/${section.id}: body_en too shallow`);
+
+    if(section.layer==='guided_practice'&&(!Array.isArray(section.prompts)||section.prompts.length<2)) fail(`${entry.id}/${section.id}: guided practice needs prompts`);
+    if(section.layer==='independent_practice'&&(!Array.isArray(section.evidence_required)||section.evidence_required.length<2)) fail(`${entry.id}/${section.id}: independent practice needs evidence_required`);
+    if(section.layer==='debugging'&&(!Array.isArray(section.diagnostic_sequence)||section.diagnostic_sequence.length<3)) fail(`${entry.id}/${section.id}: debugging needs diagnostic_sequence`);
+    if(section.layer==='transfer'&&(!Array.isArray(section.transfer_tasks)||section.transfer_tasks.length<2)) fail(`${entry.id}/${section.id}: transfer needs >=2 tasks`);
+    if(section.layer==='retention'&&(!Array.isArray(section.schedule)||section.schedule.length<3)) fail(`${entry.id}/${section.id}: retention needs >=3 checkpoints`);
   }
 
   const evidence=new Set((lesson.mastery_evidence||[]).map(item=>item.dimension));
   for(const dimension of REQUIRED_EVIDENCE) if(!evidence.has(dimension)) fail(`${entry.id}: missing evidence ${dimension}`);
+  for(const item of lesson.mastery_evidence||[]){
+    if(!item.task_tr?.trim()||item.task_tr.trim().length<40) fail(`${entry.id}: weak mastery task ${item.dimension}`);
+  }
 
   const weightTotal=(lesson.mastery_evidence||[]).reduce((sum,item)=>sum+(item.weight||0),0);
   if(weightTotal!==100) fail(`${entry.id}: evidence weights must total 100, got ${weightTotal}`);
 
-  for(const sourceId of lesson.sources||[]) if(!sources[sourceId]) fail(`${entry.id}: unknown source ${sourceId}`);
+  const lessonSources=(lesson.sources||[]).map(id=>({id,source:sources[id]}));
+  for(const {id,source} of lessonSources) if(!source) fail(`${entry.id}: unknown source ${id}`);
+  if(!lessonSources.some(item=>item.source?.type==='official')) fail(`${entry.id}: needs at least one official technical source`);
+  if(!lessonSources.some(item=>item.source?.type==='academic')) fail(`${entry.id}: needs at least one academic learning source`);
 }
 
 if((catalog.production_lessons||[]).length===0) fail('At least one production lesson is required');
