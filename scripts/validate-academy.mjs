@@ -1,0 +1,16 @@
+import fs from 'node:fs';
+const curriculum=JSON.parse(fs.readFileSync('content/curriculum.json','utf8'));
+const sources=JSON.parse(fs.readFileSync('content/sources.json','utf8'));
+const lessons=JSON.parse(fs.readFileSync('content/golden-lessons.json','utf8'));
+const TRACKS=['sql','qlik','python','excel','english'],LEVELS=['L1','L2','L3','L4','L5','Expert'],LAYERS=['mental_model','worked_example','guided_practice','independent_practice','debugging','transfer','retention'];
+const errors=[],fail=m=>errors.push(m),mods=curriculum.tracks.flatMap(t=>t.modules),byId=new Map();
+for(const t of TRACKS){const track=curriculum.tracks.find(x=>x.id===t);if(!track){fail('Missing track '+t);continue;}for(const l of LEVELS)if(!track.modules.some(m=>m.level===l))fail(`${t} missing ${l}`);}
+for(const m of mods){if(byId.has(m.id))fail('Duplicate '+m.id);byId.set(m.id,m);if(!Array.isArray(m.learning_outcomes)||m.learning_outcomes.length<2)fail(m.id+' outcomes');if(!Array.isArray(m.evidence)||m.evidence.length<2)fail(m.id+' evidence');for(const l of LAYERS)if(!m.practice_layers?.includes(l))fail(`${m.id} missing ${l}`);for(const s of m.source_ids||[])if(!sources[s])fail(`${m.id} unknown source ${s}`);}
+for(const m of mods)for(const p of m.prerequisites||[])if(!byId.has(p))fail(`${m.id} broken prerequisite ${p}`);
+const visiting=new Set(),visited=new Set();function dfs(id,trail=[]){if(visiting.has(id)){fail('Cycle '+[...trail,id].join(' -> '));return;}if(visited.has(id))return;visiting.add(id);for(const p of byId.get(id)?.prerequisites||[])dfs(p,[...trail,id]);visiting.delete(id);visited.add(id);}for(const id of byId.keys())dfs(id);
+for(const[id,s]of Object.entries(sources)){if(!['official','academic'].includes(s.type))fail('Bad source type '+id);if(!s.url?.startsWith('https://'))fail('Bad source URL '+id);}
+const lessonTracks=new Set();for(const l of lessons){lessonTracks.add(l.track);for(const o of l.objective_ids||[])if(!byId.has(o))fail(`${l.id} unknown objective ${o}`);for(const k of['mental_model','guided_practice','independent_practice','debugging','transfer'])if(typeof l[k]!=='string'||l[k].trim().length<40)fail(`${l.id} weak ${k}`);if(!l.worked_example?.problem||!l.worked_example?.explanation)fail(l.id+' worked example');if(!Array.isArray(l.misconceptions)||l.misconceptions.length<3)fail(l.id+' misconceptions');if(!Array.isArray(l.retention)||l.retention.length<3)fail(l.id+' retention');if(l.review?.technical!=='source-verified'||l.review?.pedagogical!=='source-verified')fail(l.id+' review');for(const s of l.source_ids||[])if(!sources[s])fail(`${l.id} unknown source ${s}`);}
+for(const t of TRACKS)if(!lessonTracks.has(t))fail('Missing golden lesson '+t);
+if(curriculum.philosophy?.progression!=='mastery-not-time')fail('Progression must be mastery-not-time');
+for(const e of['knowledge','interpretation','production','transfer','retention'])if(!curriculum.philosophy?.evidence_layers?.includes(e))fail('Missing evidence '+e);
+if(errors.length){console.error('ACADEMY VALIDATION FAILED');for(const e of errors)console.error(' - '+e);process.exit(1);}console.log(`academy validation: PASS · ${mods.length} modules · ${lessons.length} golden lessons · ${Object.keys(sources).length} sources`);
