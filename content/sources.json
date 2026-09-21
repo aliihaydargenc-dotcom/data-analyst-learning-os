@@ -223,5 +223,35 @@
     "type": "official",
     "title": "Microsoft Learn — DBCC CHECKCONSTRAINTS (Transact-SQL)",
     "url": "https://learn.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-checkconstraints-transact-sql?view=sql-server-ver17"
+  },
+  "ms-index-design": {
+    "type": "official",
+    "title": "Microsoft Learn — Index architecture and design guide",
+    "url": "https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-index-design-guide?view=sql-server-ver17"
+  },
+  "ms-statistics": {
+    "type": "official",
+    "title": "Microsoft Learn — Statistics",
+    "url": "https://learn.microsoft.com/en-us/sql/relational-databases/statistics/statistics?view=sql-server-ver17"
+  },
+  "ms-query-store-scenarios": {
+    "type": "official",
+    "title": "Microsoft Learn — Query Store usage scenarios",
+    "url": "https://learn.microsoft.com/en-us/sql/relational-databases/performance/query-store-usage-scenarios?view=sql-server-ver17"
+  },
+  "ms-locking-row-versioning": {
+    "type": "official",
+    "title": "Microsoft Learn — Transaction locking and row versioning guide",
+    "url": "https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-transaction-locking-and-row-versioning-guide?view=sql-server-ver17"
+  },
+  "ms-deadlocks": {
+    "type": "official",
+    "title": "Microsoft Learn — Deadlocks guide",
+    "url": "https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-deadlocks-guide?view=sql-server-ver17"
+  },
+  "ms-psp": {
+    "type": "official",
+    "title": "Microsoft Learn — Parameter Sensitive Plan optimization",
+    "url": "https://learn.microsoft.com/en-us/sql/relational-databases/performance/parameter-sensitive-plan-optimization?view=sql-server-ver17"
   }
 }

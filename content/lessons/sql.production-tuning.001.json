@@ -1,0 +1,193 @@
+{
+  "id": "sql.production-tuning.001",
+  "module_id": "sql.production-tuning",
+  "track": "sql",
+  "level": "L5",
+  "status": "production-candidate",
+  "title_tr": "Production tuning: doğru sonucu koruyarak SARGability, benchmark ve workload trade-off",
+  "title_en": "Production tuning: preserve correctness while testing SARGability, benchmarks, and workload trade-offs",
+  "subtitle_tr": "Tuning'i 'daha hızlı SQL yazmak' değil, aynı sonucu koruyan değişikliği production workload üzerinde ölçüp geri alınabilir biçimde doğrulamak olarak uygula.",
+  "subtitle_en": "Treat tuning as a controlled, reversible experiment that preserves the same result and improves workload evidence rather than merely rewriting SQL to look faster.",
+  "estimated_minutes_range": [
+    100,
+    150
+  ],
+  "why_it_matters_tr": "Production tuning'de en tehlikeli başarı, yanlış sonucu daha hızlı üretmektir. SARGable predicate, covering index, pre-aggregation veya materialization bir sorguyu hızlandırabilir; fakat her değişiklik read, CPU, memory, storage, write amplification, plan stability ve bakım maliyetini farklı etkiler. Bu nedenle önce semantic equality, sonra baseline ve Query Store kanıtı, sonra kontrollü değişiklik gerekir. Kazancı tek çalıştırma süresiyle değil tekrarlanabilir workload ölçüleriyle doğrulamak ve rollback kriteri belirlemek zorunludur.",
+  "why_it_matters_en": "The most dangerous tuning success is producing the wrong result faster. Rewrites, covering indexes, pre-aggregation, and materialization can reduce cost but may increase writes, storage, maintenance, or plan risk. Preserve semantic equality first, then compare repeatable workload evidence and keep a rollback path.",
+  "prerequisites": [
+    "sql.index-statistics-plans.001"
+  ],
+  "learning_objectives": [
+    "SARGability kavramını predicate'in index erişimine uygun biçimi ve conversion/function etkileri üzerinden açıklamak.",
+    "Tuning deneyinde semantic equality'yi performans kazanımından önce zorunlu gate olarak kullanmak.",
+    "Logical reads, duration, CPU, execution count ve Query Store geçmişini baseline/after karşılaştırmasında birlikte yorumlamak.",
+    "Covering index, pre-aggregation ve materialization'ın read kazancı ile write/storage/freshness maliyetlerini karşılaştırmak.",
+    "En az %20 read ve duration iyileşmesini aynı result hash ile kanıtlayan adayları semantic lab'da seçmek."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "Execution plan ve index/statistics kanıtlarını root-cause ilan etmeden yorumlayabiliyor musun?",
+      "if_no_tr": "Önce `sql.index-statistics-plans.001` dersindeki evidence→hypothesis→validation akışını tamamla."
+    }
+  ],
+  "lab": {
+    "id": "sql-production-tuning-v1",
+    "engine": "DuckDB-Wasm",
+    "target_semantics": "T-SQL-compatible self-join and arithmetic benchmark gate over synthetic workload variants",
+    "requires_for_section": "independent-practice",
+    "title_tr": "Semantic SQL Lab · correctness-first benchmark gate",
+    "title_en": "Semantic SQL Lab · correctness-first benchmark gate",
+    "task_tr": "`tuning_variants` tablosunda her QUERY_ID için `baseline` satırını adaylarla karşılaştır. Yalnız RESULT_HASH baseline ile aynı olan ve hem LOGICAL_READS hem DURATION_MS değeri baseline'ın en fazla %80'i olan adayları döndür. Çıktı QUERY_ID, VARIANT, READ_SAVING ve DURATION_SAVING olsun; saving alanları baseline eksi candidate olarak hesaplansın ve QUERY_ID, VARIANT sırasıyla artan gelsin.",
+    "task_en": "Compare each candidate in tuning_variants with its QUERY_ID baseline. Return only candidates with the same RESULT_HASH and with both logical reads and duration at no more than 80% of baseline. Return QUERY_ID, VARIANT, READ_SAVING, and DURATION_SAVING ordered by query and variant.",
+    "schema": "tuning_variants(QUERY_ID VARCHAR, VARIANT VARCHAR, RESULT_HASH VARCHAR, LOGICAL_READS INTEGER, DURATION_MS INTEGER, CPU_MS INTEGER)",
+    "starter_sql": "SELECT QUERY_ID, VARIANT\nFROM tuning_variants\nWHERE VARIANT <> 'baseline'\nORDER BY QUERY_ID, VARIANT;",
+    "engine_note_tr": "Lab gerçek SQL Server Query Store veya plan cache kullanmaz; sentetik benchmark satırlarında correctness-first karar kuralını test eder. Query Store ve SARGability davranışı resmi Microsoft kaynaklarıyla öğretilir.",
+    "engine_note_en": "The lab does not emulate SQL Server Query Store or plan cache. It tests a correctness-first benchmark rule on synthetic evidence; Query Store and SARGability behavior are taught from official Microsoft sources."
+  },
+  "sections": [
+    {
+      "id": "correctness-first",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: tuning gate'in ilk kolonu correctness'tir",
+      "title_en": "1. Mental model: correctness is the first tuning gate",
+      "body_tr": "Tuning çalışmasında 'before' ve 'after' sorgularının aynı business contract'ı üretmesi gerekir. Daha az satır okuyan ama NULL davranışını, date boundary'yi veya join grain'ini değiştiren rewrite başarısızdır. Bu yüzden önce deterministic test fixture, row/aggregate reconciliation veya result hash/equality ile semantik eşitliği doğrula. Performans metriklerini yalnız bu gate geçildikten sonra karşılaştır; aksi halde hız kazancı ölçülebilir ama anlamsızdır.",
+      "body_en": "Before comparing performance, prove that before and after queries implement the same business contract. A faster rewrite that changes NULL behavior, date boundaries, or join grain has failed. Performance evidence is meaningful only after semantic equality passes."
+    },
+    {
+      "id": "sargability-materialization",
+      "layer": "mental_model",
+      "title_tr": "2. SARGability ve materialization: her hızlandırma başka bir maliyet taşır",
+      "title_en": "2. SARGability and materialization: every speedup carries another cost",
+      "body_tr": "Predicate üzerinde kolonu function veya implicit conversion içine almak index erişimini zorlaştırabilir; SARGable biçim optimizer'a uygun access path seçenekleri verir. Covering index lookup'u azaltabilir fakat index genişliği ve DML maliyeti artar. Pre-aggregation/materialization runtime hesaplamayı azaltabilir ama freshness, storage ve invalidation problemi getirir. Production tuning tek sorgu hızından daha geniştir: read path, write path ve işletim maliyetini aynı değişiklik kartında tut.",
+      "body_en": "SARGable predicates give the optimizer better access-path options. Covering indexes can reduce lookups but increase storage and write cost. Pre-aggregation can reduce runtime work while adding freshness and maintenance concerns. Production tuning must account for both read and write paths."
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "3. Worked example: hızlı ama yanlış adayı ele",
+      "title_en": "3. Worked example: reject a fast but incorrect candidate",
+      "body_tr": "Q1 baseline 10.000 read ve 500 ms sürüyor olsun. `sargable` varyant aynı result hash ile 2.000 read ve 150 ms üretiyorsa iki gate'i de geçer. `wrong-fast` varyant 100 read ve 20 ms olsa bile result hash farklıysa tuning adayı değildir. Q2'de read %12, duration %17 iyileşiyorsa bu dersin %20 eşiğini geçmez. Q3 materialized varyantı aynı sonuçla her iki metriği %20'den fazla düşürürse kabul edilir.",
+      "body_en": "A candidate that is dramatically faster but has a different result hash is rejected. A correct candidate must also meet the defined improvement threshold on both reads and duration. The rule prevents performance from overriding correctness.",
+      "code": "WITH baseline AS (\n  SELECT * FROM tuning_variants WHERE VARIANT='baseline'\n)\nSELECT c.QUERY_ID, c.VARIANT,\n       b.LOGICAL_READS-c.LOGICAL_READS AS READ_SAVING,\n       b.DURATION_MS-c.DURATION_MS AS DURATION_SAVING\nFROM tuning_variants c\nJOIN baseline b ON b.QUERY_ID=c.QUERY_ID\nWHERE c.VARIANT<>'baseline'\n  AND c.RESULT_HASH=b.RESULT_HASH\n  AND c.LOGICAL_READS*100<=b.LOGICAL_READS*80\n  AND c.DURATION_MS*100<=b.DURATION_MS*80\nORDER BY c.QUERY_ID,c.VARIANT;",
+      "explanation_tr": "Threshold production standardı değildir; lab için deterministik gate'tir. Gerçek eşikler SLA, baseline varyansı ve workload önemine göre belirlenir.",
+      "explanation_en": "The 20% threshold is a deterministic lab rule, not a universal production standard. Real thresholds depend on SLA, variance, and workload importance."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "4. Guided practice: önce baseline, sonra tek değişkenli deney",
+      "title_en": "4. Guided practice: baseline first, then one controlled change",
+      "body_tr": "Query Store veya tekrarlanabilir benchmark ile execution count, duration, CPU ve plan geçmişini topla. Soğuk/sıcak cache, parameter seti ve eşzamanlı workload gibi koşulları not et. Bir denemede aynı anda index, hint ve query rewrite değiştirme; hangi müdahalenin sonucu doğurduğunu kaybedersin. Hedef, 'en hızlı koşu' değil, representative workload altında daha iyi ve stabil dağılımdır. Rollback koşulunu değişiklikten önce yaz.",
+      "body_en": "Collect a repeatable baseline with execution count, duration, CPU, and plan history. Record cache and parameter conditions, change one major variable at a time, and define rollback criteria before the experiment. Optimize representative workload behavior rather than the single fastest run.",
+      "prompts": [
+        "Aynı query'nin before/after sonuç eşitliğini hangi veri ve aggregate kontrolleriyle kanıtlarsın?",
+        "Bir covering index read'i düşürürken write maliyetini nasıl ölçersin?",
+        "Query Store'da regression gördüğünde plan forcing ile kalıcı tasarım düzeltmesini nasıl ayırırsın?"
+      ]
+    },
+    {
+      "id": "independent-practice",
+      "layer": "independent_practice",
+      "title_tr": "5. Bağımsız üretim: correctness-first benchmark gate'i iki fixture'da geçir",
+      "title_en": "5. Independent production: pass the correctness-first benchmark gate",
+      "body_tr": "Semantic SQL Lab'da baseline ile candidate satırlarını self-join ederek aynı result hash, read eşiği ve duration eşiğini tek contract altında uygula. Edge fixture yalnız tek metriği iyileştiren veya sonucu değiştiren adaylarla yanlış pozitifleri sınar. Lab geçtikten sonra bu kuralın gerçek production'da neden tek başına yeterli olmadığını; CPU, concurrency, write amplification ve uzun dönem plan stability ölçülerini ayrıca nasıl izleyeceğini yaz.",
+      "body_en": "Join candidates to their baseline and enforce result equality plus both improvement thresholds. The edge fixture contains candidates that improve only one metric or change the result. After passing, explain why CPU, concurrency, write cost, and long-term stability still matter.",
+      "requires_lab_pass": "sql-production-tuning-v1",
+      "evidence_required": [
+        "semantic_lab_pass_visible_and_edge_fixture",
+        "correctness_before_speed",
+        "repeatable_baseline_design",
+        "rollback_and_workload_tradeoff"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "6. Debugging: benchmark gürültüsünü tuning sonucu sanma",
+      "title_en": "6. Debugging: do not mistake benchmark noise for tuning evidence",
+      "body_tr": "Tek çalıştırma, farklı cache durumu, farklı parameter distribution veya değişen concurrent load nedeniyle yanıltıcı olabilir. Önce sonuç eşitliğini, sonra representative parameter setini ve tekrar sayısını sabitle. Duration düşerken CPU veya logical reads artıyorsa sistem başka bir kaynağa maliyet taşıyor olabilir. Query Store geçmişinde yeni plan regression'ı görünüyorsa değişikliğin plan seçimine etkisini ayrıca incele. Tuning raporunda 'ölçtüm' demek yerine koşulları ve varyansı yaz.",
+      "body_en": "One run can be misleading because of cache state, parameter distribution, or concurrent load. Fix the result contract and representative inputs, repeat measurements, and check whether lower duration merely shifts cost to CPU, reads, writes, or plan instability.",
+      "diagnostic_sequence": [
+        "Before/after result equality ve filter/grain sözleşmesini doğrula.",
+        "Representative parameter seti, cache koşulu ve workload penceresini kaydet.",
+        "Duration yanında logical reads, CPU ve execution count ölç.",
+        "Index/materialization değişikliğinin write/storage/freshness maliyetini ölç.",
+        "Query Store plan geçmişinde regression veya plan churn olup olmadığını kontrol et.",
+        "SLA veya rollback threshold ihlal edilirse değişikliği geri al."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "7. Transfer: controlled experiment disiplini her performans probleminde aynıdır",
+      "title_en": "7. Transfer: controlled-experiment discipline applies across performance work",
+      "body_tr": "pandas optimizasyonunda vectorized çözüm ile apply yaklaşımını aynı output ve veri setinde karşılaştır; Qlik'te script/model değişikliğini aynı reload data ve app davranışıyla test et; Power Query'de folding değişikliğini kaynak sonucu ve refresh süresiyle doğrula. Ortak desen correctness gate, representative baseline, tek değişkenli müdahale, çoklu metrik ve rollback'tir. SQL'e özgü index kavramı değil bu deney disiplini transfer edilir.",
+      "body_en": "For pandas, Qlik, or Power Query, preserve the same output and data, establish a representative baseline, change one major factor, measure several metrics, and keep rollback criteria. The transferable skill is experiment design, not SQL-specific indexing.",
+      "transfer_tasks": [
+        {
+          "tool": "Python / pandas",
+          "task_tr": "İki implementasyonu exact dataframe equality, runtime ve peak memory ile karşılaştıran benchmark planı yaz."
+        },
+        {
+          "tool": "Qlik Sense",
+          "task_tr": "Bir model/script optimizasyonunu reload süresi kadar row count, association ve KPI regression ile de doğrula."
+        },
+        {
+          "tool": "Excel / Power Query",
+          "task_tr": "Folding sağlayan rewrite için refresh süresi, kaynak yükü ve result reconciliation gate'i tanımla."
+        }
+      ]
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: tuning kararını evidence ledger olarak geri çağır",
+      "title_en": "8. Retrieval: retrieve tuning as an evidence ledger",
+      "body_tr": "D+1'de correctness-first tuning sırasını ve SARGability/index/materialization trade-offlarını açıkla. D+7'de yeni benchmark tablosunda hangi adayların result-equality ve %20 çift-metrik gate'ini geçtiğini sorgu çalıştırmadan hesapla. D+30'da gerçek bir tuning değişikliği için baseline, hypothesis, change, result reconciliation, performance evidence, workload risk ve rollback alanlarını içeren kısa production change record hazırla.",
+      "body_en": "On D+1, explain correctness-first tuning and the trade-offs of SARGability, indexes, and materialization. On D+7, manually evaluate benchmark candidates. On D+30, produce a production change record with baseline, hypothesis, reconciliation, evidence, risks, and rollback.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explain-correctness-first-tuning"
+        },
+        {
+          "day": 7,
+          "evidence": "evaluate-benchmark-gates"
+        },
+        {
+          "day": 30,
+          "evidence": "produce-production-tuning-change-record"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "SARGability, covering index, materialization ve Query Store rollerini correctness ve workload trade-offlarıyla birlikte açıkla.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Benchmark kanıtında semantic mismatch, tek-metrik kazanç ve gerçek çift-metrik iyileşmeyi ayır.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Aynı result hash ve çift %20 iyileşme gate'ini visible/edge fixture üzerinde exact sonuçla uygula.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Controlled tuning experiment disiplinini pandas, Qlik veya Power Query performans değişikliğine taşı ve rollback kriteri tanımla.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "ms-index-design",
+    "ms-query-store-scenarios",
+    "ms-execution-plans",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}
