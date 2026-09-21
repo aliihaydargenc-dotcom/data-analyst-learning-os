@@ -1,0 +1,94 @@
+{
+  "title": "Data Analyst Learning OS",
+  "weeks": 24,
+  "tracks": [
+    "SQL",
+    "Qlik Sense",
+    "Python",
+    "Excel",
+    "Technical English"
+  ],
+  "phases": [
+    {
+      "id": "P0",
+      "name_tr": "Tanı",
+      "name_en": "Diagnostic",
+      "weeks": [
+        0
+      ],
+      "outcome_tr": "Seviye ve konu bazlı açıkların ölçülmesi"
+    },
+    {
+      "id": "P1",
+      "name_tr": "Eksik Temelleri Kapat",
+      "name_en": "Bridge Gaps",
+      "weeks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "outcome_tr": "JOIN/CTE, Qlik script, pandas ve Power Query temellerini eşitle"
+    },
+    {
+      "id": "P2",
+      "name_tr": "Analitik Çekirdek",
+      "name_en": "Analytical Core",
+      "weeks": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "outcome_tr": "Window functions, Set Analysis, pandas windows, Data Model/DAX"
+    },
+    {
+      "id": "P3",
+      "name_tr": "İleri Analiz",
+      "name_en": "Advanced Analysis",
+      "weeks": [
+        9,
+        10,
+        11,
+        12
+      ],
+      "outcome_tr": "Cohort, canonical date, nested aggregation, LAMBDA ve vaka çözümü"
+    },
+    {
+      "id": "P4",
+      "name_tr": "Modelleme ve Performans",
+      "name_en": "Modeling & Performance",
+      "weeks": [
+        13,
+        14,
+        15,
+        16
+      ],
+      "outcome_tr": "Execution plan, Qlik model performansı, pandas optimizasyonu, query folding"
+    },
+    {
+      "id": "P5",
+      "name_tr": "Otomasyon ve Entegrasyon",
+      "name_en": "Automation & Integration",
+      "weeks": [
+        17,
+        18,
+        19,
+        20
+      ],
+      "outcome_tr": "SQL→Python→Excel/Qlik pipeline ve veri kalite kapıları"
+    },
+    {
+      "id": "P6",
+      "name_tr": "Capstone",
+      "name_en": "Capstone",
+      "weeks": [
+        21,
+        22,
+        23,
+        24
+      ],
+      "outcome_tr": "Uçtan uca otel revenue analytics projesi ve final sınavı"
+    }
+  ]
+}
