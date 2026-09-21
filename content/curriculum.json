@@ -1,0 +1,1895 @@
+{
+  "version": "0.3.0",
+  "philosophy": {
+    "starting_point": "zero-prerequisite-high-comprehension",
+    "progression": "mastery-not-time",
+    "evidence_layers": [
+      "knowledge",
+      "interpretation",
+      "production",
+      "transfer",
+      "retention"
+    ],
+    "learning_loop": [
+      "concept",
+      "mental-model",
+      "worked-example",
+      "guided-practice",
+      "independent-production",
+      "debugging",
+      "transfer",
+      "retrieval",
+      "retention"
+    ]
+  },
+  "levels": [
+    {
+      "id": "L1",
+      "name_tr": "Foundation"
+    },
+    {
+      "id": "L2",
+      "name_tr": "Operational"
+    },
+    {
+      "id": "L3",
+      "name_tr": "Analytical"
+    },
+    {
+      "id": "L4",
+      "name_tr": "Advanced"
+    },
+    {
+      "id": "L5",
+      "name_tr": "Production"
+    },
+    {
+      "id": "Expert",
+      "name_tr": "Expert"
+    }
+  ],
+  "tracks": [
+    {
+      "id": "sql",
+      "name": "SQL Server / T-SQL",
+      "purpose_tr": "İlişkisel düşünmeden optimizer ve production tuning'e kadar.",
+      "modules": [
+        {
+          "id": "sql.relational-thinking",
+          "track": "sql",
+          "level": "L1",
+          "title_tr": "İlişkisel düşünme ve veri tanesi",
+          "title_en": "Relational thinking and data grain",
+          "prerequisites": [],
+          "learning_outcomes": [
+            "Bir satırın hangi iş olayını temsil ettiğini açıklar.",
+            "Anahtar, benzersizlik ve tablo ilişkisini veri tanesiyle birlikte yorumlar."
+          ],
+          "evidence": [
+            "explain",
+            "model-read"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "ms-tsql"
+          ]
+        },
+        {
+          "id": "sql.select-null-filtering",
+          "track": "sql",
+          "level": "L1",
+          "title_tr": "SELECT semantiği, NULL ve filtreleme",
+          "title_en": "SELECT semantics, NULL and filtering",
+          "prerequisites": [
+            "sql.relational-thinking"
+          ],
+          "learning_outcomes": [
+            "NULL ile boş değer arasındaki farkı sorgu sonucuna etkisiyle açıklar.",
+            "Filtre, sıralama ve veri tipi davranışını tahmin eder."
+          ],
+          "evidence": [
+            "interpret",
+            "produce"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "ms-tsql"
+          ]
+        },
+        {
+          "id": "sql.aggregation-grain",
+          "track": "sql",
+          "level": "L2",
+          "title_tr": "Aggregation ve GROUP BY tanesi",
+          "title_en": "Aggregation and GROUP BY grain",
+          "prerequisites": [
+            "sql.select-null-filtering"
+          ],
+          "learning_outcomes": [
+            "Aggregation sonrası sonuç tanesini önceden tanımlar.",
+            "WHERE ve HAVING kullanımını doğru aşamada seçer."
+          ],
+          "evidence": [
+            "interpret",
+            "debug"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "ms-tsql"
+          ]
+        },
+        {
+          "id": "sql.join-cardinality",
+          "track": "sql",
+          "level": "L2",
+          "title_tr": "JOIN, cardinality ve fan-out",
+          "title_en": "JOIN, cardinality and fan-out",
+          "prerequisites": [
+            "sql.aggregation-grain"
+          ],
+          "learning_outcomes": [
+            "1:1, 1:N ve N:N ilişkilerin satır sayısına etkisini öngörür.",
+            "Duplicate inflation oluştuğunda sebebi veri tanesi üzerinden teşhis eder."
+          ],
+          "evidence": [
+            "produce",
+            "debug",
+            "transfer"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "ms-tsql"
+          ]
+        },
+        {
+          "id": "sql.cte-subquery-sets",
+          "track": "sql",
+          "level": "L3",
+          "title_tr": "CTE, subquery ve set işlemleri",
+          "title_en": "CTEs, subqueries and set operations",
+          "prerequisites": [
+            "sql.join-cardinality"
+          ],
+          "learning_outcomes": [
+            "CTE, subquery ve EXISTS seçeneklerini semantiğe göre ayırır.",
+            "Okunabilir analitik sorguyu katmanlara böler."
+          ],
+          "evidence": [
+            "produce",
+            "explain"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "ms-tsql"
+          ]
+        },
+        {
+          "id": "sql.window-semantics",
+          "track": "sql",
+          "level": "L3",
+          "title_tr": "Window functions: partition, order, frame",
+          "title_en": "Window functions: partition, order, frame",
+          "prerequisites": [
+            "sql.cte-subquery-sets"
+          ],
+          "learning_outcomes": [
+            "GROUP BY ile window aggregation arasındaki sonuç-tanesi farkını açıklar.",
+            "PARTITION BY, ORDER BY ve frame seçiminin sonucu nasıl değiştirdiğini kanıtlar."
+          ],
+          "evidence": [
+            "interpret",
+            "produce",
+            "debug",
+            "transfer"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "ms-over"
+          ]
+        },
+        {
+          "id": "sql.analytical-patterns",
+          "track": "sql",
+          "level": "L4",
+          "title_tr": "Analitik SQL desenleri",
+          "title_en": "Analytical SQL patterns",
+          "prerequisites": [
+            "sql.window-semantics"
+          ],
+          "learning_outcomes": [
+            "Running total, rolling metric, gaps/islands ve as-of analiz desenlerini ayırt eder.",
+            "Aynı analitik problemi farklı veri tanesinde yeniden kurar."
+          ],
+          "evidence": [
+            "produce",
+            "transfer"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "ms-over"
+          ]
+        },
+        {
+          "id": "sql.model-quality",
+          "track": "sql",
+          "level": "L4",
+          "title_tr": "Şema, constraint ve veri kalitesi",
+          "title_en": "Schema, constraints and data quality",
+          "prerequisites": [
+            "sql.join-cardinality"
+          ],
+          "learning_outcomes": [
+            "Primary, unique ve foreign key rollerini veri kalitesiyle ilişkilendirir.",
+            "Reconciliation ve invariant kontrolleri tasarlar."
+          ],
+          "evidence": [
+            "model-design",
+            "debug"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "ms-tsql"
+          ]
+        },
+        {
+          "id": "sql.index-statistics-plans",
+          "track": "sql",
+          "level": "L5",
+          "title_tr": "Index, statistics ve execution plan",
+          "title_en": "Indexes, statistics and execution plans",
+          "prerequisites": [
+            "sql.analytical-patterns",
+            "sql.model-quality"
+          ],
+          "learning_outcomes": [
+            "Index ve statistics bilgisinin optimizer kararlarıyla ilişkisini açıklar.",
+            "Estimated ve actual plan üzerinde temel erişim ve join operatörlerini yorumlar."
+          ],
+          "evidence": [
+            "interpret",
+            "performance-diagnosis"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "ms-execution-plans"
+          ]
+        },
+        {
+          "id": "sql.production-tuning",
+          "track": "sql",
+          "level": "L5",
+          "title_tr": "Production tuning ve güvenli sorgu",
+          "title_en": "Production tuning and safe querying",
+          "prerequisites": [
+            "sql.index-statistics-plans"
+          ],
+          "learning_outcomes": [
+            "SARGability, materialization ve workload trade-offlarını ölçerek değerlendirir.",
+            "Doğru sonucu koruyarak bir sorgunun performans darboğazını azaltır."
+          ],
+          "evidence": [
+            "produce",
+            "benchmark",
+            "debug"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "ms-execution-plans"
+          ]
+        },
+        {
+          "id": "sql.optimizer-concurrency",
+          "track": "sql",
+          "level": "Expert",
+          "title_tr": "Optimizer reasoning ve concurrency",
+          "title_en": "Optimizer reasoning and concurrency",
+          "prerequisites": [
+            "sql.production-tuning"
+          ],
+          "learning_outcomes": [
+            "Plan seçiminin veri dağılımı ve istatistiklerle neden değişebildiğini savunur.",
+            "Isolation ve concurrency trade-offlarını analitik workload bağlamında değerlendirir."
+          ],
+          "evidence": [
+            "architecture-defense",
+            "transfer"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "ms-execution-plans"
+          ]
+        },
+        {
+          "id": "sql.architecture-review",
+          "track": "sql",
+          "level": "Expert",
+          "title_tr": "SQL mimari ve code review",
+          "title_en": "SQL architecture and code review",
+          "prerequisites": [
+            "sql.optimizer-concurrency"
+          ],
+          "learning_outcomes": [
+            "Bilinmeyen workload için veri erişim stratejisi önerir.",
+            "Başka bir çözümü doğruluk, performans ve sürdürülebilirlik açısından review eder."
+          ],
+          "evidence": [
+            "review",
+            "architecture-defense"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "ms-execution-plans"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "qlik",
+      "name": "Qlik Sense",
+      "purpose_tr": "Associative modelden production app architecture'a kadar.",
+      "modules": [
+        {
+          "id": "qlik.associative-state",
+          "track": "qlik",
+          "level": "L1",
+          "title_tr": "Associative model ve selection state",
+          "title_en": "Associative model and selection state",
+          "prerequisites": [],
+          "learning_outcomes": [
+            "Selection state'in aggregation kapsamını nasıl etkilediğini açıklar.",
+            "Association davranışını veri modeli üzerinden yorumlar."
+          ],
+          "evidence": [
+            "explain",
+            "interpret"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "qlik-set-analysis"
+          ]
+        },
+        {
+          "id": "qlik.dimension-measure-grain",
+          "track": "qlik",
+          "level": "L1",
+          "title_tr": "Dimension, measure ve chart grain",
+          "title_en": "Dimensions, measures and chart grain",
+          "prerequisites": [
+            "qlik.associative-state"
+          ],
+          "learning_outcomes": [
+            "Chart grain'i dimension setinden türetir.",
+            "Measure sonucunun seçim ve dimension bağlamına göre neden değiştiğini açıklar."
+          ],
+          "evidence": [
+            "interpret",
+            "produce"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "qlik-set-analysis"
+          ]
+        },
+        {
+          "id": "qlik.load-script",
+          "track": "qlik",
+          "level": "L2",
+          "title_tr": "Load Script, Resident/Preceding ve mapping",
+          "title_en": "Load Script, Resident/Preceding and mapping",
+          "prerequisites": [
+            "qlik.dimension-measure-grain"
+          ],
+          "learning_outcomes": [
+            "LOAD ve SQL SELECT katmanlarını doğru seçer.",
+            "Resident, preceding ve mapping desenlerini ihtiyaca göre ayırır."
+          ],
+          "evidence": [
+            "produce",
+            "debug"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "qlik-resident"
+          ]
+        },
+        {
+          "id": "qlik.associations-calendar",
+          "track": "qlik",
+          "level": "L2",
+          "title_tr": "Association, cardinality ve master calendar",
+          "title_en": "Associations, cardinality and master calendar",
+          "prerequisites": [
+            "qlik.load-script",
+            "sql.join-cardinality"
+          ],
+          "learning_outcomes": [
+            "Alan isimlerinin association oluşturma etkisini önceden değerlendirir.",
+            "Master calendar ilişkisini fact grain ile tutarlı kurar."
+          ],
+          "evidence": [
+            "model-design",
+            "debug"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "qlik-synthetic"
+          ]
+        },
+        {
+          "id": "qlik.set-analysis",
+          "track": "qlik",
+          "level": "L3",
+          "title_tr": "Set Analysis ve aggregation scope",
+          "title_en": "Set Analysis and aggregation scope",
+          "prerequisites": [
+            "qlik.associations-calendar",
+            "sql.aggregation-grain"
+          ],
+          "learning_outcomes": [
+            "$ ve 1 identifier'larının selection state ile farkını açıklar.",
+            "Set modifier ve operator bileşenlerini scope mantığıyla kurar."
+          ],
+          "evidence": [
+            "interpret",
+            "produce",
+            "debug"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "qlik-set-analysis"
+          ]
+        },
+        {
+          "id": "qlik.variables-aggr-altstate",
+          "track": "qlik",
+          "level": "L3",
+          "title_tr": "Variables, dollar-sign expansion, Aggr ve alternate states",
+          "title_en": "Variables, dollar-sign expansion, Aggr and alternate states",
+          "prerequisites": [
+            "qlik.set-analysis"
+          ],
+          "learning_outcomes": [
+            "Dollar-sign expansion zamanlamasını expression evaluation'dan ayırır.",
+            "Aggr ve alternate state kullanımını grain ve karşılaştırma ihtiyacına göre gerekçelendirir."
+          ],
+          "evidence": [
+            "produce",
+            "debug",
+            "transfer"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "qlik-set-analysis"
+          ]
+        },
+        {
+          "id": "qlik.synthetic-circular-model",
+          "track": "qlik",
+          "level": "L4",
+          "title_tr": "Synthetic/circular diagnosis ve model redesign",
+          "title_en": "Synthetic/circular diagnosis and model redesign",
+          "prerequisites": [
+            "qlik.associations-calendar"
+          ],
+          "learning_outcomes": [
+            "Synthetic key'i otomatik hata saymadan nedenini analiz eder.",
+            "Circular reference oluştuğunda alternatif model tasarımlarını karşılaştırır."
+          ],
+          "evidence": [
+            "debug",
+            "model-design"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "qlik-synthetic"
+          ]
+        },
+        {
+          "id": "qlik.qvd-canonical-link",
+          "track": "qlik",
+          "level": "L4",
+          "title_tr": "QVD katmanları, canonical date ve link table",
+          "title_en": "QVD layers, canonical date and link tables",
+          "prerequisites": [
+            "qlik.synthetic-circular-model",
+            "qlik.variables-aggr-altstate"
+          ],
+          "learning_outcomes": [
+            "Extract, transform ve app katmanlarını tekrar kullanılabilir QVD mimarisiyle ayırır.",
+            "Birden çok date role veya fact için canonical ve link yaklaşımını trade-offlarıyla seçer."
+          ],
+          "evidence": [
+            "architecture-design",
+            "transfer"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "qlik-resident"
+          ]
+        },
+        {
+          "id": "qlik.incremental-security",
+          "track": "qlik",
+          "level": "L5",
+          "title_tr": "Incremental load ve Section Access",
+          "title_en": "Incremental loading and Section Access",
+          "prerequisites": [
+            "qlik.qvd-canonical-link"
+          ],
+          "learning_outcomes": [
+            "Yeni ve değişen kayıt stratejisini güvenli merge mantığıyla tasarlar.",
+            "Section Access veri reduction davranışını test senaryolarıyla doğrular."
+          ],
+          "evidence": [
+            "produce",
+            "security-review"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "qlik-resident"
+          ]
+        },
+        {
+          "id": "qlik.performance-governance",
+          "track": "qlik",
+          "level": "L5",
+          "title_tr": "App performansı ve governance",
+          "title_en": "App performance and governance",
+          "prerequisites": [
+            "qlik.incremental-security"
+          ],
+          "learning_outcomes": [
+            "Reload, model ve chart darboğazlarını ayrı katmanlarda teşhis eder.",
+            "Reusable measure, script ve deployment standardı önerir."
+          ],
+          "evidence": [
+            "performance-diagnosis",
+            "review"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "qlik-synthetic"
+          ]
+        },
+        {
+          "id": "qlik.enterprise-architecture",
+          "track": "qlik",
+          "level": "Expert",
+          "title_tr": "Enterprise Qlik mimarisi",
+          "title_en": "Enterprise Qlik architecture",
+          "prerequisites": [
+            "qlik.performance-governance"
+          ],
+          "learning_outcomes": [
+            "Multi-app semantic ve reload mimarisini veri hacmi ve ownership ile birlikte tasarlar.",
+            "Güvenlik, performans ve yeniden kullanım trade-offlarını savunur."
+          ],
+          "evidence": [
+            "architecture-defense",
+            "transfer"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "qlik-set-analysis"
+          ]
+        },
+        {
+          "id": "qlik.engine-review",
+          "track": "qlik",
+          "level": "Expert",
+          "title_tr": "Engine/API farkındalığı ve design review",
+          "title_en": "Engine/API awareness and design review",
+          "prerequisites": [
+            "qlik.enterprise-architecture"
+          ],
+          "learning_outcomes": [
+            "Hangi problemin gerçek Qlik ortamında test edilmesi gerektiğini ayırır.",
+            "Başka bir Qlik app mimarisini teknik ve analitik açıdan review eder."
+          ],
+          "evidence": [
+            "review",
+            "architecture-defense"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "qlik-set-analysis"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "python",
+      "name": "Python for Data Analysis",
+      "purpose_tr": "Dil semantiğinden testli ve performanslı analitik pipeline'a kadar.",
+      "modules": [
+        {
+          "id": "python.language-semantics",
+          "track": "python",
+          "level": "L1",
+          "title_tr": "Python dil semantiği",
+          "title_en": "Python language semantics",
+          "prerequisites": [],
+          "learning_outcomes": [
+            "Temel veri tipleri, truthiness ve control flow davranışını tahmin eder.",
+            "Mutable ve immutable ayrımının program davranışına etkisini açıklar."
+          ],
+          "evidence": [
+            "interpret",
+            "produce"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "python-tutorial"
+          ]
+        },
+        {
+          "id": "python.functions-errors-files",
+          "track": "python",
+          "level": "L1",
+          "title_tr": "Fonksiyonlar, hatalar ve dosyalar",
+          "title_en": "Functions, errors and files",
+          "prerequisites": [
+            "python.language-semantics"
+          ],
+          "learning_outcomes": [
+            "Fonksiyon sınırlarını ve exception akışını okunabilir biçimde kurar.",
+            "Dosya girdisini doğrulayıp anlamlı hata üretir."
+          ],
+          "evidence": [
+            "produce",
+            "debug"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "python-tutorial"
+          ]
+        },
+        {
+          "id": "python.numpy-array-thinking",
+          "track": "python",
+          "level": "L2",
+          "title_tr": "NumPy ve array thinking",
+          "title_en": "NumPy and array thinking",
+          "prerequisites": [
+            "python.functions-errors-files"
+          ],
+          "learning_outcomes": [
+            "Shape, dtype ve broadcasting ilişkisini açıklar.",
+            "Loop yerine vectorized yaklaşımın ne zaman uygun olduğunu seçer."
+          ],
+          "evidence": [
+            "interpret",
+            "produce"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "numpy-broadcasting"
+          ]
+        },
+        {
+          "id": "python.pandas-dtype-index",
+          "track": "python",
+          "level": "L2",
+          "title_tr": "pandas DataFrame, dtype ve index",
+          "title_en": "pandas DataFrame, dtype and index",
+          "prerequisites": [
+            "python.numpy-array-thinking"
+          ],
+          "learning_outcomes": [
+            "dtype ve index seçimlerinin bellek ve semantik etkisini açıklar.",
+            "Eksik değer ve tarih tiplerini kontrollü biçimde dönüştürür."
+          ],
+          "evidence": [
+            "produce",
+            "debug"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "pandas-groupby"
+          ]
+        },
+        {
+          "id": "python.groupby-reshape",
+          "track": "python",
+          "level": "L3",
+          "title_tr": "groupby, reshape ve aggregation",
+          "title_en": "groupby, reshape and aggregation",
+          "prerequisites": [
+            "python.pandas-dtype-index"
+          ],
+          "learning_outcomes": [
+            "split-apply-combine modelini veri tanesiyle ilişkilendirir.",
+            "agg, transform ve pivot seçimlerini çıktı şekline göre yapar."
+          ],
+          "evidence": [
+            "interpret",
+            "produce"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "pandas-groupby"
+          ]
+        },
+        {
+          "id": "python.merge-window",
+          "track": "python",
+          "level": "L3",
+          "title_tr": "merge cardinality ve window işlemleri",
+          "title_en": "Merge cardinality and window operations",
+          "prerequisites": [
+            "python.groupby-reshape",
+            "sql.join-cardinality"
+          ],
+          "learning_outcomes": [
+            "Merge öncesi cardinality varsayımını doğrular.",
+            "shift, rolling ve window işlemlerini doğru grup ve zaman sırasıyla kurar."
+          ],
+          "evidence": [
+            "produce",
+            "debug",
+            "transfer"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "pandas-merging",
+            "pandas-window"
+          ]
+        },
+        {
+          "id": "python.stats-eda",
+          "track": "python",
+          "level": "L4",
+          "title_tr": "İstatistiksel düşünme ve EDA",
+          "title_en": "Statistical reasoning and EDA",
+          "prerequisites": [
+            "python.merge-window"
+          ],
+          "learning_outcomes": [
+            "Descriptive metric ile inferential iddia arasındaki farkı korur.",
+            "Korelasyon, dağılım ve örnekleme sınırlılıklarını analizde belirtir."
+          ],
+          "evidence": [
+            "interpret",
+            "analysis-memo"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "pandas-groupby"
+          ]
+        },
+        {
+          "id": "python.io-api-sql",
+          "track": "python",
+          "level": "L4",
+          "title_tr": "SQL, API, JSON ve Excel entegrasyonu",
+          "title_en": "SQL, API, JSON and Excel integration",
+          "prerequisites": [
+            "python.merge-window"
+          ],
+          "learning_outcomes": [
+            "Dış kaynaktan gelen veriyi schema validation ile alır.",
+            "Retry, pagination ve malformed response senaryolarını ele alır."
+          ],
+          "evidence": [
+            "produce",
+            "debug"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "python-tutorial"
+          ]
+        },
+        {
+          "id": "python.testing-typing-logging",
+          "track": "python",
+          "level": "L5",
+          "title_tr": "Testing, typing, logging ve config",
+          "title_en": "Testing, typing, logging and config",
+          "prerequisites": [
+            "python.io-api-sql"
+          ],
+          "learning_outcomes": [
+            "Analitik fonksiyonlar için edge-case testleri yazar.",
+            "Config ve logging ile tekrar üretilebilir çalışma akışı kurar."
+          ],
+          "evidence": [
+            "produce",
+            "review"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "python-tutorial"
+          ]
+        },
+        {
+          "id": "python.performance-pipelines",
+          "track": "python",
+          "level": "L5",
+          "title_tr": "Performans, bellek ve pipeline tasarımı",
+          "title_en": "Performance, memory and pipeline design",
+          "prerequisites": [
+            "python.testing-typing-logging",
+            "python.stats-eda"
+          ],
+          "learning_outcomes": [
+            "Profiling sonucuna göre dtype, vectorization ve chunking kararı verir.",
+            "Idempotent ve yeniden başlatılabilir analitik pipeline tasarlar."
+          ],
+          "evidence": [
+            "benchmark",
+            "architecture-design"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "numpy-broadcasting"
+          ]
+        },
+        {
+          "id": "python.repro-architecture",
+          "track": "python",
+          "level": "Expert",
+          "title_tr": "Reproducibility ve analitik yazılım mimarisi",
+          "title_en": "Reproducibility and analytical software architecture",
+          "prerequisites": [
+            "python.performance-pipelines"
+          ],
+          "learning_outcomes": [
+            "Ortam, bağımlılık ve veri versiyonlarını yeniden üretilebilir biçimde yönetir.",
+            "Kaynak veya hacim değişimine dayanıklı tasarım önerir."
+          ],
+          "evidence": [
+            "architecture-defense",
+            "transfer"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "python-tutorial"
+          ]
+        },
+        {
+          "id": "python.peer-review",
+          "track": "python",
+          "level": "Expert",
+          "title_tr": "Production analytics code review",
+          "title_en": "Production analytics code review",
+          "prerequisites": [
+            "python.repro-architecture"
+          ],
+          "learning_outcomes": [
+            "Başka bir pipeline'ı doğruluk, test, gözlemlenebilirlik ve performans açısından inceler.",
+            "Trade-offları kanıt ve benchmark ile savunur."
+          ],
+          "evidence": [
+            "review",
+            "architecture-defense"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "python-tutorial"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "excel",
+      "name": "Advanced Excel",
+      "purpose_tr": "Formül semantiğinden Data Model, DAX, Power Query ve governance'a kadar.",
+      "modules": [
+        {
+          "id": "excel.table-reference-semantics",
+          "track": "excel",
+          "level": "L1",
+          "title_tr": "Table, range ve reference semantiği",
+          "title_en": "Table, range and reference semantics",
+          "prerequisites": [],
+          "learning_outcomes": [
+            "Relative, absolute ve structured reference farkını davranış üzerinden açıklar.",
+            "Excel Table kullanımının genişleyen veri aralığına etkisini yorumlar."
+          ],
+          "evidence": [
+            "interpret",
+            "produce"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "excel-pq-pivot"
+          ]
+        },
+        {
+          "id": "excel.logic-lookups",
+          "track": "excel",
+          "level": "L1",
+          "title_tr": "Mantık, aggregation ve lookup",
+          "title_en": "Logic, aggregation and lookup",
+          "prerequisites": [
+            "excel.table-reference-semantics"
+          ],
+          "learning_outcomes": [
+            "IF, SUMIFS ve XLOOKUP kullanımını anahtar kalitesiyle ilişkilendirir.",
+            "Yanlış veya çoğul anahtarların lookup sonucunu nasıl bozduğunu teşhis eder."
+          ],
+          "evidence": [
+            "produce",
+            "debug"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "excel-pq-pivot"
+          ]
+        },
+        {
+          "id": "excel.dynamic-arrays",
+          "track": "excel",
+          "level": "L2",
+          "title_tr": "Dynamic arrays ve modern formüller",
+          "title_en": "Dynamic arrays and modern formulas",
+          "prerequisites": [
+            "excel.logic-lookups"
+          ],
+          "learning_outcomes": [
+            "FILTER, UNIQUE ve SORT ile spill davranışını kontrollü kullanır.",
+            "Helper column ihtiyacını azaltan dinamik raporlar kurar."
+          ],
+          "evidence": [
+            "produce",
+            "debug"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "excel-let"
+          ]
+        },
+        {
+          "id": "excel.let-lambda-pivot",
+          "track": "excel",
+          "level": "L2",
+          "title_tr": "LET/LAMBDA ve Pivot analizi",
+          "title_en": "LET/LAMBDA and Pivot analysis",
+          "prerequisites": [
+            "excel.dynamic-arrays"
+          ],
+          "learning_outcomes": [
+            "LET ile ara hesapları isimlendirip formül okunabilirliğini artırır.",
+            "LAMBDA ile yeniden kullanılabilir fonksiyon tasarlar."
+          ],
+          "evidence": [
+            "produce",
+            "review"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "excel-let",
+            "excel-lambda"
+          ]
+        },
+        {
+          "id": "excel.power-query-transform",
+          "track": "excel",
+          "level": "L3",
+          "title_tr": "Power Query dönüşüm hattı",
+          "title_en": "Power Query transformation pipeline",
+          "prerequisites": [
+            "excel.logic-lookups"
+          ],
+          "learning_outcomes": [
+            "Type, merge, append, group ve parameter adımlarını tekrar üretilebilir sırada kurar.",
+            "UI adımlarının M kodundaki karşılığını okuyabilir."
+          ],
+          "evidence": [
+            "produce",
+            "interpret"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "excel-pq-pivot"
+          ]
+        },
+        {
+          "id": "excel.power-query-quality",
+          "track": "excel",
+          "level": "L3",
+          "title_tr": "Power Query veri kalitesi ve schema drift",
+          "title_en": "Power Query data quality and schema drift",
+          "prerequisites": [
+            "excel.power-query-transform"
+          ],
+          "learning_outcomes": [
+            "Kolon değişimi ve tip bozulması gibi schema drift senaryolarını yakalar.",
+            "Refresh öncesi kalite kontrolleri tasarlar."
+          ],
+          "evidence": [
+            "debug",
+            "transfer"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "excel-pq-pivot"
+          ]
+        },
+        {
+          "id": "excel.data-model-relations",
+          "track": "excel",
+          "level": "L4",
+          "title_tr": "Data Model ve ilişkiler",
+          "title_en": "Data Model and relationships",
+          "prerequisites": [
+            "excel.power-query-quality",
+            "sql.join-cardinality"
+          ],
+          "learning_outcomes": [
+            "Fact ve dimension grain ile one-to-many ilişkiyi doğru kurar.",
+            "Yanlış relationship veya mixed grain nedeniyle oluşan ölçüm hatasını teşhis eder."
+          ],
+          "evidence": [
+            "model-design",
+            "debug"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "excel-pq-pivot"
+          ]
+        },
+        {
+          "id": "excel.dax-filter-context",
+          "track": "excel",
+          "level": "L4",
+          "title_tr": "DAX measure ve filter context",
+          "title_en": "DAX measures and filter context",
+          "prerequisites": [
+            "excel.data-model-relations"
+          ],
+          "learning_outcomes": [
+            "Measure ile calculated column farkını model bağlamında açıklar.",
+            "CALCULATE ile filter context değişimini adım adım yorumlar."
+          ],
+          "evidence": [
+            "interpret",
+            "produce"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "excel-pq-pivot"
+          ]
+        },
+        {
+          "id": "excel.query-folding-performance",
+          "track": "excel",
+          "level": "L5",
+          "title_tr": "Query folding ve model performansı",
+          "title_en": "Query folding and model performance",
+          "prerequisites": [
+            "excel.dax-filter-context"
+          ],
+          "learning_outcomes": [
+            "Hangi kaynaklarda folding'in mümkün olduğunu ayırt eder.",
+            "Refresh ve model boyutu darboğazlarını ölçerek optimize eder."
+          ],
+          "evidence": [
+            "performance-diagnosis",
+            "benchmark"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "power-query-folding"
+          ]
+        },
+        {
+          "id": "excel.automation-governance",
+          "track": "excel",
+          "level": "L5",
+          "title_tr": "Otomasyon, auditability ve governance",
+          "title_en": "Automation, auditability and governance",
+          "prerequisites": [
+            "excel.query-folding-performance",
+            "excel.let-lambda-pivot"
+          ],
+          "learning_outcomes": [
+            "Kontrollü input, validation ve audit trail içeren workbook tasarlar.",
+            "VBA, Office Scripts veya Python seçimini gereksinime göre gerekçelendirir."
+          ],
+          "evidence": [
+            "architecture-design",
+            "review"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "excel-pq-pivot"
+          ]
+        },
+        {
+          "id": "excel.reporting-architecture",
+          "track": "excel",
+          "level": "Expert",
+          "title_tr": "Enterprise reporting pack mimarisi",
+          "title_en": "Enterprise reporting pack architecture",
+          "prerequisites": [
+            "excel.automation-governance"
+          ],
+          "learning_outcomes": [
+            "Birden fazla veri kaynağını yönetilebilir refresh ve model katmanına bağlar.",
+            "Workbook, Data Model ve dış sistem sınırlarını doğru belirler."
+          ],
+          "evidence": [
+            "architecture-defense",
+            "transfer"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "excel-pq-pivot"
+          ]
+        },
+        {
+          "id": "excel.audit-review",
+          "track": "excel",
+          "level": "Expert",
+          "title_tr": "Workbook audit ve peer review",
+          "title_en": "Workbook audit and peer review",
+          "prerequisites": [
+            "excel.reporting-architecture"
+          ],
+          "learning_outcomes": [
+            "Sessiz hesaplama ve veri kalitesi hatalarını sistematik audit eder.",
+            "Başka bir reporting pack'i sürdürülebilirlik ve doğruluk açısından review eder."
+          ],
+          "evidence": [
+            "review",
+            "debug"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "excel-pq-pivot"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "english",
+      "name": "Technical English",
+      "purpose_tr": "Görev okumadan teknik savunma ve kaynak sentezine kadar.",
+      "modules": [
+        {
+          "id": "english.core-vocabulary",
+          "track": "english",
+          "level": "L1",
+          "title_tr": "Temel analitik teknik kelime dağarcığı",
+          "title_en": "Core analytical technical vocabulary",
+          "prerequisites": [],
+          "learning_outcomes": [
+            "grain, cardinality, aggregate, dimension ve measure terimlerini bağlam içinde açıklar.",
+            "Teknik talepteki fiil ve kısıtları doğru ayırır."
+          ],
+          "evidence": [
+            "interpret",
+            "produce"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "cefr"
+          ]
+        },
+        {
+          "id": "english.task-reading",
+          "track": "english",
+          "level": "L1",
+          "title_tr": "Teknik görev talimatı okuma",
+          "title_en": "Reading technical task instructions",
+          "prerequisites": [
+            "english.core-vocabulary"
+          ],
+          "learning_outcomes": [
+            "Kısa İngilizce analitik görevi ölçüt ve çıktı beklentisine ayırır.",
+            "Belirsiz bir talepte eksik bilgiyi işaretler."
+          ],
+          "evidence": [
+            "interpret",
+            "clarify"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "cefr"
+          ]
+        },
+        {
+          "id": "english.docs-errors",
+          "track": "english",
+          "level": "L2",
+          "title_tr": "Dokümantasyon ve hata mesajı okuma",
+          "title_en": "Reading documentation and error messages",
+          "prerequisites": [
+            "english.task-reading"
+          ],
+          "learning_outcomes": [
+            "Resmî dokümandan davranış kuralı çıkarır.",
+            "Error message içindeki neden, bağlam ve olası aksiyonu ayırır."
+          ],
+          "evidence": [
+            "interpret",
+            "explain"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "cefr"
+          ]
+        },
+        {
+          "id": "english.requirement-clarification",
+          "track": "english",
+          "level": "L2",
+          "title_tr": "Requirement clarification",
+          "title_en": "Requirement clarification",
+          "prerequisites": [
+            "english.docs-errors"
+          ],
+          "learning_outcomes": [
+            "Belirsiz stakeholder isteği için kısa ve hedefli sorular üretir.",
+            "Assumption ile requirement arasındaki farkı yazılı biçimde korur."
+          ],
+          "evidence": [
+            "clarify",
+            "produce"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "cefr"
+          ]
+        },
+        {
+          "id": "english.insight-writing",
+          "track": "english",
+          "level": "L3",
+          "title_tr": "Analitik insight yazımı",
+          "title_en": "Analytical insight writing",
+          "prerequisites": [
+            "english.requirement-clarification"
+          ],
+          "learning_outcomes": [
+            "Chart sonucunu sebep iddiasına dönüştürmeden doğru gözlem diliyle yazar.",
+            "Metric, dönem ve karşılaştırma tabanını açık belirtir."
+          ],
+          "evidence": [
+            "analysis-memo",
+            "review"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "cefr"
+          ]
+        },
+        {
+          "id": "english.issue-pr-writing",
+          "track": "english",
+          "level": "L3",
+          "title_tr": "Issue/PR ve teknik açıklama",
+          "title_en": "Issue/PR and technical explanation",
+          "prerequisites": [
+            "english.insight-writing"
+          ],
+          "learning_outcomes": [
+            "Problem, evidence, change ve verification bölümlerini kısa teknik formatta yazar.",
+            "Teknik değişikliği varsayım ve sınırlılıklarıyla açıklar."
+          ],
+          "evidence": [
+            "produce",
+            "review"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "cefr"
+          ]
+        },
+        {
+          "id": "english.root-cause-memo",
+          "track": "english",
+          "level": "L4",
+          "title_tr": "Root-cause memo",
+          "title_en": "Root-cause memo",
+          "prerequisites": [
+            "english.issue-pr-writing"
+          ],
+          "learning_outcomes": [
+            "Evidence ile hypothesis'i ayıran kısa root-cause memo yazar.",
+            "Alternatif açıklamaları ve veri sınırlılıklarını belirtir."
+          ],
+          "evidence": [
+            "analysis-memo",
+            "transfer"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "cefr"
+          ]
+        },
+        {
+          "id": "english.stakeholder-explanation",
+          "track": "english",
+          "level": "L4",
+          "title_tr": "Stakeholder explanation",
+          "title_en": "Stakeholder explanation",
+          "prerequisites": [
+            "english.root-cause-memo"
+          ],
+          "learning_outcomes": [
+            "Teknik bulguyu teknik olmayan paydaş için anlam kaybetmeden sadeleştirir.",
+            "Takip sorularına metric definition ve evidence ile yanıt verir."
+          ],
+          "evidence": [
+            "presentation",
+            "clarify"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "cefr"
+          ]
+        },
+        {
+          "id": "english.design-review",
+          "track": "english",
+          "level": "L5",
+          "title_tr": "Technical design review",
+          "title_en": "Technical design review",
+          "prerequisites": [
+            "english.stakeholder-explanation"
+          ],
+          "learning_outcomes": [
+            "Architecture trade-offlarını İngilizce yazılı olarak karşılaştırır.",
+            "Risk, assumption ve validation planını açıklar."
+          ],
+          "evidence": [
+            "review",
+            "architecture-defense"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "cefr"
+          ]
+        },
+        {
+          "id": "english.executive-briefing",
+          "track": "english",
+          "level": "L5",
+          "title_tr": "Executive analytics briefing",
+          "title_en": "Executive analytics briefing",
+          "prerequisites": [
+            "english.design-review"
+          ],
+          "learning_outcomes": [
+            "Analitik sonucu karar bağlamına taşıyan kısa briefing üretir.",
+            "Belirsizlik ve confidence düzeyini abartmadan ifade eder."
+          ],
+          "evidence": [
+            "presentation",
+            "analysis-memo"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "cefr"
+          ]
+        },
+        {
+          "id": "english.architecture-defense",
+          "track": "english",
+          "level": "Expert",
+          "title_tr": "Architecture defence",
+          "title_en": "Architecture defence",
+          "prerequisites": [
+            "english.executive-briefing"
+          ],
+          "learning_outcomes": [
+            "Teknik mimariyi sorgulama altında savunur ve trade-offları açıklar.",
+            "Yeni constraint geldiğinde çözümünü yeniden değerlendirir."
+          ],
+          "evidence": [
+            "architecture-defense",
+            "transfer"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "cefr"
+          ]
+        },
+        {
+          "id": "english.source-synthesis",
+          "track": "english",
+          "level": "Expert",
+          "title_tr": "Kaynak sentezi ve öğretme",
+          "title_en": "Source synthesis and teaching",
+          "prerequisites": [
+            "english.architecture-defense"
+          ],
+          "learning_outcomes": [
+            "Birden fazla resmî kaynaktaki bilgiyi çelişki üretmeden sentezler.",
+            "Teknik kavramı başka bir analiste örnek, karşı-örnek ve sınırlılıkla öğretir."
+          ],
+          "evidence": [
+            "source-synthesis",
+            "teaching"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "cefr"
+          ]
+        }
+      ]
+    }
+  ]
+}
