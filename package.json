@@ -1,14 +1,17 @@
 {
-  "name":"data-analyst-learning-os",
-  "version":"0.3.0",
-  "private":true,
-  "type":"module",
-  "scripts":{
-    "test:core":"node tests/core.test.mjs",
-    "test:mastery":"node tests/mastery.test.mjs",
-    "validate:academy":"node scripts/validate-academy.mjs",
-    "test":"npm run test:core && npm run test:mastery && npm run validate:academy",
-    "test:browser":"node tests/browser-smoke.mjs"
+  "name": "data-analyst-learning-os",
+  "version": "0.4.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:core": "node tests/core.test.mjs",
+    "test:mastery": "node tests/mastery.test.mjs",
+    "validate:academy": "node scripts/validate-academy.mjs",
+    "test": "npm run test:core && npm run test:mastery && npm run validate:academy && npm run validate:screening",
+    "test:browser": "node tests/browser-smoke.mjs",
+    "validate:screening": "node scripts/validate-screening.mjs"
   },
-  "devDependencies":{"playwright":"1.63.0"}
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
 }
