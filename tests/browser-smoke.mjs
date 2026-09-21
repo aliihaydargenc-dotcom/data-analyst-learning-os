@@ -16,6 +16,9 @@ try{
 
   await page.locator('#trackGrid .track-card').first().waitFor({state:'visible'});
   assert.equal(await page.locator('#trackGrid .track-card').count(),5);
+  await page.locator('#curriculumGrid .curriculum-card').first().waitFor({state:'visible'});
+  assert.equal(await page.locator('#curriculumGrid .curriculum-card').count(),5);
+  assert.equal(await page.locator('#curriculumGrid .level-step').count(),30);
 
   await page.locator('#runSql').click();
   await page.locator('#sqlTable tbody tr').first().waitFor({state:'visible',timeout:120000});
