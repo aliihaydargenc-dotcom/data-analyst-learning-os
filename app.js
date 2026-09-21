@@ -17,10 +17,10 @@ let sqlLabModulePromise=null;
 const copy={
   tr:{
     heroTitle:'Kurs izlemek değil, seviye ölçmek ve uygulamak.',
-    heroText:'Beş alan tek sistemde ilerler. Bildiğin konular atlanır, açıklar konu bazında görünür ve gerçek analist görevleriyle kapanır.',
-    tracksTitle:'Beş paralel uzmanlık yolu',diagTitle:'Hızlı Ön Tarama',
-    diagIntro:'Her alandan 5 soru seçilir. Bu ekran yalnızca MCQ tabanlı hızlı ön taramadır; gerçek placement yorumlama, üretim, debugging, transfer ve retention kanıtı ister.',
-    start:'25 Soruluk Ön Taramayı Başlat',topStart:'Ön Taramayı Başlat',next:'Sonraki',finish:'Sonucu Gör',
+    heroText:'Altı alan tek mastery sisteminde ilerler. Bildiğin konular kanıtla sıkıştırılır; açıklar konu bazında derinleşir ve gerçek görevlerle kapanır.',
+    tracksTitle:'Altı kümülatif uzmanlık yolu',diagTitle:'Hızlı Ön Tarama',
+    diagIntro:'Her trackten küçük bir örneklem seçilir. Bu ekran yalnızca hızlı ön taramadır; gerçek placement yorumlama, üretim, debugging, transfer ve retention kanıtı ister.',
+    start:'Hızlı Ön Taramayı Başlat',topStart:'Ön Taramayı Başlat',next:'Sonraki',finish:'Sonucu Gör',
     academyTitle:'Temelden Expert seviyesine, kanıtla ilerleyen müfredat',academyIntro:'Hafta doldurmak değil; kavramı açıklamak, üretmek, hata ayıklamak, başka probleme taşımak ve daha sonra yeniden hatırlamak gerekiyor.',
     roadmap:'24 haftalık referans tempo planı',ready:'Hazır',
     sqlTask:'Görev: Her otel için günlük REVENUE_EUR değerini ve bir önceki günün gelirini döndür. BUSINESS_DATE sırasını kullan.',
@@ -33,10 +33,10 @@ const copy={
   },
   en:{
     heroTitle:'Do not just watch courses. Measure, practice, and prove skill.',
-    heroText:'Five domains move inside one system. Strong topics are skipped, gaps become visible by topic, and real analyst tasks close them.',
-    tracksTitle:'Five parallel specialization tracks',diagTitle:'Quick Screening',
-    diagIntro:'Five questions are sampled from each domain. This MCQ screen is not final placement; interpretation, production, debugging, transfer and retention evidence are required.',
-    start:'Start 25-Question Screen',topStart:'Start Screening',next:'Next',finish:'View Results',
+    heroText:'Six domains progress inside one mastery system. Proven strengths are compressed; gaps deepen by objective and close through authentic work.',
+    tracksTitle:'Six cumulative specialization tracks',diagTitle:'Quick Screening',
+    diagIntro:'A small sample is drawn from each track. This is only a quick screen; final placement requires interpretation, production, debugging, transfer and retention evidence.',
+    start:'Start Quick Screening',topStart:'Start Screening',next:'Next',finish:'View Results',
     academyTitle:'From foundations to Expert, progress by evidence',academyIntro:'Progress requires explanation, production, debugging, transfer and delayed retention — not simply finishing weeks.',
     roadmap:'24-week reference pace plan',ready:'Ready',
     sqlTask:'Task: For each hotel, return daily REVENUE_EUR and previous-day revenue ordered by BUSINESS_DATE.',
@@ -54,6 +54,7 @@ const tracks=[
   {name:'Qlik Sense',tr:'Load script, veri modeli, Set Analysis, QVD, incremental load ve performans.',en:'Load script, data modeling, Set Analysis, QVD, incremental load and performance.',tags:['Set Analysis','QVD','Model','Performance']},
   {name:'Python',tr:'pandas, otomasyon, SQL bağlantısı, veri kalite kontrolleri ve performans.',en:'pandas, automation, SQL connectivity, data quality checks and performance.',tags:['pandas','IO','Automation','QA']},
   {name:'Advanced Excel',tr:'Dynamic arrays, Power Query, Data Model, Power Pivot, DAX ve performans.',en:'Dynamic arrays, Power Query, Data Model, Power Pivot, DAX and performance.',tags:['LET/LAMBDA','PQ','DAX','Model']},
+  {name:'HTML & Web Foundations',tr:'Semantik HTML, data table, form, accessibility, DOM sözleşmeleri ve production analitik rapor yapısı.',en:'Semantic HTML, data tables, forms, accessibility, DOM contracts and production analytical report structure.',tags:['Semantic HTML','Tables','Forms','A11y']},
   {name:'Technical English',tr:'Dokümantasyon okuma, görev yorumlama, hata mesajı ve teknik açıklama pratiği.',en:'Documentation reading, requirement interpretation, error messages and technical explanation.',tags:['Docs','Vocabulary','Errors','Writing']}
 ];
 
