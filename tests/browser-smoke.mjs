@@ -704,6 +704,51 @@ ORDER BY OPTION_ID;`);
   assert.equal(await page.locator('#lessonPythonLab').isVisible(),true);
   assert.equal(await page.locator('#lessonSqlLab').isVisible(),false);
 
+
+  // Excel track: deterministic Semantic Case Lab plus track-scoped navigation.
+  await page.setViewportSize({width:1280,height:900});
+  await page.goto(`${baseUrl}/lesson.html?id=excel.table-reference-semantics.001`,{waitUntil:'domcontentloaded'});
+  await page.locator('#lessonHero').waitFor({state:'visible'});
+  assert.match(await page.locator('#lessonTitle').textContent(),/Table, range ve reference semantiği/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/1 \/ 12/);
+  assert.equal(await page.locator('#previousLessonLink').isVisible(),false);
+  assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
+  assert.match(await page.locator('#nextLessonLink').getAttribute('href'),/excel\.logic-lookups\.001/);
+  assert.equal(await page.locator('#lessonSqlLab').isVisible(),false);
+  assert.equal(await page.locator('#lessonPythonLab').isVisible(),false);
+  assert.equal(await page.locator('#lessonCaseLab').isVisible(),true);
+
+  await page.locator('#lessonOutline .outline-item').nth(3).click();
+  await page.locator('#sectionResponse').fill('Structured reference tablo ve kolon sözleşmesini izler; current-row @ semantiği ile tüm kolon referansı ayrılmalı, copy/fill davranışı relative ve absolute reference kurallarıyla doğrulanmalıdır.');
+  await page.locator('#completeSection').click();
+  assert.match(await page.locator('#sectionFeedback').textContent(),/Semantic Case Lab/i);
+
+  await page.locator('input[name="case-case-1"][value="a"]').check();
+  await page.locator('input[name="case-case-2"][value="b"]').check();
+  await page.locator('input[name="case-case-3"][value="a"]').check();
+  await page.locator('#runLessonCase').click();
+  assert.match(await page.locator('#lessonCaseFeedback').textContent(),/geçti/);
+  await page.locator('#completeSection').click();
+  assert.match(await page.locator('#progressValue').textContent(),/13%/);
+
+  await page.locator('#nextLessonLink').click();
+  await page.locator('#lessonHero').waitFor({state:'visible'});
+  assert.match(await page.locator('#lessonTitle').textContent(),/Mantık, aggregation ve lookup/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/2 \/ 12/);
+
+  await page.goto(`${baseUrl}/lesson.html?id=excel.audit-review.001`,{waitUntil:'domcontentloaded'});
+  await page.locator('#lessonHero').waitFor({state:'visible'});
+  assert.match(await page.locator('#lessonTitle').textContent(),/Workbook audit ve peer review/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/12 \/ 12/);
+  assert.equal(await page.locator('#previousLessonLink').isVisible(),true);
+  assert.equal(await page.locator('#nextLessonLink').isVisible(),false);
+  assert.equal(await page.locator('#lessonCaseLab').isVisible(),true);
+  await page.locator('input[name="case-case-1"][value="b"]').check();
+  await page.locator('input[name="case-case-2"][value="a"]').check();
+  await page.locator('input[name="case-case-3"][value="a"]').check();
+  await page.locator('#runLessonCase').click();
+  assert.match(await page.locator('#lessonCaseFeedback').textContent(),/geçti/);
+
   assert.deepEqual(pageErrors,[]);
   assert.deepEqual(consoleErrors,[]);
   console.log('browser smoke: PASS');

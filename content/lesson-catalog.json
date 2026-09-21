@@ -1,5 +1,5 @@
 {
-  "version": "1.2.0",
+  "version": "1.3.0",
   "production_lessons": [
     {
       "id": "sql.relational-thinking.001",
@@ -360,6 +360,126 @@
       "path": "content/lessons/python.peer-review.001.json",
       "status": "production-candidate",
       "runtime": "lesson.html?id=python.peer-review.001"
+    },
+    {
+      "id": "excel.table-reference-semantics.001",
+      "module_id": "excel.table-reference-semantics",
+      "track": "excel",
+      "level": "L1",
+      "order": 37,
+      "path": "content/lessons/excel.table-reference-semantics.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=excel.table-reference-semantics.001"
+    },
+    {
+      "id": "excel.logic-lookups.001",
+      "module_id": "excel.logic-lookups",
+      "track": "excel",
+      "level": "L1",
+      "order": 38,
+      "path": "content/lessons/excel.logic-lookups.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=excel.logic-lookups.001"
+    },
+    {
+      "id": "excel.dynamic-arrays.001",
+      "module_id": "excel.dynamic-arrays",
+      "track": "excel",
+      "level": "L2",
+      "order": 39,
+      "path": "content/lessons/excel.dynamic-arrays.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=excel.dynamic-arrays.001"
+    },
+    {
+      "id": "excel.let-lambda-pivot.001",
+      "module_id": "excel.let-lambda-pivot",
+      "track": "excel",
+      "level": "L2",
+      "order": 40,
+      "path": "content/lessons/excel.let-lambda-pivot.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=excel.let-lambda-pivot.001"
+    },
+    {
+      "id": "excel.power-query-transform.001",
+      "module_id": "excel.power-query-transform",
+      "track": "excel",
+      "level": "L3",
+      "order": 41,
+      "path": "content/lessons/excel.power-query-transform.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=excel.power-query-transform.001"
+    },
+    {
+      "id": "excel.power-query-quality.001",
+      "module_id": "excel.power-query-quality",
+      "track": "excel",
+      "level": "L3",
+      "order": 42,
+      "path": "content/lessons/excel.power-query-quality.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=excel.power-query-quality.001"
+    },
+    {
+      "id": "excel.data-model-relations.001",
+      "module_id": "excel.data-model-relations",
+      "track": "excel",
+      "level": "L4",
+      "order": 43,
+      "path": "content/lessons/excel.data-model-relations.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=excel.data-model-relations.001"
+    },
+    {
+      "id": "excel.dax-filter-context.001",
+      "module_id": "excel.dax-filter-context",
+      "track": "excel",
+      "level": "L4",
+      "order": 44,
+      "path": "content/lessons/excel.dax-filter-context.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=excel.dax-filter-context.001"
+    },
+    {
+      "id": "excel.query-folding-performance.001",
+      "module_id": "excel.query-folding-performance",
+      "track": "excel",
+      "level": "L5",
+      "order": 45,
+      "path": "content/lessons/excel.query-folding-performance.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=excel.query-folding-performance.001"
+    },
+    {
+      "id": "excel.automation-governance.001",
+      "module_id": "excel.automation-governance",
+      "track": "excel",
+      "level": "L5",
+      "order": 46,
+      "path": "content/lessons/excel.automation-governance.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=excel.automation-governance.001"
+    },
+    {
+      "id": "excel.reporting-architecture.001",
+      "module_id": "excel.reporting-architecture",
+      "track": "excel",
+      "level": "Expert",
+      "order": 47,
+      "path": "content/lessons/excel.reporting-architecture.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=excel.reporting-architecture.001"
+    },
+    {
+      "id": "excel.audit-review.001",
+      "module_id": "excel.audit-review",
+      "track": "excel",
+      "level": "Expert",
+      "order": 48,
+      "path": "content/lessons/excel.audit-review.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=excel.audit-review.001"
     }
   ]
 }

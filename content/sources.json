@@ -368,5 +368,80 @@
     "type": "official",
     "title": "Python Standard Library — hashlib",
     "url": "https://docs.python.org/3/library/hashlib.html"
+  },
+  "excel-structured-refs": {
+    "type": "official",
+    "title": "Microsoft Support — Using structured references with Excel tables",
+    "url": "https://support.microsoft.com/en-us/excel/using-structured-references-with-excel-tables"
+  },
+  "excel-tables": {
+    "type": "official",
+    "title": "Microsoft Support — Overview of Excel tables",
+    "url": "https://support.microsoft.com/en-us/excel/overview-of-excel-tables"
+  },
+  "excel-xlookup": {
+    "type": "official",
+    "title": "Microsoft Support — XLOOKUP function",
+    "url": "https://support.microsoft.com/en-us/excel/functions/xlookup-function"
+  },
+  "excel-lookup-ref": {
+    "type": "official",
+    "title": "Microsoft Support — Lookup and reference functions",
+    "url": "https://support.microsoft.com/en-us/excel/lookup-and-reference-functions-reference"
+  },
+  "excel-filter": {
+    "type": "official",
+    "title": "Microsoft Support — FILTER function",
+    "url": "https://support.microsoft.com/en-us/excel/functions/filter-function"
+  },
+  "excel-unique": {
+    "type": "official",
+    "title": "Microsoft Support — UNIQUE function",
+    "url": "https://support.microsoft.com/en-us/excel/functions/unique-function"
+  },
+  "excel-dynamic-arrays": {
+    "type": "official",
+    "title": "Microsoft Support — Dynamic array formulas and spilled array behavior",
+    "url": "https://support.microsoft.com/en-us/excel/dynamic-array-formulas-and-spilled-array-behavior"
+  },
+  "power-query-m": {
+    "type": "official",
+    "title": "Microsoft Learn — Power Query M formula language",
+    "url": "https://learn.microsoft.com/en-us/powerquery-m/"
+  },
+  "power-query-types": {
+    "type": "official",
+    "title": "Microsoft Learn — Data types in Power Query",
+    "url": "https://learn.microsoft.com/en-us/power-query/data-types"
+  },
+  "excel-data-model": {
+    "type": "official",
+    "title": "Microsoft Support — Create a Data Model in Excel",
+    "url": "https://support.microsoft.com/en-us/excel/create-a-data-model-in-excel"
+  },
+  "excel-relationships": {
+    "type": "official",
+    "title": "Microsoft Support — Relationships between tables in a Data Model",
+    "url": "https://support.microsoft.com/en-us/excel/relationships-between-tables-in-a-data-model"
+  },
+  "excel-power-pivot": {
+    "type": "official",
+    "title": "Microsoft Support — Power Pivot: data analysis and modeling in Excel",
+    "url": "https://support.microsoft.com/en-us/excel/power-pivot-powerful-data-analysis-and-data-modeling-in-excel"
+  },
+  "excel-dax": {
+    "type": "official",
+    "title": "Microsoft Support — Data Analysis Expressions (DAX) in Power Pivot",
+    "url": "https://support.microsoft.com/en-us/excel/data-analysis-expressions-dax-in-power-pivot"
+  },
+  "excel-dax-context": {
+    "type": "official",
+    "title": "Microsoft Support — Create formulas for calculations in Power Pivot",
+    "url": "https://support.microsoft.com/en-us/excel/create-formulas-for-calculations-in-power-pivot"
+  },
+  "office-scripts": {
+    "type": "official",
+    "title": "Microsoft Learn — Office Scripts in Excel",
+    "url": "https://learn.microsoft.com/en-us/office/dev/scripts/overview/excel"
   }
 }
