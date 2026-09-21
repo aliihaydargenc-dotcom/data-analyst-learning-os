@@ -4,7 +4,7 @@ import {
   validateLessonStructure,lessonLayerSummary,REQUIRED_LAYERS,
   createLessonProgress,normalizeLessonProgress,canCompleteSection,
   completionPercent,completeSection,buildRetentionSchedule,saveEvidenceDraft,
-  labPassed,recordLabAttempt,recordCaseLabAttempt,recordPythonLabAttempt
+  labPassed,recordLabAttempt,recordCaseLabAttempt,recordPythonLabAttempt,recordHtmlLabAttempt
 } from '../lesson-runtime.mjs';
 
 const lesson=JSON.parse(fs.readFileSync('content/lessons/sql.relational-thinking.001.json','utf8'));
@@ -105,5 +105,18 @@ pythonProgress=recordPythonLabAttempt(pythonLesson,pythonProgress,pythonLesson.p
 assert.equal(labPassed(pythonProgress,pythonLesson.python_lab.id),true);
 pythonGated=completeSection(pythonLesson,pythonProgress,pythonIndependent.id,pythonResponse,now);
 assert.equal(pythonGated.ok,true);
+
+// Semantic HTML-lab gate supports executable DOM production lessons.
+const htmlLesson=JSON.parse(fs.readFileSync('content/lessons/html.document-semantics.001.json','utf8'));
+let htmlProgress=createLessonProgress(htmlLesson,now);
+const htmlIndependent=htmlLesson.sections.find(section=>section.requires_html_lab_pass);
+const htmlResponse='Semantic structure parser sonrası DOM ağacında native landmark, heading ve identity contractlarıyla doğrulanmalıdır.';
+let htmlGated=completeSection(htmlLesson,htmlProgress,htmlIndependent.id,htmlResponse,now);
+assert.equal(htmlGated.ok,false);
+assert.equal(htmlGated.reason,'html_lab_required');
+htmlProgress=recordHtmlLabAttempt(htmlLesson,htmlProgress,htmlLesson.html_lab.id,{passed:true,summary:{visible:true,edge:true}},now);
+assert.equal(labPassed(htmlProgress,htmlLesson.html_lab.id),true);
+htmlGated=completeSection(htmlLesson,htmlProgress,htmlIndependent.id,htmlResponse,now);
+assert.equal(htmlGated.ok,true);
 
 console.log('lesson runtime tests: PASS');

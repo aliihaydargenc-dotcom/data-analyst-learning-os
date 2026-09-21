@@ -749,6 +749,56 @@ ORDER BY OPTION_ID;`);
   await page.locator('#runLessonCase').click();
   assert.match(await page.locator('#lessonCaseFeedback').textContent(),/geçti/);
 
+
+  // HTML track: real DOMParser semantic lab plus track-scoped navigation.
+  await page.setViewportSize({width:1280,height:900});
+  await page.goto(`${baseUrl}/lesson.html?id=html.document-semantics.001`,{waitUntil:'domcontentloaded'});
+  await page.locator('#lessonHero').waitFor({state:'visible'});
+  assert.match(await page.locator('#lessonTitle').textContent(),/Belge yapısı, parser ve semantik/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/1 \/ 12/);
+  assert.equal(await page.locator('#previousLessonLink').isVisible(),false);
+  assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
+  assert.match(await page.locator('#nextLessonLink').getAttribute('href'),/html\.text-links-media\.001/);
+  assert.equal(await page.locator('#lessonSqlLab').isVisible(),false);
+  assert.equal(await page.locator('#lessonPythonLab').isVisible(),false);
+  assert.equal(await page.locator('#lessonCaseLab').isVisible(),false);
+  assert.equal(await page.locator('#lessonHtmlLab').isVisible(),true);
+
+  await page.locator('#lessonOutline .outline-item').nth(3).click();
+  await page.locator('#sectionResponse').fill('HTML source browser parser ile DOM ağacına dönüşür; doctype, lang, main ve heading hiyerarşisi görsel stilden bağımsız semantic contract olarak doğrulanmalıdır.');
+  await page.locator('#completeSection').click();
+  assert.match(await page.locator('#sectionFeedback').textContent(),/Semantic HTML DOM Lab/i);
+
+  await page.locator('#runLessonHtml').click();
+  await page.waitForFunction(()=>document.querySelector('#lessonHtmlFeedback')?.textContent?.includes('Semantic HTML DOM Lab geçti'));
+  assert.match(await page.locator('#lessonHtmlFeedback').textContent(),/visible: PASS/);
+  assert.match(await page.locator('#lessonHtmlFeedback').textContent(),/edge: PASS/);
+  await page.locator('#completeSection').click();
+  assert.match(await page.locator('#progressValue').textContent(),/13%/);
+
+  await page.locator('#nextLessonLink').click();
+  await page.locator('#lessonHero').waitFor({state:'visible'});
+  assert.match(await page.locator('#lessonTitle').textContent(),/Metin, link, liste ve medya semantiği/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/2 \/ 12/);
+
+  await page.goto(`${baseUrl}/lesson.html?id=html.accessibility-peer-review.001`,{waitUntil:'domcontentloaded'});
+  await page.locator('#lessonHero').waitFor({state:'visible'});
+  assert.match(await page.locator('#lessonTitle').textContent(),/Erişilebilirlik ve semantik peer review/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/12 \/ 12/);
+  assert.equal(await page.locator('#previousLessonLink').isVisible(),true);
+  assert.equal(await page.locator('#nextLessonLink').isVisible(),false);
+  assert.equal(await page.locator('#lessonHtmlLab').isVisible(),true);
+  await page.locator('#runLessonHtml').click();
+  await page.waitForFunction(()=>document.querySelector('#lessonHtmlFeedback')?.textContent?.includes('Semantic HTML DOM Lab geçti'));
+  assert.match(await page.locator('#lessonHtmlFeedback').textContent(),/visible: PASS/);
+  assert.match(await page.locator('#lessonHtmlFeedback').textContent(),/edge: PASS/);
+
+  await page.setViewportSize({width:390,height:844});
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#lessonWorkspace').waitFor({state:'visible'});
+  assert.match(await page.locator('#lessonHtmlLabStatus').textContent(),/geçti/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/12 \/ 12/);
+
   assert.deepEqual(pageErrors,[]);
   assert.deepEqual(consoleErrors,[]);
   console.log('browser smoke: PASS');

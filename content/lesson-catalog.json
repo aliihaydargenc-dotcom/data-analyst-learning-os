@@ -1,5 +1,5 @@
 {
-  "version": "1.3.0",
+  "version": "1.4.0",
   "production_lessons": [
     {
       "id": "sql.relational-thinking.001",
@@ -480,6 +480,126 @@
       "path": "content/lessons/excel.audit-review.001.json",
       "status": "production-candidate",
       "runtime": "lesson.html?id=excel.audit-review.001"
+    },
+    {
+      "id": "html.document-semantics.001",
+      "module_id": "html.document-semantics",
+      "track": "html",
+      "level": "L1",
+      "order": 49,
+      "path": "content/lessons/html.document-semantics.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=html.document-semantics.001"
+    },
+    {
+      "id": "html.text-links-media.001",
+      "module_id": "html.text-links-media",
+      "track": "html",
+      "level": "L1",
+      "order": 50,
+      "path": "content/lessons/html.text-links-media.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=html.text-links-media.001"
+    },
+    {
+      "id": "html.data-tables.001",
+      "module_id": "html.data-tables",
+      "track": "html",
+      "level": "L2",
+      "order": 51,
+      "path": "content/lessons/html.data-tables.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=html.data-tables.001"
+    },
+    {
+      "id": "html.forms-native-validation.001",
+      "module_id": "html.forms-native-validation",
+      "track": "html",
+      "level": "L2",
+      "order": 52,
+      "path": "content/lessons/html.forms-native-validation.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=html.forms-native-validation.001"
+    },
+    {
+      "id": "html.semantic-layout-accessibility.001",
+      "module_id": "html.semantic-layout-accessibility",
+      "track": "html",
+      "level": "L3",
+      "order": 53,
+      "path": "content/lessons/html.semantic-layout-accessibility.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=html.semantic-layout-accessibility.001"
+    },
+    {
+      "id": "html.dom-data-attributes.001",
+      "module_id": "html.dom-data-attributes",
+      "track": "html",
+      "level": "L3",
+      "order": 54,
+      "path": "content/lessons/html.dom-data-attributes.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=html.dom-data-attributes.001"
+    },
+    {
+      "id": "html.data-report-structure.001",
+      "module_id": "html.data-report-structure",
+      "track": "html",
+      "level": "L4",
+      "order": 55,
+      "path": "content/lessons/html.data-report-structure.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=html.data-report-structure.001"
+    },
+    {
+      "id": "html.embedded-visualization.001",
+      "module_id": "html.embedded-visualization",
+      "track": "html",
+      "level": "L4",
+      "order": 56,
+      "path": "content/lessons/html.embedded-visualization.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=html.embedded-visualization.001"
+    },
+    {
+      "id": "html.validation-security-boundaries.001",
+      "module_id": "html.validation-security-boundaries",
+      "track": "html",
+      "level": "L5",
+      "order": 57,
+      "path": "content/lessons/html.validation-security-boundaries.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=html.validation-security-boundaries.001"
+    },
+    {
+      "id": "html.performance-delivery.001",
+      "module_id": "html.performance-delivery",
+      "track": "html",
+      "level": "L5",
+      "order": 58,
+      "path": "content/lessons/html.performance-delivery.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=html.performance-delivery.001"
+    },
+    {
+      "id": "html.report-architecture.001",
+      "module_id": "html.report-architecture",
+      "track": "html",
+      "level": "Expert",
+      "order": 59,
+      "path": "content/lessons/html.report-architecture.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=html.report-architecture.001"
+    },
+    {
+      "id": "html.accessibility-peer-review.001",
+      "module_id": "html.accessibility-peer-review",
+      "track": "html",
+      "level": "Expert",
+      "order": 60,
+      "path": "content/lessons/html.accessibility-peer-review.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=html.accessibility-peer-review.001"
     }
   ]
 }

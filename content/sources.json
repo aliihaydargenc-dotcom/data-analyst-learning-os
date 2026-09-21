@@ -443,5 +443,20 @@
     "type": "official",
     "title": "Microsoft Learn — Office Scripts in Excel",
     "url": "https://learn.microsoft.com/en-us/office/dev/scripts/overview/excel"
+  },
+  "mdn-data-attributes": {
+    "type": "official",
+    "title": "MDN — Use data attributes",
+    "url": "https://developer.mozilla.org/en-US/docs/Web/HTML/How_to/Use_data_attributes"
+  },
+  "owasp-output-encoding": {
+    "type": "official",
+    "title": "OWASP — Cross Site Scripting Prevention Cheat Sheet",
+    "url": "https://owasp.org/www-project-cheat-sheets/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html"
+  },
+  "web-performance-images": {
+    "type": "official",
+    "title": "web.dev — Image performance",
+    "url": "https://web.dev/learn/performance/image-performance"
   }
 }
