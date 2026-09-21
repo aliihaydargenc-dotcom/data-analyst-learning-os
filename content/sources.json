@@ -193,5 +193,20 @@
     "type": "official",
     "title": "Microsoft Learn — EXCEPT and INTERSECT (Transact-SQL)",
     "url": "https://learn.microsoft.com/en-us/sql/t-sql/language-elements/set-operators-except-and-intersect-transact-sql?view=sql-server-ver17"
+  },
+  "ms-row-number": {
+    "type": "official",
+    "title": "Microsoft Learn — ROW_NUMBER (Transact-SQL)",
+    "url": "https://learn.microsoft.com/en-us/sql/t-sql/functions/row-number-transact-sql?view=sql-server-ver17"
+  },
+  "ms-lag": {
+    "type": "official",
+    "title": "Microsoft Learn — LAG (Transact-SQL)",
+    "url": "https://learn.microsoft.com/en-us/sql/t-sql/functions/lag-transact-sql?view=sql-server-ver17"
+  },
+  "ms-ranking-functions": {
+    "type": "official",
+    "title": "Microsoft Learn — Ranking functions (Transact-SQL)",
+    "url": "https://learn.microsoft.com/en-us/sql/t-sql/functions/ranking-functions-transact-sql?view=sql-server-ver17"
   }
 }

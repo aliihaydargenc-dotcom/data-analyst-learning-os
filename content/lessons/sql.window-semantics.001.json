@@ -1,0 +1,208 @@
+{
+  "id": "sql.window-semantics.001",
+  "module_id": "sql.window-semantics",
+  "track": "sql",
+  "level": "L3",
+  "status": "production-candidate",
+  "title_tr": "Window functions: grain'i koruyarak geçmişi, sırayı ve frame'i hesapla",
+  "title_en": "Window functions: compute history, order, and frames without collapsing grain",
+  "subtitle_tr": "PARTITION BY, window ORDER BY ve ROWS/RANGE frame'lerini tek zihinsel modelde kur; GROUP BY ile farkı, duplicate order değerlerini, LAG/ROW_NUMBER determinism riskini ve running metric semantiğini gerçek sonuçlar üzerinden kanıtla.",
+  "subtitle_en": "Build one mental model for PARTITION BY, window ORDER BY, and ROWS/RANGE frames; prove how they differ from GROUP BY and how ties affect LAG, ranking, and running metrics.",
+  "estimated_minutes_range": [
+    80,
+    120
+  ],
+  "why_it_matters_tr": "Window function sorguları çoğu zaman syntax olarak doğru ama semantik olarak yanlıştır. GROUP BY gibi satır sayısını azaltmadıkları için aynı kaynak grain üzerinde aggregate bağlamı eklerler; yanlış PARTITION BY bir otelin değerini başka otelle karıştırabilir; yalnızca tarih ile ORDER BY yapmak aynı tarihli satırlarda LAG veya ROW_NUMBER için belirsiz sıra bırakabilir; frame açık yazılmadığında aggregate window fonksiyonlarında peer satırlar beklenmedik biçimde birlikte değerlendirilebilir. Güçlü analist window hesabını partition, logical order ve frame olarak ayrı ayrı tanımlar ve outer ORDER BY ile window ORDER BY'ın farklı görevleri olduğunu bilir.",
+  "why_it_matters_en": "Window-function queries can be syntactically valid yet semantically wrong. Unlike GROUP BY, they preserve row grain while adding calculations over related rows. A missing PARTITION BY can mix entities, a non-unique window ORDER BY can make offset/ranking results unstable across ties, and an omitted frame can change aggregate-window behavior for peer rows. Strong analysts reason separately about partition, logical window order, frame, and final presentation order.",
+  "prerequisites": [
+    "sql.cte-subquery-sets.001"
+  ],
+  "learning_objectives": [
+    "GROUP BY aggregate ile window aggregate arasındaki result-grain farkını açıklamak ve aynı source row sayısının neden korunabildiğini göstermek.",
+    "PARTITION BY ile hesaplama evrenini, window ORDER BY ile mantıksal sırayı ve ROWS/RANGE ile current-row frame'ini ayrı kavramlar olarak tanımlamak.",
+    "Aynı ORDER BY değerine sahip peer satırlarda ROWS ile RANGE davranışının neden farklılaşabileceğini sonuç üzerinden kanıtlamak.",
+    "ROW_NUMBER, RANK ve DENSE_RANK tie davranışlarını ayırmak ve deterministik sıra gereken durumda tie-break key gereksinimini savunmak.",
+    "LAG/LEAD gibi offset fonksiyonlarında partition sınırı ve sıra tanımının önceki/sonraki satır anlamını nasıl belirlediğini yorumlamak."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "CTE ile query block grain'i kurabiliyor ve ORDER BY'ın query sonucundaki rolünü açıklayabiliyor musun?",
+      "if_no_tr": "Önce `sql.cte-subquery-sets.001` dersini ve önceki SELECT/order semantiğini tamamla veya eşdeğer kanıt üret."
+    }
+  ],
+  "lab": {
+    "id": "sql-window-semantics-v1",
+    "engine": "DuckDB-Wasm",
+    "target_semantics": "T-SQL-compatible OVER / PARTITION BY / ORDER BY / ROWS / RANGE / LAG / ROW_NUMBER subset",
+    "requires_for_section": "independent-practice",
+    "title_tr": "Semantic SQL Lab · partition, order ve frame",
+    "title_en": "Semantic SQL Lab · partition, order, and frame",
+    "task_tr": "window_metric_cases tablosunda her kaynak satırı koru. Çıktı kolonları sırasıyla EVENT_ID, HOTEL, BUSINESS_DATE, REVENUE_EUR, PREV_REVENUE, ROW_RUNNING_REVENUE, DATE_RUNNING_REVENUE, HOTEL_ROW_NUMBER olsun. PREV_REVENUE aynı HOTEL içindeki BUSINESS_DATE + EVENT_ID sırasına göre bir önceki revenue'dur. ROW_RUNNING_REVENUE aynı deterministik sırada fiziksel satır frame'i ile running total'dır. DATE_RUNNING_REVENUE yalnızca BUSINESS_DATE order'ı ve RANGE UNBOUNDED PRECEDING..CURRENT ROW kullanarak aynı tarihli peer satırlara aynı gün-sonu cumulative total vermelidir. HOTEL_ROW_NUMBER her hotel partition'ında BUSINESS_DATE + EVENT_ID ile 1'den başlamalıdır. Sonucu HOTEL, BUSINESS_DATE, EVENT_ID artan sırada getir.",
+    "task_en": "Preserve every source row. Return EVENT_ID, HOTEL, BUSINESS_DATE, REVENUE_EUR, PREV_REVENUE, ROW_RUNNING_REVENUE, DATE_RUNNING_REVENUE, HOTEL_ROW_NUMBER in that order. PREV_REVENUE uses the prior row within HOTEL ordered by BUSINESS_DATE + EVENT_ID. ROW_RUNNING_REVENUE uses an explicit physical ROWS running frame on that deterministic order. DATE_RUNNING_REVENUE uses BUSINESS_DATE only with RANGE UNBOUNDED PRECEDING through CURRENT ROW so same-date peers share the same end-of-date cumulative total. HOTEL_ROW_NUMBER restarts per hotel. Final output order is HOTEL, BUSINESS_DATE, EVENT_ID.",
+    "schema": "window_metric_cases(EVENT_ID VARCHAR unique, HOTEL VARCHAR, BUSINESS_DATE DATE, REVENUE_EUR INTEGER NULL)",
+    "starter_sql": "SELECT EVENT_ID,\n       HOTEL,\n       BUSINESS_DATE,\n       REVENUE_EUR,\n       LAG(REVENUE_EUR) OVER (ORDER BY BUSINESS_DATE) AS PREV_REVENUE\nFROM window_metric_cases\nORDER BY HOTEL, BUSINESS_DATE, EVENT_ID;",
+    "engine_note_tr": "Lab DuckDB-Wasm ile çalışır. Ölçülen OVER, PARTITION BY, ORDER BY, ROWS/RANGE, LAG ve ROW_NUMBER davranışları bu görevde T-SQL hedefiyle uyumlu alt küme olarak kullanılır. SQL Server optimizer, memory grant ve physical window operator ayrıntıları ileri performans derslerine bırakılır.",
+    "engine_note_en": "The lab runs in DuckDB-Wasm. OVER, PARTITION BY, ORDER BY, ROWS/RANGE, LAG, and ROW_NUMBER are used here as a subset compatible with the T-SQL target. SQL Server-specific physical execution behavior is handled later."
+  },
+  "sections": [
+    {
+      "id": "grain-preservation",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: window hesaplar, GROUP BY ise grain'i dönüştürür",
+      "title_en": "1. Mental model: windows calculate across rows while preserving row grain",
+      "body_tr": "GROUP BY kaynak satırları gruplara indirerek sonuç grain'ini değiştirir. Window function ise FROM/WHERE sonrasında kalan satırlar üzerinde bir hesaplama bağlamı kurar ve normalde her kaynak/result satırını koruyarak o satıra ek değer üretir. Örneğin `SUM(REVENUE_EUR) OVER (PARTITION BY HOTEL)` her hotel toplamını her hotel satırına tekrar ekleyebilir; `GROUP BY HOTEL` ise hotel başına tek satır üretir. Bu yüzden window fonksiyonunu anlamanın ilk sorusu 'hangi satırlar korunuyor?' ve ikinci sorusu 'current row için hangi diğer satırlar hesaplamaya katılıyor?' olmalıdır.",
+      "body_en": "GROUP BY reduces source rows into grouped result rows and therefore changes grain. A window function instead defines a calculation context over rows that remain after FROM/WHERE and usually preserves those rows, adding a value to each row. `SUM(REVENUE_EUR) OVER (PARTITION BY HOTEL)` can repeat a hotel total on every hotel row, while `GROUP BY HOTEL` produces one row per hotel.",
+      "checks": [
+        "Window kullanınca sonuç grain'inin otomatik değişmediğini doğrula.",
+        "GROUP BY ve window aggregate'ı aynı aggregate fonksiyon adı üzerinden eşitleme.",
+        "Her window expression için current row ve hesaplama bağlamını ayrı yaz."
+      ]
+    },
+    {
+      "id": "partition-order-frame",
+      "layer": "mental_model",
+      "title_tr": "2. Üç ayrı sözleşme: PARTITION, window ORDER ve frame",
+      "title_en": "2. Three separate contracts: partition, window order, and frame",
+      "body_tr": "PARTITION BY hesabın hangi bağımsız gruplarda yeniden başlayacağını belirler. Window içindeki ORDER BY bu partition içindeki mantıksal sırayı tanımlar; final SELECT'in dışındaki ORDER BY ise yalnızca sonuç satırlarının sunum sırasını belirler. Aggregate window fonksiyonlarında frame current row çevresinde hangi satırların gerçekten hesaba gireceğini sınırlar. SQL Server OVER dokümantasyonunda ORDER BY var ama explicit ROWS/RANGE yoksa frame destekleyen fonksiyonlarda varsayılan frame başlangıçtan current row'a kadar RANGE davranışıdır; bu nedenle duplicate order değerleri peer olarak aynı frame'e girebilir.",
+      "body_en": "PARTITION BY defines independent groups where calculations restart. ORDER BY inside OVER defines logical order within a partition, while the query's final ORDER BY controls presentation order. For aggregate windows, the frame limits which rows around the current row participate. In SQL Server, when an applicable aggregate window has ORDER BY but no explicit ROWS/RANGE frame, the default is RANGE from the partition start through the current row, which can include peers sharing the same ordering value.",
+      "checks": [
+        "Window ORDER BY ile final ORDER BY'ı aynı görev sanma.",
+        "PARTITION BY eksik olduğunda hesaplamanın tüm result set üzerinde devam edebileceğini düşün.",
+        "Running metric için frame'i implicit bırakmadan önce peer davranışını bilinçli seç."
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "3. Worked example: aynı tarihte iki satır varsa ROWS ve RANGE neden ayrışır?",
+      "title_en": "3. Worked example: why ROWS and RANGE diverge when dates tie",
+      "body_tr": "Hotel A için 1 Temmuz'da E01=100 ve E02=200, 2 Temmuz'da E03=150 olduğunu düşün. `ROWS ... ORDER BY BUSINESS_DATE, EVENT_ID` current fiziksel sıraya göre E01 running total=100, E02=300, E03=450 üretir. Buna karşılık `RANGE ... ORDER BY BUSINESS_DATE` 1 Temmuz tarihini aynı logical order değerine sahip peer set olarak görür; E01 ve E02 için date-running total 300 olabilir. Bu iki sonuçtan biri diğerinden daha doğru değildir; cevaplanan iş sorusu farklıdır: 'bu satıra kadar' mı, yoksa 'bu order değeri/tarih tamamlanana kadar' mı?",
+      "body_en": "Assume Hotel A has E01=100 and E02=200 on July 1, then E03=150 on July 2. A ROWS frame ordered by BUSINESS_DATE, EVENT_ID can produce running totals 100, 300, 450. A RANGE frame ordered only by BUSINESS_DATE treats same-date rows as peers, so both July 1 rows can receive a date-running total of 300. Neither is universally correct; they answer different questions.",
+      "code": "SELECT\n    EVENT_ID,\n    HOTEL,\n    BUSINESS_DATE,\n    REVENUE_EUR,\n    LAG(REVENUE_EUR) OVER (\n        PARTITION BY HOTEL ORDER BY BUSINESS_DATE, EVENT_ID\n    ) AS PREV_REVENUE,\n    SUM(REVENUE_EUR) OVER (\n        PARTITION BY HOTEL\n        ORDER BY BUSINESS_DATE, EVENT_ID\n        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW\n    ) AS ROW_RUNNING_REVENUE,\n    SUM(REVENUE_EUR) OVER (\n        PARTITION BY HOTEL\n        ORDER BY BUSINESS_DATE\n        RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW\n    ) AS DATE_RUNNING_REVENUE\nFROM window_metric_cases;",
+      "explanation_tr": "LAG ve row-level running total deterministik bir row order ister; EVENT_ID tie-breaker bu örnekte aynı tarihli satırları kararlı biçimde ayırır. DATE_RUNNING_REVENUE ise bilerek yalnızca date order'ı kullanır ve aynı tarihli peer satırların ortak gün-sonu cumulative değerini göstermeyi hedefler.",
+      "explanation_en": "LAG and row-level running totals require a meaningful row order; EVENT_ID provides a tie-breaker for same-date rows. DATE_RUNNING_REVENUE intentionally orders only by date so peers on the same date share the same cumulative value through that date."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "4. Rehberli uygulama: ranking tie davranışını ve determinism'i ayır",
+      "title_en": "4. Guided practice: separate ranking tie semantics from determinism",
+      "body_tr": "Bir partition içinde revenue değerleri 500, 500, 300 olsun. `ROW_NUMBER() OVER (ORDER BY REVENUE_EUR DESC)` tüm satırlara farklı sıra numarası verir fakat 500 tie'ının kendi içindeki sıra, ORDER BY listesi satırları tekilleştirmiyorsa kararlı kabul edilmemelidir. RANK tie satırlara aynı rank verip sonraki rank'ta boşluk bırakır; DENSE_RANK aynı rank'ı verir ama boşluk bırakmaz. Burada 'tie'ı nasıl puanlamak istiyorum?' ile 'aynı sonucu her çalıştırmada hangi satıra hangi row number'ı vereceğim?' iki ayrı tasarım sorusudur.",
+      "body_en": "Suppose a partition contains revenues 500, 500, and 300. ROW_NUMBER assigns distinct sequence values, but the internal order of the tied 500 rows should not be treated as stable if the ORDER BY list does not uniquely order them. RANK assigns the same rank to ties and leaves a gap afterward; DENSE_RANK assigns the same rank without a gap. Tie semantics and deterministic row ordering are separate design decisions.",
+      "prompts": [
+        "ROW_NUMBER için tie-break key neden business anlamına sahip olmalı?",
+        "RANK ile DENSE_RANK arasında 1,1,3 ve 1,1,2 farkı hangi rapor sorularında önem kazanır?",
+        "Final result ORDER BY eklemek window function'ın daha önce hesapladığı row number'ı neden yeniden tanımlamaz?"
+      ]
+    },
+    {
+      "id": "independent-practice",
+      "layer": "independent_practice",
+      "title_tr": "5. Bağımsız üretim: partition, offset ve iki farklı frame'i iki fixture üzerinde kanıtla",
+      "title_en": "5. Independent production: prove partition, offset, and two frames across fixtures",
+      "body_tr": "Semantic SQL Lab'da kaynak satır sayısını aynen koru. PREV_REVENUE ve HOTEL_ROW_NUMBER için HOTEL partition'ı ile BUSINESS_DATE + EVENT_ID deterministik order'ını kullan. ROW_RUNNING_REVENUE explicit ROWS frame ile satır-bazlı cumulative değer üretmeli; DATE_RUNNING_REVENUE ise yalnız BUSINESS_DATE ile RANGE frame kullanarak aynı tarihli peer satırlara aynı gün-sonu cumulative total vermeli. Görünür fixture duplicate dates içerir; edge fixture ayrıca NULL revenue ve farklı partition uzunlukları içerir. Lab geçmeden bölüm tamamlanamaz.",
+      "body_en": "Preserve every source row. PREV_REVENUE and HOTEL_ROW_NUMBER must use HOTEL partitions with deterministic BUSINESS_DATE + EVENT_ID ordering. ROW_RUNNING_REVENUE must use an explicit ROWS frame; DATE_RUNNING_REVENUE must use a BUSINESS_DATE RANGE frame so same-date peers share the same through-date total. The visible fixture contains duplicate dates and the edge fixture adds NULL revenue and different partition sizes.",
+      "requires_lab_pass": "sql-window-semantics-v1",
+      "evidence_required": [
+        "semantic_lab_pass_visible_and_edge_fixture",
+        "partition_and_order_contract",
+        "rows_vs_range_reasoning",
+        "tie_break_and_offset_reasoning"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "6. Debugging: yanlış partition, implicit frame ve tie belirsizliğini ayrı teşhis et",
+      "title_en": "6. Debugging: diagnose partition, implicit frame, and tie ambiguity separately",
+      "body_tr": "Window sorgusunda yanlış sonuç görünce ilk olarak fonksiyon adını değiştirme. Önce PARTITION BY eksik mi diye bak; running total başka hotel'e taşıyorsa partition problemi vardır. Sonra window ORDER BY'ın business sırasını gerçekten tanımlayıp tanımlamadığını ve tie'ların tekil olup olmadığını kontrol et. Aggregate window'da frame implicitse aynı order değerine sahip peer satırların birlikte dahil olup olmadığını test et. LAG yanlış 'önceki' satırı veriyorsa final ORDER BY'a değil OVER içindeki order'a bak. Window alias'ını aynı query block'un WHERE koşulunda kullanmaya çalışıyorsan önce CTE/derived table ile hesaplama katmanını ayır.",
+      "body_en": "When a window result is wrong, do not immediately change the function. Check whether PARTITION BY is missing, whether the window ORDER BY truly defines business order and resolves ties, and whether an implicit aggregate frame includes peer rows. If LAG returns the wrong prior row, inspect ORDER BY inside OVER, not final presentation order. If you need to filter by a window alias, separate calculation and filtering into query blocks.",
+      "diagnostic_sequence": [
+        "PARTITION BY olmadan tüm result set'in tek partition olup olmadığını test et.",
+        "Window ORDER BY kolonlarının tie üretip üretmediğini profile et.",
+        "Aggregate window için implicit ve explicit ROWS/RANGE sonuçlarını küçük fixture üzerinde karşılaştır.",
+        "LAG/LEAD offset sonucunu partition başlangıç/bitiş satırlarında ayrıca kontrol et.",
+        "ROW_NUMBER/RANK/DENSE_RANK seçimini tie business kuralıyla karşılaştır.",
+        "Window sonucu filtrelenecekse CTE/derived table ile query-block scope'u ayır."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "7. Transfer: window semantiğini araç değil context modeli olarak taşı",
+      "title_en": "7. Transfer: carry window semantics as a context model across tools",
+      "body_tr": "Window düşüncesi SQL'e özgü değildir: aynı row grain'i korurken komşu/önceki satır veya hareketli context üzerinden hesap yapmak birçok araçta vardır. pandas'ta groupby + shift/rolling, Excel'de sıralı tablo üzerinde running/previous-row formülleri, Qlik chart hesaplarında dimension sort ve Above/RangeSum benzeri context fonksiyonları aynı temel soruları doğurur: partition nedir, order nedir, current row için hangi komşular dahil? Transferde syntax çevirmek yerine context sözleşmesini koru.",
+      "body_en": "Window reasoning is not unique to SQL. pandas groupby with shift/rolling, ordered Excel calculations, and Qlik chart calculations all raise the same context questions: what defines the partition, what defines order, and which neighboring rows belong to the current calculation? Transfer the context contract rather than translating syntax literally.",
+      "transfer_tasks": [
+        {
+          "tool": "Python / pandas",
+          "task_tr": "HOTEL bazında sort_values sonrası groupby.shift ile PREV_REVENUE ve groupby.cumsum ile row-running metric üretirken SQL'deki partition/order sözleşmesini hangi adımlarla koruyacağını açıkla."
+        },
+        {
+          "tool": "Excel",
+          "task_tr": "Aynı tarihte birden fazla kayıt varken running total formülünün satır sırasına mı tarih peer grubuna mı göre çalışması gerektiğini nasıl açık bir business kuralına dönüştüreceğini yaz."
+        },
+        {
+          "tool": "Qlik",
+          "task_tr": "Above/RangeSum gibi sıra-duyarlı chart hesaplarında dimension sort ve partition benzeri grouping context yanlışsa hangi semptomların çıkacağını kontrol planı olarak yaz."
+        },
+        {
+          "tool": "HTML",
+          "task_tr": "Bir raporda row-running ve date-running metriklerini yan yana gösterirken iki kolonun farklı frame anlamını kullanıcıya kolon adı/açıklama ile nasıl görünür kılacağını belirt."
+        }
+      ]
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: OVER syntax'ını değil partition-order-frame modelini geri çağır",
+      "title_en": "8. Retrieval: retrieve the partition-order-frame model, not syntax",
+      "body_tr": "D+1'de GROUP BY ile window aggregate grain farkını ve partition/order/frame üçlüsünü notlara bakmadan açıkla. D+7'de duplicate date içeren küçük bir fixture için ROWS ve RANGE running total sonuçlarını sorgu çalıştırmadan tahmin et; ayrıca LAG ve ROW_NUMBER için tie-break gereksinimini belirt. D+30'da başka bir domain'de previous-value, ranking ve running metric ihtiyacını tek query'de kurup yanlış partition veya frame içeren bir versiyonu debug et.",
+      "body_en": "On D+1, explain GROUP BY versus window grain and the partition/order/frame model without notes. On D+7, predict ROWS versus RANGE running totals on a fixture with duplicate dates and state the tie-break requirement for LAG and ROW_NUMBER. On D+30, build previous-value, ranking, and running metrics in another domain and debug a version with the wrong partition or frame.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explain-window-grain-partition-order-frame"
+        },
+        {
+          "day": 7,
+          "evidence": "predict-rows-range-lag-ranking-ties"
+        },
+        {
+          "day": 30,
+          "evidence": "transfer-build-and-debug-window-metrics"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "GROUP BY ve window aggregate grain farkını; PARTITION BY, window ORDER BY ve frame rollerini tek örnek üzerinde açıkla.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Duplicate order değerleri içeren verilen sorguda ROWS/RANGE, LAG ve ranking sonuçlarını çalıştırmadan tahmin et.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Aynı row grain'i koruyarak deterministic LAG, explicit ROWS running total, peer-aware RANGE running total ve ROW_NUMBER üreten sorguyu bağımsız kur.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Aynı partition/order/frame modelini pandas, Excel, Qlik veya başka bir domain'e taşı ve context sözleşmesini açıkla.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "ms-over",
+    "ms-row-number",
+    "ms-lag",
+    "ms-ranking-functions",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}
