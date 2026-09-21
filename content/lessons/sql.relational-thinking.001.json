@@ -1,0 +1,186 @@
+{
+  "id": "sql.relational-thinking.001",
+  "module_id": "sql.relational-thinking",
+  "track": "sql",
+  "level": "L1",
+  "status": "production-candidate",
+  "title_tr": "Satır neyi temsil ediyor? Veri tanesi (grain) olmadan SQL öğrenilmez",
+  "title_en": "What does one row represent? SQL starts with data grain",
+  "subtitle_tr": "Bu ders SELECT ezberletmez. Önce bir tablodaki tek satırın hangi iş olayını temsil ettiğini, anahtar ve ilişki kararlarının buradan nasıl çıktığını kurar.",
+  "subtitle_en": "This lesson does not start with SELECT syntax. It builds the idea that every table has a grain, and keys and relationships only make sense relative to that grain.",
+  "estimated_minutes_range": [
+    45,
+    75
+  ],
+  "why_it_matters_tr": "Yanlış grain; JOIN fan-out, yanlış toplam, bozuk KPI, duplicate ve yanlış model sorunlarının ortak kök nedenlerinden biridir. SQL, pandas merge, Excel Data Model ve Qlik association kararları aynı temel düşünceyi paylaşır.",
+  "why_it_matters_en": "Wrong grain is a common root cause behind join fan-out, inflated totals, broken KPIs, duplicates and faulty models. SQL, pandas merge, Excel Data Model and Qlik associations all depend on the same reasoning.",
+  "prerequisites": [],
+  "learning_objectives": [
+    "Bir tablo için 'bir satır neyi temsil ediyor?' sorusuna tek ve test edilebilir bir cümleyle cevap vermek.",
+    "Grain ile candidate key/uniqueness arasındaki ilişkiyi açıklamak.",
+    "JOIN öncesi iki tablonun grain ve cardinality uyumunu kontrol etmek.",
+    "Mixed-grain veride toplamların neden bozulabileceğini teşhis etmek.",
+    "Aynı grain düşüncesini SQL dışındaki Python, Excel, Qlik ve HTML veri tablosuna transfer etmek."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "Tablo, satır ve kolon kavramlarını günlük anlamıyla biliyor musun?",
+      "if_no_tr": "Dersi yine başlat. İlk bölüm bu kavramları sıfırdan kuruyor; ayrı bir ön ders gerekmiyor."
+    }
+  ],
+  "sections": [
+    {
+      "id": "concept",
+      "layer": "mental_model",
+      "title_tr": "1. Kavram: grain bir tabloyu tanımlayan cümledir",
+      "title_en": "1. Concept: grain is the sentence that defines a table",
+      "body_tr": "Grain, tek bir satırın hangi gerçek dünya olayını veya ölçümünü temsil ettiğini söyler. 'Bu otelin verisi' grain değildir; fazla belirsizdir. 'Her HOTEL ve BUSINESS_DATE için bir satır' test edilebilir bir grain tanımıdır. Bu cümle doğruysa aynı HOTEL + BUSINESS_DATE ikilisi tabloda normal koşullarda birden fazla kez görünmemelidir.",
+      "body_en": "Grain states what one row represents in the real world. 'Hotel data' is too vague. 'One row per HOTEL and BUSINESS_DATE' is testable. If that statement is true, the same HOTEL + BUSINESS_DATE pair should not normally appear more than once.",
+      "checks": [
+        "Grain kolon listesi değildir; satırın anlamıdır.",
+        "Unique key çoğu zaman grain'i doğrulamak için kullanılır, grain'in kendisi değildir.",
+        "Aynı iş konusu farklı grain'lerde tutulabilir: booking, room-night, hotel-day gibi."
+      ]
+    },
+    {
+      "id": "mental-model",
+      "layer": "mental_model",
+      "title_tr": "2. Zihinsel model: önce satırı tanımla, sonra hesapla",
+      "title_en": "2. Mental model: define the row before calculating",
+      "body_tr": "Bir sorguya başlamadan önce üç şeyi yaz: mevcut grain, hedef grain, grain'i benzersiz yapan alanlar. Örneğin hotel_daily için mevcut grain 'HOTEL × BUSINESS_DATE'. 'Aylık otel geliri' istediğinde hedef grain 'HOTEL × MONTH' olur. GROUP BY yalnızca bir syntax adımı değil, veriyi yeni bir grain'e dönüştürme kararıdır.",
+      "body_en": "Before writing a query, state three things: current grain, target grain, and the fields that make the grain unique. For hotel_daily the current grain is HOTEL × BUSINESS_DATE. Monthly hotel revenue changes the target grain to HOTEL × MONTH. GROUP BY is therefore a grain transformation, not merely syntax.",
+      "checks": [
+        "Current grain → source row meaning",
+        "Target grain → requested output row meaning",
+        "Key/cardinality → whether transformations preserve or multiply rows"
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "3. Worked example: hotel_daily neden günlük fact gibi davranıyor?",
+      "title_en": "3. Worked example: why hotel_daily behaves like a daily fact table",
+      "body_tr": "hotel_daily içinde BUSINESS_DATE, HOTEL, ROOMS_AVAILABLE, ROOMS_SOLD, ADR_EUR ve REVENUE_EUR var. İlk hipotezimiz: bir satır bir otelin bir business day'ini temsil ediyor. Bunu yalnızca kolon adlarına bakarak kabul etmeyiz. HOTEL + BUSINESS_DATE kombinasyonunun tekilliğini kontrol eder, satır sayısını ve duplicate örneklerini inceleriz. Eğer tekillik sağlanıyorsa günlük Revenue toplamak anlamlıdır. Ancak bu tabloyu aynı günün booking-level tablosuyla yalnızca HOTEL + DATE üzerinden JOIN edersek günlük satır her booking satırı kadar çoğalabilir; Revenue tekrar tekrar kopyalanır ve SUM(REVENUE_EUR) şişer.",
+      "body_en": "The first hypothesis for hotel_daily is one row per hotel per business date. We do not trust column names alone: we test HOTEL + BUSINESS_DATE uniqueness and inspect duplicates. If the grain holds, daily revenue can be aggregated safely. Joining this daily table to booking-level rows on only HOTEL + DATE can multiply each daily row by the number of bookings and inflate SUM(REVENUE_EUR).",
+      "code": "-- Grain kontrolü\nSELECT\n    HOTEL,\n    BUSINESS_DATE,\n    COUNT(*) AS row_count\nFROM hotel_daily\nGROUP BY HOTEL, BUSINESS_DATE\nHAVING COUNT(*) > 1;\n\n-- Bu sorgu 0 satır döndürüyorsa\n-- HOTEL + BUSINESS_DATE mevcut dataset için unique görünüyor.",
+      "explanation_tr": "Buradaki amaç sorguyu ezberlemek değil. Önce grain hipotezi kuruyoruz; sonra SQL ile hipotezi test ediyoruz."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "4. Rehberli uygulama: üç tablo, üç farklı grain",
+      "title_en": "4. Guided practice: three tables, three grains",
+      "body_tr": "Aşağıdaki tabloları düşün: Reservations(BOOKING_ID, HOTEL, ARRIVAL_DATE, DEPARTURE_DATE), RoomNights(BOOKING_ID, STAY_DATE, ROOM_NO, REVENUE_EUR), HotelDaily(HOTEL, BUSINESS_DATE, REVENUE_EUR). Önce SQL yazmadan her biri için 'bir satır...' cümlesini kur. Sonra olası candidate key'i belirt. Son olarak Reservations ile HotelDaily'yi HOTEL üzerinden birleştirmenin neden tehlikeli olduğunu açıkla.",
+      "body_en": "For Reservations, RoomNights and HotelDaily, write the one-row sentence first, then a possible candidate key. Finally explain why joining Reservations to HotelDaily on HOTEL alone is dangerous.",
+      "prompts": [
+        "Reservations için bir satır neyi temsil eder?",
+        "RoomNights için BOOKING_ID tek başına unique olmak zorunda mı?",
+        "HotelDaily ile booking-level veri birleşirken beklenen cardinality nedir?"
+      ]
+    },
+    {
+      "id": "independent-practice",
+      "layer": "independent_practice",
+      "title_tr": "5. Bağımsız üretim: tablo tasarımını grain'den başlat",
+      "title_en": "5. Independent production: design from grain first",
+      "body_tr": "Yeni bir satış dataset'i tasarla. İstenen analizler: günlük ürün adedi, sipariş geliri ve müşteri bazlı tekrar satın alma. Önce tek bir dev tablo çizme. En az iki tablo öner; her biri için grain, candidate key ve iki örnek satır yaz. Sonra hangi KPI'nın hangi grain'de hesaplanacağını belirt.",
+      "body_en": "Design a sales dataset for daily product quantity, order revenue and customer repeat purchase analysis. Propose at least two tables, define grain and candidate keys, provide two example rows, and state the grain at which each KPI should be calculated.",
+      "evidence_required": [
+        "grain_statement",
+        "candidate_key",
+        "example_rows",
+        "kpi_target_grain"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "6. Debugging: doğru çalışan sorgu nasıl yanlış sonuç üretir?",
+      "title_en": "6. Debugging: how can valid SQL produce the wrong answer?",
+      "body_tr": "Bir analist HotelDaily ile BookingLine tablolarını HOTEL + BUSINESS_DATE üzerinden JOIN ediyor ve toplam Revenue'nun yaklaşık 6 kat arttığını görüyor. Syntax hatası yok. Debug sırası: önce iki tablonun grain'ini yaz; join key'in her tarafta kaç kez tekrar ettiğini ölç; join öncesi/sonrası satır sayısını karşılaştır; günlük Revenue'nun kaç kez kopyalandığını örnek bir HOTEL + DATE üzerinde göster. Düzeltme join türünü LEFT/INNER değiştirmek değildir; önce hangi grain'de hangi metriğin birleştirileceğini yeniden tasarlamaktır.",
+      "body_en": "A valid join between HotelDaily and BookingLine inflates revenue by roughly six times. Debug by stating both grains, measuring key multiplicity, comparing row counts before and after the join, and proving how often one daily revenue value is duplicated. Changing INNER to LEFT is not the conceptual fix; the grain relationship must be redesigned.",
+      "diagnostic_sequence": [
+        "grain",
+        "key_multiplicity",
+        "row_count_before_after",
+        "metric_duplication",
+        "redesign"
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "7. Transfer: aynı kavram beş araçta",
+      "title_en": "7. Transfer: the same concept across five tools",
+      "body_tr": "SQL'de grain GROUP BY ve JOIN kararını belirler. pandas'ta merge cardinality ve groupby seviyesini belirler. Excel Data Model'de fact/dimension ilişkisini ve one-side tekilliğini belirler. Qlik'te association ve chart dimension seviyesini etkiler. HTML data table'da ise bir satırın hangi veri kaydını temsil ettiğini ve hangi başlıklarla ilişkilendiğini anlamlı biçimde sunmanı sağlar. Araç değişiyor; temel soru değişmiyor: 'bir satır neyi temsil ediyor?'",
+      "body_en": "In SQL grain drives GROUP BY and JOIN choices; in pandas it drives merge cardinality and groupby level; in Excel Data Model it drives fact/dimension relationships; in Qlik it shapes associations and chart dimensions; in an HTML data table it clarifies what each rendered row represents. The tool changes, the question does not.",
+      "transfer_tasks": [
+        {
+          "tool": "Python",
+          "task_tr": "pandas merge öncesi left/right grain ve validate beklentisini yaz."
+        },
+        {
+          "tool": "Excel",
+          "task_tr": "Fact ve dimension tablolarında one-side adayını grain üzerinden seç."
+        },
+        {
+          "tool": "Qlik",
+          "task_tr": "İki fact tabloyu ortak alanla bağlamadan önce grain çakışmasını açıkla."
+        },
+        {
+          "tool": "HTML",
+          "task_tr": "Günlük hotel tablosunda bir <tr> öğesinin temsil ettiği veri kaydını tanımla."
+        }
+      ]
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: tekrar okumak yerine yeniden üret",
+      "title_en": "8. Retrieval: reproduce instead of rereading",
+      "body_tr": "Bu dersin retention kontrolü cevap anahtarına bakarak tekrar okuma değildir. D+1'de grain ve key farkını kendi cümlelerinle açıklarsın. D+7'de yeni bir dataset üzerinde grain'i çıkarır ve duplicate testini kendin yazarsın. D+30'da farklı bir sektörde fan-out hatasını teşhis edersin.",
+      "body_en": "Retention checks require retrieval, not rereading. On D+1 explain grain versus key from memory; on D+7 infer grain and write a duplicate test for a new dataset; on D+30 diagnose fan-out in a different domain.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explanation"
+        },
+        {
+          "day": 7,
+          "evidence": "production"
+        },
+        {
+          "day": 30,
+          "evidence": "transfer-debugging"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "Grain, key ve cardinality kavramlarını kısa örnekle ayır.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Verilen iki tablo şemasından mevcut grain ve olası fan-out riskini çıkar.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Yeni dataset için grain tanımı, uniqueness testi ve doğru aggregation sorgusu üret.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Aynı grain problemini pandas/Excel/Qlik veya başka bir domain'e taşı.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "ms-tsql",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}

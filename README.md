@@ -2,7 +2,7 @@
 
 Sıfır önkoşulla başlayabilen, fakat hızlı kavrayan öğrenciyi gereksiz tekrarlarla yavaşlatmayan; SQL, Qlik Sense, Python, Excel, HTML/Web Foundations ve Technical English'i tek mastery sistemi altında birleştiren veri analisti akademisi.
 
-## Academy kernel v0.4
+## Academy kernel v0.5
 
 Bu repo artık yalnızca özellik listesiyle ilerlemez. İçerik ve seviye yapısı executable kalite kapılarıyla doğrulanır.
 
@@ -17,6 +17,7 @@ Mevcut çekirdek:
 - DuckDB-Wasm ile gerçek browser SQL Lab
 - 1.460 satırlık sentetik hotel dataset
 - gerçek Chromium smoke test
+- production lesson runtime: section progress, practice-response gate, evidence drafts ve retention planı
 - curriculum quality validator
 
 ## Eğitim kalite ilkesi
@@ -32,7 +33,11 @@ MCQ bankası nihai placement değildir ve belirli bir soru sayısına sabitlenme
 - `content/golden-lessons.json`: katmanlı ders kalite örnekleri
 - `content/sources.json`: official/academic source catalog
 - `mastery-engine.mjs`: mastery, adaptive-depth ve retention mantığı
-- `scripts/validate-academy.mjs`: broken/circular prerequisite ve content gate\n- `scripts/validate-screening.mjs`: domain/topic coverage, duplicate ve answer-integrity gate
+- `scripts/validate-academy.mjs`: broken/circular prerequisite ve content gate
+- `scripts/validate-screening.mjs`: domain/topic coverage, duplicate ve answer-integrity gate
+- `scripts/validate-lessons.mjs`: production lesson depth, source, evidence ve pedagogy gate
+- `lesson-runtime.mjs`: lesson progress, response gate ve retention runtime
+- `lesson.html` + `lesson-page.mjs`: tarayıcıda gerçek ders çalışma ekranı
 - `duckdb-lab.mjs`: gerçek browser SQL execution
 - `data/question-bank.json`: starter MCQ bank
 - `data/roadmap.json`: 24 haftalık referans tempo
@@ -70,3 +75,12 @@ Soru bankasında sabit bir üst limit yoktur. CI artık `50 soru` gibi bir sayı
 ## HTML / Web Foundations kapsamı
 
 HTML track'i front-end geliştirici eğitimi değildir. Veri analistinin ürettiği web raporunu doğru semantik, erişilebilir data table/form yapısı, DOM sözleşmeleri, embedded visualization sınırları ve production review düzeyine taşır. CSS/JavaScript ayrıntısı yalnızca HTML'in veri ürünü bağlamını anlamak için gerektiği kadar kullanılır.
+
+
+## Production ders runtime
+
+İlk production-candidate ders `sql.relational-thinking.001` üzerinden uçtan uca çalışır. Ders; mental model, worked example, guided practice, independent production, debugging, transfer ve retention katmanlarını ayrı bölümler halinde gösterir.
+
+Practice bölümlerinde gerekçeli yanıt taslağı olmadan bölüm tamamlanamaz. Bu gate yalnızca çalışma disiplinidir; yanıtın doğru olduğunu veya mastery kazanıldığını iddia etmez. Mastery evidence taslakları ayrı tutulur ve completion yüzdesine dahil edilmez.
+
+Ders ilerlemesi şimdilik tarayıcı `localStorage` alanında saklanır. Hesaplar arası senkronizasyon eklenmeden önce bunun local-only olduğu açıkça korunur.

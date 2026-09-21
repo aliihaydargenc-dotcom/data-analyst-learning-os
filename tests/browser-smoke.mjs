@@ -37,6 +37,30 @@ try{
   const errorText=(await page.locator('#sqlError').textContent())?.trim();
   assert.equal(errorText,'');
 
+  await page.goto('http://127.0.0.1:4173/lesson.html?id=sql.relational-thinking.001',{waitUntil:'domcontentloaded',timeout:120000});
+  await page.locator('#lessonHero').waitFor({state:'visible'});
+  assert.match(await page.locator('#lessonTitle').textContent(),/Satır neyi temsil ediyor/);
+  assert.equal(await page.locator('#lessonOutline .outline-item').count(),8);
+  assert.equal(await page.locator('#sourceList .source-item').count(),3);
+
+  await page.locator('#lessonOutline .outline-item').nth(3).click();
+  await page.locator('#completeSection').click();
+  assert.match(await page.locator('#sectionFeedback').textContent(),/yanıt taslağı/i);
+
+  await page.locator('#sectionResponse').fill('Reservations tablosunda bir satır tek bir rezervasyonu temsil eder; join öncesi grain ve candidate key birlikte doğrulanmalıdır.');
+  await page.locator('#completeSection').click();
+  assert.match(await page.locator('#progressValue').textContent(),/13%/);
+
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#lessonHero').waitFor({state:'visible'});
+  assert.match(await page.locator('#progressValue').textContent(),/13%/);
+
+  await page.setViewportSize({width:390,height:844});
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#lessonWorkspace').waitFor({state:'visible'});
+  assert.equal(await page.locator('#lessonOutline').isVisible(),true);
+  assert.equal(await page.locator('.lesson-reader').isVisible(),true);
+
   assert.deepEqual(pageErrors,[]);
   assert.deepEqual(consoleErrors,[]);
   console.log('browser smoke: PASS');
