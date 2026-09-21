@@ -5,7 +5,7 @@ import {
 
 const $=selector=>document.querySelector(selector);
 const params=new URLSearchParams(location.search);
-const state={lang:'tr',catalog:null,lesson:null,sources:null,progress:null,sectionIndex:0};
+const state={lang:'tr',catalog:null,entry:null,lesson:null,sources:null,progress:null,sectionIndex:0};
 
 const labels={
   tr:{
@@ -19,7 +19,9 @@ const labels={
     evidenceIntro:'Bu alanlar tamamlanma yüzdesini artırmaz. Mastery için üretim ve transfer kanıtı ayrı değerlendirilir.',
     retentionTitle:'Gecikmeli geri çağırma planı',sources:'Kaynaklar',candidate:'Pilot ders',production:'Production',
     noMastery:'Dersin bütün bölümleri tamamlandı. Bu durum mastery verilmiş olduğu anlamına gelmez.',
-    due:'Vade',pending:'bekliyor',draftSaved:'Taslak kaydedildi'
+    due:'Vade',pending:'bekliyor',draftSaved:'Taslak kaydedildi',
+    prevLesson:'Önceki production ders',nextLesson:'Sonraki production ders',
+    sequenceHint:'Ders sırası mastery yerine geçmez.',sequenceWord:'Ders'
   },
   en:{
     loading:'Loading',progress:'Progress',estimate:'Estimated study',minutes:'min',
@@ -32,7 +34,9 @@ const labels={
     evidenceIntro:'These drafts do not increase completion. Production and transfer evidence are evaluated separately for mastery.',
     retentionTitle:'Delayed retrieval plan',sources:'Sources',candidate:'Pilot lesson',production:'Production',
     noMastery:'All lesson sections are complete. This does not mean mastery has been awarded.',
-    due:'Due',pending:'pending',draftSaved:'Draft saved'
+    due:'Due',pending:'pending',draftSaved:'Draft saved',
+    prevLesson:'Previous production lesson',nextLesson:'Next production lesson',
+    sequenceHint:'Sequence order is not mastery.',sequenceWord:'Lesson'
   }
 };
 
@@ -171,6 +175,35 @@ function renderRetention(){
   $('#retentionList').innerHTML=state.progress.retentionDue.map(item=>`<div class="retention-item"><div><strong>D+${item.day}</strong><br><span>${escapeHtml(item.evidence)}</span></div><div><strong>${l.due}</strong><br><span>${new Date(item.dueAt).toLocaleDateString(state.lang==='tr'?'tr-TR':'en-US')} · ${l.pending}</span></div></div>`).join('');
 }
 
+
+function renderSequence(){
+  const l=labels[state.lang];
+  const entries=[...(state.catalog?.production_lessons||[])].sort((a,b)=>(a.order??999)-(b.order??999));
+  const index=entries.findIndex(item=>item.id===state.entry?.id);
+  const previous=index>0?entries[index-1]:null;
+  const next=index>=0&&index<entries.length-1?entries[index+1]:null;
+
+  $('#lessonSequence').classList.toggle('hidden',entries.length<2);
+  if(entries.length<2)return;
+
+  $('#sequencePosition').textContent=`${l.sequenceWord} ${index+1} / ${entries.length}`;
+  $('#sequenceHint').textContent=l.sequenceHint;
+  $('#previousLessonLabel').textContent=l.prevLesson;
+  $('#nextLessonLabel').textContent=l.nextLesson;
+
+  $('#previousLessonLink').classList.toggle('hidden',!previous);
+  $('#nextLessonLink').classList.toggle('hidden',!next);
+
+  if(previous){
+    $('#previousLessonLink').href=previous.runtime||`lesson.html?id=${encodeURIComponent(previous.id)}`;
+    $('#previousLessonName').textContent=previous.module_id;
+  }
+  if(next){
+    $('#nextLessonLink').href=next.runtime||`lesson.html?id=${encodeURIComponent(next.id)}`;
+    $('#nextLessonName').textContent=next.module_id;
+  }
+}
+
 function renderSources(){
   const l=labels[state.lang];
   $('#sourcesTitle').textContent=l.sources;
@@ -183,7 +216,7 @@ function renderSources(){
 
 function renderAll(){
   if(!state.lesson)return;
-  renderHero();renderOutline();renderSection();renderEvidence();renderRetention();renderSources();
+  renderHero();renderOutline();renderSection();renderSequence();renderEvidence();renderRetention();renderSources();
 }
 
 function escapeHtml(value){
@@ -222,6 +255,7 @@ async function init(){
     const requested=params.get('id');
     const entry=state.catalog.production_lessons.find(item=>item.id===requested)||state.catalog.production_lessons[0];
     if(!entry) throw new Error('No production lesson is available.');
+    state.entry=entry;
 
     const lessonResponse=await fetch('./'+entry.path);
     if(!lessonResponse.ok) throw new Error('Lesson content could not be loaded.');
@@ -231,6 +265,7 @@ async function init(){
     $('#lessonHero').classList.remove('hidden');
     $('#lessonContext').classList.remove('hidden');
     $('#lessonWorkspace').classList.remove('hidden');
+    $('#lessonSequence').classList.remove('hidden');
     $('#masteryEvidence').classList.remove('hidden');
     $('#lessonSources').classList.remove('hidden');
     renderAll();
