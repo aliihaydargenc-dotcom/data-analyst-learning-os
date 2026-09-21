@@ -3,6 +3,57 @@ import {DUCKDB_VERSION,DUCKDB_BUNDLES} from './duckdb-config.mjs';
 import {compareResultSets} from './sql-result-evaluator.mjs';
 
 const FIXTURES=Object.freeze({
+  'sql-window-semantics-v1':{
+    table:'window_metric_cases',
+    visibleSetup:`
+      DROP TABLE IF EXISTS window_metric_cases;
+      CREATE TABLE window_metric_cases(EVENT_ID VARCHAR, HOTEL VARCHAR, BUSINESS_DATE DATE, REVENUE_EUR INTEGER);
+      INSERT INTO window_metric_cases VALUES
+        ('E03','A',DATE '2026-07-02',150),
+        ('E06','B',DATE '2026-07-01',80),
+        ('E01','A',DATE '2026-07-01',100),
+        ('E07','B',DATE '2026-07-02',100),
+        ('E02','A',DATE '2026-07-01',200),
+        ('E05','B',DATE '2026-07-01',120),
+        ('E04','A',DATE '2026-07-03',50);
+    `,
+    edgeSetup:`
+      DROP TABLE IF EXISTS window_metric_cases;
+      CREATE TABLE window_metric_cases(EVENT_ID VARCHAR, HOTEL VARCHAR, BUSINESS_DATE DATE, REVENUE_EUR INTEGER);
+      INSERT INTO window_metric_cases VALUES
+        ('W4','C',DATE '2026-08-03',200),
+        ('W5','D',DATE '2026-08-01',50),
+        ('W2','C',DATE '2026-08-01',100),
+        ('W1','C',DATE '2026-08-01',300),
+        ('W6','D',DATE '2026-08-02',50),
+        ('W3','C',DATE '2026-08-02',NULL);
+    `,
+    referenceSql:`
+      SELECT
+        EVENT_ID,
+        HOTEL,
+        BUSINESS_DATE,
+        REVENUE_EUR,
+        LAG(REVENUE_EUR) OVER (
+          PARTITION BY HOTEL ORDER BY BUSINESS_DATE, EVENT_ID
+        ) AS PREV_REVENUE,
+        SUM(REVENUE_EUR) OVER (
+          PARTITION BY HOTEL
+          ORDER BY BUSINESS_DATE, EVENT_ID
+          ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS ROW_RUNNING_REVENUE,
+        SUM(REVENUE_EUR) OVER (
+          PARTITION BY HOTEL
+          ORDER BY BUSINESS_DATE
+          RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS DATE_RUNNING_REVENUE,
+        ROW_NUMBER() OVER (
+          PARTITION BY HOTEL ORDER BY BUSINESS_DATE, EVENT_ID
+        ) AS HOTEL_ROW_NUMBER
+      FROM window_metric_cases
+      ORDER BY HOTEL, BUSINESS_DATE, EVENT_ID
+    `
+  },
   'sql-cte-exists-v1':{
     table:'customer_dim',
     visibleSetup:`
