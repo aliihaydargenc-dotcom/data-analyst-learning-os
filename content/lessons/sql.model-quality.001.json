@@ -1,0 +1,207 @@
+{
+  "id": "sql.model-quality.001",
+  "module_id": "sql.model-quality",
+  "track": "sql",
+  "level": "L4",
+  "status": "production-candidate",
+  "title_tr": "Şema ve veri kalitesi: constraint, uniqueness, referential integrity ve reconciliation",
+  "title_en": "Schema and data quality: constraints, uniqueness, referential integrity, and reconciliation",
+  "subtitle_tr": "Veri kalitesini dashboard temizliği olarak değil, veri modelinin doğrulanabilir sözleşmeleri olarak kur. Primary/unique/foreign/check constraint rollerini; profiling, orphan detection ve reconciliation invariant'larıyla birlikte düşün.",
+  "subtitle_en": "Treat data quality as verifiable contracts in the data model rather than dashboard cleanup. Connect primary/unique/foreign/check constraints with profiling, orphan detection, and reconciliation invariants.",
+  "estimated_minutes_range": [
+    85,
+    125
+  ],
+  "why_it_matters_tr": "Analitik modelde yanlış veri yalnızca eksik hücre değildir. Duplicate business key 1:N ilişkiyi N:N'e çevirebilir; orphan foreign key dimension lookup'ı kaybettirebilir; geçersiz domain değeri KPI segmentlerini parçalayabilir; negatif veya imkânsız ölçü bir aggregate'ı sessizce bozabilir. Constraint'ler bazı kuralları veritabanında zorunlu kılar, fakat kaynak sistem, staging katmanı ve mevcut kirli veri için ayrıca profiling ve reconciliation gerekir. Güçlü analist 'veri temiz mi?' sorusuna sezgiyle değil, executable invariant setiyle cevap verir.",
+  "why_it_matters_en": "Bad analytical data is more than missing cells. Duplicate business keys can turn a 1:N relationship into N:N, orphan foreign keys can break dimension lookups, invalid domain values can fragment KPIs, and impossible numeric values can silently distort aggregates. Database constraints can enforce some rules, but staging and existing dirty data also require profiling and reconciliation. Strong analysts answer 'is the data valid?' with executable invariants.",
+  "prerequisites": [
+    "sql.join-cardinality.001"
+  ],
+  "learning_objectives": [
+    "PRIMARY KEY, UNIQUE, FOREIGN KEY ve CHECK constraint rollerini entity, referential ve domain integrity açısından ayırmak.",
+    "Candidate/business key tekilliğini row count ve distinct-count invariant'larıyla ölçmek; duplicate sayısını doğru tanımlamak.",
+    "Orphan foreign key kayıtlarını outer join veya anti-existence mantığıyla tespit etmek ve late-arriving dimension senaryosundan ayırmak.",
+    "CHECK constraint ile NULL/UNKNOWN davranışını ve constraint'in hangi kuralları tek başına garanti edemeyeceğini açıklamak.",
+    "Kaynak-hedef row count, distinct business key, ölçü toplamı ve violation-count kontrollerinden bir reconciliation sözleşmesi tasarlamak."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "JOIN cardinality ve fan-out'u key uniqueness üzerinden teşhis edebiliyor musun?",
+      "if_no_tr": "Önce `sql.join-cardinality.001` dersini tamamla veya aynı cardinality/reconciliation kanıtını üret."
+    }
+  ],
+  "lab": {
+    "id": "sql-model-quality-v1",
+    "engine": "DuckDB-Wasm",
+    "target_semantics": "T-SQL-compatible SELECT / COUNT / DISTINCT / LEFT JOIN / UNION ALL / CASE-free profiling subset",
+    "requires_for_section": "independent-practice",
+    "title_tr": "Semantic SQL Lab · executable data-quality contract",
+    "title_en": "Semantic SQL Lab · executable data-quality contract",
+    "task_tr": "hotel_dim ve booking_fact için altı kalite kontrolünü tek sonuç setinde üret: duplicate_booking_id, duplicate_hotel_id, invalid_status, negative_revenue, negative_room_nights ve orphan_hotel_fk. Çıktı kolonları CHECK_NAME, VIOLATION_COUNT olsun. Duplicate ihlali `COUNT(*) - COUNT(DISTINCT key)` olarak extra-row sayısını ölçsün. invalid_status yalnız Active, Pending, Cancelled dışındaki değerleri saysın. Orphan FK kontrolü, booking HOTEL_ID değeri NULL değilken distinct hotel key kümesinde eşleşme bulunmayan satırları saysın. Tüm altı kontrol her zaman sonuçta bulunsun ve CHECK_NAME artan sırada gelsin.",
+    "task_en": "Produce six data-quality checks for hotel_dim and booking_fact in one result set: duplicate_booking_id, duplicate_hotel_id, invalid_status, negative_revenue, negative_room_nights, and orphan_hotel_fk. Return CHECK_NAME and VIOLATION_COUNT. Duplicate counts must measure extra rows using COUNT(*) - COUNT(DISTINCT key). Invalid status allows only Active, Pending, Cancelled. Orphan FK counts non-NULL booking HOTEL_ID values with no match in the distinct hotel key set. Always return all six checks ordered by CHECK_NAME.",
+    "schema": "hotel_dim(HOTEL_ID VARCHAR, HOTEL_NAME VARCHAR); booking_fact(BOOKING_ID VARCHAR, HOTEL_ID VARCHAR, STATUS VARCHAR, ROOM_NIGHTS INTEGER, REVENUE_EUR INTEGER)",
+    "starter_sql": "SELECT 'duplicate_booking_id' AS CHECK_NAME,\n       COUNT(*) - COUNT(DISTINCT BOOKING_ID) AS VIOLATION_COUNT\nFROM booking_fact\nORDER BY CHECK_NAME;",
+    "engine_note_tr": "Lab DuckDB-Wasm ile çalışır. Ölçülen COUNT/DISTINCT, LEFT JOIN, WHERE ve UNION ALL davranışları bu görevde T-SQL hedefiyle uyumlu alt kümedir. Gerçek SQL Server constraint oluşturma/validate etme adımları bu lab'ın dışında, resmi SQL Server semantiğiyle ayrıca öğretilir.",
+    "engine_note_en": "The lab runs in DuckDB-Wasm. COUNT/DISTINCT, LEFT JOIN, WHERE, and UNION ALL are used as a subset compatible with the T-SQL target. SQL Server-specific constraint creation and validation are taught separately from this profiling lab."
+  },
+  "sections": [
+    {
+      "id": "constraint-contracts",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: constraint veri sözleşmesinin enforce edilen kısmıdır",
+      "title_en": "1. Mental model: a constraint is the enforced part of a data contract",
+      "body_tr": "PRIMARY KEY bir tablonun entity kimliğini benzersiz ve NOT NULL olarak tanımlar. UNIQUE, primary key olmayan candidate key'lerde benzersizliği enforce eder. FOREIGN KEY child değerlerin parent key evreniyle referential integrity ilişkisini kurar. CHECK ise bir veya daha fazla kolon için row-level domain kuralı uygular. Bunların hiçbiri tek başına 'veri kaliteli' sonucunu garanti etmez; örneğin business reconciliation, source-to-target completeness veya semantik yanlış sınıflandırma ayrı invariant'lar gerektirir. Model kalitesi enforce edilen constraint + gözlenen profiling + reconciliation sözleşmesidir.",
+      "body_en": "PRIMARY KEY defines a unique, non-null entity identity. UNIQUE enforces uniqueness for candidate keys that are not the primary key. FOREIGN KEY establishes referential integrity between child values and a parent key. CHECK enforces row-level domain rules. None of these alone proves that the analytical data is high quality; completeness, reconciliation, and semantic classification need additional invariants.",
+      "checks": [
+        "Constraint tipini business rule ile eşleştir; 'index var' diye uniqueness varsayma.",
+        "Schema rule ile data profiling kontrolünü birbirinin yerine kullanma.",
+        "Her kritik rule için enforce mi, monitor mü, reconcile mı edildiğini belirt."
+      ]
+    },
+    {
+      "id": "uniqueness-referential",
+      "layer": "mental_model",
+      "title_tr": "2. Uniqueness ve referential integrity: cardinality'nin veri-kalite temeli",
+      "title_en": "2. Uniqueness and referential integrity: the data-quality basis of cardinality",
+      "body_tr": "Bir dimension'ın business key'i tekil değilse fact→dimension many-to-one varsayımı bozulur ve join fan-out oluşabilir. `COUNT(*) - COUNT(DISTINCT key)` duplicate key'lerin kaç farklı key olduğu değil, key tekrarlarının ürettiği extra-row sayısını verir; hangi metriği istediğini açıkça tanımla. Foreign key tarafında orphan kontrolü child key NULL değilken parent evreninde eşleşme bulunmamasıdır. Ancak late-arriving dimension gibi bilinçli gecikme senaryoları gerçek kalite ihlalinden ayrı sınıflandırılmalıdır; aksi halde operasyonel gecikmeyi model hatası sanabilirsin.",
+      "body_en": "If a dimension business key is not unique, a fact-to-dimension many-to-one assumption can collapse into fan-out. `COUNT(*) - COUNT(DISTINCT key)` measures extra rows caused by repeated keys, not the number of distinct duplicated key values. An orphan foreign key is a non-null child key with no parent match, but intentional late-arriving dimensions should be distinguished from true quality defects.",
+      "checks": [
+        "Duplicate key count'un hangi tanımı ölçtüğünü isimlendir.",
+        "Parent key kümesini tekil hale getirmeden orphan join'i çoğaltma.",
+        "Late-arriving dimension için exception policy tanımla."
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "3. Worked example: altı invariant tek violation matrix'te",
+      "title_en": "3. Worked example: six invariants in one violation matrix",
+      "body_tr": "Bir kalite raporunu satır satır kirli kayıt listesi olarak değil, önce rule-level özet olarak düşün. Her CHECK_NAME tek bir invariant'ı temsil eder ve VIOLATION_COUNT o invariant'ın kaç satır/extra-row ihlali ürettiğini gösterir. Bu format CI, günlük veri pipeline kontrolü veya dashboard health panel için stabildir. Duplicate booking key ve duplicate hotel key ayrı izlenir; orphan FK distinct parent key evrenine göre hesaplanır; domain/status ve negatif ölçü kontrolleri ise row-level predicate'tir. Drill-down gerektiğinde aynı rule'un offending-row query'si ayrıca çalıştırılır.",
+      "body_en": "Think of a data-quality report first as a stable rule-level summary rather than a raw list of dirty rows. Each CHECK_NAME represents one invariant and VIOLATION_COUNT reports its failures. Duplicate booking and hotel keys are tracked separately, orphan foreign keys are checked against a distinct parent-key universe, and domain or negative-value checks are row predicates. A drill-down query can then return offending rows for a selected rule.",
+      "code": "WITH hotel_keys AS (\n    SELECT DISTINCT HOTEL_ID FROM hotel_dim\n),\nchecks AS (\n    SELECT 'duplicate_booking_id' AS CHECK_NAME,\n           COUNT(*) - COUNT(DISTINCT BOOKING_ID) AS VIOLATION_COUNT\n    FROM booking_fact\n    UNION ALL\n    SELECT 'orphan_hotel_fk', COUNT(*)\n    FROM booking_fact AS b\n    LEFT JOIN hotel_keys AS h ON h.HOTEL_ID = b.HOTEL_ID\n    WHERE b.HOTEL_ID IS NOT NULL AND h.HOTEL_ID IS NULL\n)\nSELECT CHECK_NAME, VIOLATION_COUNT\nFROM checks\nORDER BY CHECK_NAME;",
+      "explanation_tr": "Örnek yalnız iki rule gösteriyor; production lab altı rule'u aynı contract altında birleştirir. `UNION ALL` burada duplicate suppression yapmak için değil, farklı rule sonuçlarını alt alta taşımak için kullanılır.",
+      "explanation_en": "The example shows only two rules; the production lab combines six under the same contract. UNION ALL is used to stack independent rule results, not to deduplicate them."
+    },
+    {
+      "id": "null-check-nuance",
+      "layer": "guided_practice",
+      "title_tr": "4. CHECK ve NULL: UNKNOWN her zaman ihlal demek değildir",
+      "title_en": "4. CHECK and NULL: UNKNOWN is not automatically a violation",
+      "body_tr": "SQL Server CHECK constraint semantiğinde expression FALSE olduğunda row reddedilir; NULL içeren expression UNKNOWN üretebilir ve bu her zaman FALSE değildir. Bu yüzden `CHECK (REVENUE_EUR >= 0)` yazıp kolon nullable bırakıldıysa NULL revenue değerlerinin otomatik olarak engellendiğini varsayma. 'Revenue zorunlu ve negatif olamaz' kuralı nullable policy ile domain rule'un birlikte tasarlanmasını gerektirir. Aynı şekilde UNIQUE ve PRIMARY KEY aynı şey değildir; PRIMARY KEY NULL kabul etmezken nullable UNIQUE davranışının kendi kuralları vardır. Model kuralını DDL syntax'tan önce doğal dille yaz.",
+      "body_en": "In SQL Server CHECK semantics, rows are rejected when the expression evaluates to FALSE; expressions involving NULL can evaluate to UNKNOWN, which is not the same as FALSE. Therefore `CHECK (REVENUE_EUR >= 0)` on a nullable column does not by itself mean revenue is required. Nullability and domain rules must be designed together. UNIQUE and PRIMARY KEY also have different nullability semantics.",
+      "prompts": [
+        "`REVENUE_EUR >= 0` business rule'unda NULL allowed mı? Bunu schema'da hangi iki ayrı kararla ifade edersin?",
+        "UNIQUE business key ile PRIMARY KEY entity key rollerini hangi durumda ayırırsın?",
+        "Constraint geçerli olsa bile source-to-target reconciliation neden ayrıca gerekir?"
+      ]
+    },
+    {
+      "id": "independent-practice",
+      "layer": "independent_practice",
+      "title_tr": "5. Bağımsız üretim: executable kalite contract'ını iki fixture üzerinde kanıtla",
+      "title_en": "5. Independent production: prove an executable quality contract across two fixtures",
+      "body_tr": "Semantic SQL Lab'da altı rule'u tek sonuç setine üret. Visible fixture her rule için en az bir ihlal içerir; edge fixture duplicate hotel key ve orphan FK sayısını değiştirir. Evaluator keyword aramaz; CHECK_NAME kümesi ve her rule'un exact violation count'u her iki fixture üzerinde referans sonuçla eşleşmelidir. Lab geçtikten sonra yanıt alanında hangi rule'un schema constraint ile enforce edilebileceğini, hangilerinin profiling/reconciliation olarak kalması gerektiğini ve hangi exception policy'lerin gerekli olduğunu açıkla.",
+      "body_en": "Produce all six rules in one result set. The visible fixture contains at least one failure for every rule; the edge fixture changes duplicate-hotel and orphan counts. The evaluator checks exact rule names and counts on both fixtures rather than keywords. After passing, explain which rules belong in schema constraints, which remain profiling or reconciliation checks, and where exception policies are needed.",
+      "requires_lab_pass": "sql-model-quality-v1",
+      "evidence_required": [
+        "semantic_lab_pass_visible_and_edge_fixture",
+        "constraint_vs_monitoring_mapping",
+        "duplicate_and_orphan_count_definition",
+        "reconciliation_and_exception_policy"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "6. Debugging: DISTINCT ve COALESCE ile kalite problemi gizleme",
+      "title_en": "6. Debugging: do not hide quality failures with DISTINCT or COALESCE",
+      "body_tr": "Join fan-out görünce `DISTINCT`, NULL görünce `COALESCE(...,0)` eklemek veri kalitesini düzeltmez; semptomu gizleyebilir. Duplicate business key varsa önce key sözleşmesini ve offending rows'u bul. Orphan FK varsa child key'in gerçekten yanlış mı yoksa late-arriving dimension mı olduğunu ayır. Negatif revenue business reversal/credit olabilir; her negatif değer otomatik hata değildir, domain rule iş bağlamıyla tanımlanmalıdır. Reconciliation farkı gördüğünde denominator, filter window, grain ve currency/unit dönüşümünü ayrı ayrı kontrol et.",
+      "body_en": "Adding DISTINCT after fan-out or COALESCE around NULL does not repair data quality; it can hide the symptom. Diagnose duplicate business keys at the source contract, classify orphan foreign keys versus late-arriving dimensions, and define negative-value rules from business semantics because credits or reversals may be legitimate. Reconciliation failures should be traced through population, grain, units, and transformations.",
+      "diagnostic_sequence": [
+        "Rule'un business tanımını ve exception'ını yaz.",
+        "Offending rows'u rule summary'den ayrı query ile çıkar.",
+        "Duplicate veya orphan problemini join sonrası DISTINCT ile kapatma.",
+        "NULL replacement'ın missingness bilgisini kaybettirip kaybettirmediğini kontrol et.",
+        "Source-target row count, distinct key ve measure totals değerlerini aynı filter window/grain'de reconcile et.",
+        "Fix sonrası hem violation count'u hem ana KPI toplamını tekrar doğrula."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "7. Transfer: data-quality contract araç değişse de korunur",
+      "title_en": "7. Transfer: the data-quality contract survives tool changes",
+      "body_tr": "pandas merge `validate` seçenekleri join cardinality assumption'ını executable hale getirebilir; Excel Data Model one-side uniqueness bekler; Qlik association modelinde duplicate key ve birden fazla ortak alan synthetic key veya unexpected association semptomları üretebilir; HTML form native validation ise yalnız client/UI katmanıdır ve database/business integrity yerine geçmez. Transfer görevi aynı invariant'ı her araçta uygun katmana taşımaktır: enforce, detect, explain veya present.",
+      "body_en": "pandas merge validation can make cardinality assumptions executable, Excel Data Model relies on one-side uniqueness, Qlik associations can surface duplicate-key or multi-field relationship problems, and native HTML form validation is only a client/UI layer rather than database integrity. Transfer means placing the same invariant at the correct layer: enforce, detect, explain, or present.",
+      "transfer_tasks": [
+        {
+          "tool": "Python / pandas",
+          "task_tr": "Fact→dimension merge için many-to-one assumption'ını executable validate kuralına çevir ve failure durumunda duplicate dimension keys'i nasıl raporlayacağını açıkla."
+        },
+        {
+          "tool": "Excel Data Model",
+          "task_tr": "Relationship'ın one-side tablosunda duplicate key bulunduğunda modeli temiz görünür kılmak yerine hangi upstream invariant'ın düzeltilmesi gerektiğini açıkla."
+        },
+        {
+          "tool": "Qlik",
+          "task_tr": "Duplicate business key ve synthetic-key semptomlarını data-model quality contract ile nasıl ayıracağını ve hangi key'lerin gerçekten aynı association'ı temsil ettiğini belirt."
+        },
+        {
+          "tool": "HTML",
+          "task_tr": "Required/min/max gibi client validation ile server/database constraint arasındaki güven sınırını açıklayıp aynı business rule'un hangi katmanlarda tekrar doğrulanması gerektiğini belirt."
+        }
+      ]
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: constraint adını değil invariant tasarımını geri çağır",
+      "title_en": "8. Retrieval: retrieve invariant design, not constraint names",
+      "body_tr": "D+1'de PK, UNIQUE, FK ve CHECK rollerini business invariant örnekleriyle açıklayıp hangi rule'un enforce/monitor/reconcile olduğunu sınıflandır. D+7'de duplicate key, orphan FK, invalid domain ve impossible numeric değer içeren küçük fixture için violation counts'u sorgu çalıştırmadan hesapla. D+30'da başka bir domain'de en az altı invariant içeren kalite contract'ı tasarla; exception policy ve source-target reconciliation ile birlikte savun.",
+      "body_en": "On D+1, explain PK, UNIQUE, FK, and CHECK through business invariants and classify each rule as enforce, monitor, or reconcile. On D+7, manually calculate violation counts for a fixture containing duplicate keys, orphan foreign keys, invalid domains, and impossible numeric values. On D+30, design a six-rule quality contract for another domain including exception policy and source-to-target reconciliation.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "classify-constraint-and-quality-invariants"
+        },
+        {
+          "day": 7,
+          "evidence": "predict-quality-violation-counts"
+        },
+        {
+          "day": 30,
+          "evidence": "transfer-design-quality-contract-and-reconciliation"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "PRIMARY/UNIQUE/FOREIGN/CHECK rollerini entity, referential ve domain integrity üzerinden ayır; constraint ile profiling/reconciliation farkını açıkla.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Kirli fixture üzerinde duplicate, orphan, invalid-domain ve impossible-value ihlallerini rule tanımlarına göre çalıştırmadan tahmin et.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Altı rule'lu executable quality matrix'i üret; visible ve edge fixture sonuçlarını exact violation count ile kanıtla.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Aynı kalite contract'ını pandas, Excel Data Model, Qlik veya web-data giriş katmanına taşı ve enforce/detect sınırlarını açıkla.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "ms-pk-fk",
+    "ms-unique-check",
+    "ms-checkconstraints",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}
