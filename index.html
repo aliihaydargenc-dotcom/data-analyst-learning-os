@@ -25,6 +25,7 @@
       </a>
       <nav>
         <a href="#tracks">Yollar</a>
+        <a href="#academy">Akademi</a>
         <a href="#diagnostic">Seviye Tespiti</a>
         <a href="#sql-lab">SQL Lab</a>
         <a href="#roadmap">24 Hafta</a>
@@ -45,13 +46,14 @@
           <p id="heroText">Beş alan tek sistemde ilerler. Bildiğin konular atlanır, açıklar konu bazında görünür ve gerçek analist görevleriyle kapanır.</p>
           <div class="actions">
             <button id="startExamTop" class="primary">Seviye Tespitini Başlat</button>
-            <a href="#roadmap" class="secondary">24 haftalık plan</a>
+            <a href="#academy" class="secondary">Mastery sistemi</a>
+            <a href="#roadmap" class="secondary">Referans plan</a>
           </div>
         </div>
         <div class="metrics">
           <article><strong>50</strong><span>Soru bankası</span></article>
           <article><strong>25</strong><span>Tanı sorusu</span></article>
-          <article><strong>24</strong><span>Hafta</span></article>
+          <article><strong>6</strong><span>Mastery seviye</span></article>
           <article><strong>1.460</strong><span>Sentetik kayıt</span></article>
         </div>
       </section>
@@ -61,15 +63,25 @@
         <div id="trackGrid" class="track-grid"></div>
       </section>
 
+      <section id="academy" class="block">
+        <div class="section-title">
+          <span class="eyebrow">MASTERY ACADEMY</span>
+          <h2 id="academyTitle">Temelden Expert seviyesine, kanıtla ilerleyen müfredat</h2>
+          <p id="academyIntro" class="section-copy">Hafta doldurmak değil; kavramı açıklamak, üretmek, hata ayıklamak, başka probleme taşımak ve daha sonra yeniden hatırlamak gerekiyor.</p>
+        </div>
+        <div id="masteryGrid" class="mastery-grid"></div>
+        <div id="curriculumGrid" class="curriculum-grid"></div>
+      </section>
+
       <section id="diagnostic" class="panel exam-panel">
         <div class="section-title row">
-          <div><span class="eyebrow">PLACEMENT</span><h2 id="diagTitle">Seviye Tespit Sınavı</h2></div>
+          <div><span class="eyebrow">PLACEMENT</span><h2 id="diagTitle">Hızlı Ön Tarama</h2></div>
           <span id="diagCounter" class="pill">Hazır</span>
         </div>
 
         <div id="diagnosticStart">
-          <p id="diagIntro">Her alandan 5 soru seçilir. Sonuçlar SQL, Qlik, Python, Excel ve Technical English için ayrı ayrı L1–L5 seviyesine çevrilir.</p>
-          <button id="startDiagnostic" class="primary">25 Soruluk Tanıyı Başlat</button>
+          <p id="diagIntro">Her alandan 5 soru seçilir. Bu ekran yalnızca MCQ tabanlı hızlı ön taramadır; gerçek placement için yorumlama, üretim, debugging, transfer ve retention kanıtı gerekir.</p>
+          <button id="startDiagnostic" class="primary">25 Soruluk Ön Taramayı Başlat</button>
         </div>
 
         <div id="questionStage" class="hidden">
@@ -136,7 +148,7 @@ FROM hotel_daily;</textarea>
       </section>
 
       <section id="roadmap" class="block">
-        <div class="section-title"><span class="eyebrow">ROADMAP</span><h2 id="roadmapTitle">24 haftalık plan</h2></div>
+        <div class="section-title"><span class="eyebrow">ROADMAP</span><h2 id="roadmapTitle">24 haftalık referans tempo planı</h2></div>
         <div id="roadmapGrid" class="roadmap-grid"></div>
       </section>
 
