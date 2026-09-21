@@ -7,6 +7,15 @@
   <title>Ders · Data Analyst Learning OS</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="lesson.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "@duckdb/duckdb-wasm": "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.33.1-dev57.0/dist/duckdb-browser.mjs",
+      "apache-arrow": "https://cdn.jsdelivr.net/npm/apache-arrow@17.0.0/+esm",
+      "qs": "https://cdn.jsdelivr.net/npm/qs@6.14.1/+esm"
+    }
+  }
+  </script>
 </head>
 <body class="lesson-page">
   <header class="lesson-topbar">
@@ -76,6 +85,36 @@
         </div>
         <p id="sectionFeedback" class="lesson-feedback"></p>
       </article>
+    </section>
+
+    <section id="lessonSqlLab" class="panel lesson-sql-lab hidden">
+      <div class="section-title row">
+        <div>
+          <span class="eyebrow">SEMANTIC SQL LAB</span>
+          <h2 id="lessonSqlLabTitle">Semantic SQL Lab</h2>
+        </div>
+        <span id="lessonSqlLabStatus" class="pill">Çalıştırılmadı</span>
+      </div>
+      <p id="lessonSqlLabTask"></p>
+      <div class="lesson-lab-meta">
+        <code id="lessonSqlSchema"></code>
+        <small id="lessonSqlEngineNote"></small>
+      </div>
+      <textarea id="lessonSqlEditor" spellcheck="false"></textarea>
+      <div class="lesson-lab-actions">
+        <button id="runLessonSql" class="primary">Semantik testi çalıştır</button>
+        <button id="resetLessonSql" class="secondary">Sıfırla</button>
+      </div>
+      <p id="lessonSqlFeedback" class="lesson-lab-feedback"></p>
+      <div class="lesson-sql-output">
+        <div class="table-wrap">
+          <table id="lessonSqlTable" aria-label="Lesson SQL result">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="lessonSqlEmpty" class="empty-output">Sorguyu çalıştırdığında görünür fixture sonucu burada görünecek.</div>
+      </div>
     </section>
 
     <section id="lessonSequence" class="lesson-sequence panel hidden" aria-label="Production lesson sequence">
