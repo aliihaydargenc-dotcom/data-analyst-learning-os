@@ -1,0 +1,902 @@
+[
+  {
+    "id": "Q001",
+    "domain": "SQL",
+    "level": 2,
+    "topic": "JOIN",
+    "type": "mcq",
+    "difficulty": "easy",
+    "question_tr": "LEFT JOIN kullanıldığında sağ tabloda eşleşme yoksa sağ sütunlarda ne görülür?",
+    "question_en": "With a LEFT JOIN, what appears in right-table columns when there is no match?",
+    "choices": [
+      "0",
+      "NULL",
+      "Boş string",
+      "Satır silinir"
+    ],
+    "answer": 1,
+    "explanation_tr": "LEFT JOIN sol satırı korur; eşleşmeyen sağ alanlar NULL olur."
+  },
+  {
+    "id": "Q002",
+    "domain": "SQL",
+    "level": 2,
+    "topic": "GROUP BY",
+    "type": "mcq",
+    "difficulty": "easy",
+    "question_tr": "WHERE ve HAVING arasındaki temel fark nedir?",
+    "question_en": "What is the main difference between WHERE and HAVING?",
+    "choices": [
+      "İkisi aynıdır",
+      "WHERE gruplama sonrası çalışır",
+      "WHERE satırları, HAVING gruplanmış sonuçları filtreler",
+      "HAVING yalnızca JOIN ile kullanılır"
+    ],
+    "answer": 2,
+    "explanation_tr": "WHERE satır seviyesinde, HAVING aggregation sonrası filtreleme yapar."
+  },
+  {
+    "id": "Q003",
+    "domain": "SQL",
+    "level": 3,
+    "topic": "CTE",
+    "type": "mcq",
+    "difficulty": "medium",
+    "question_tr": "CTE en doğru hangi amaçla kullanılır?",
+    "question_en": "What is a CTE most appropriately used for?",
+    "choices": [
+      "Kalıcı tablo oluşturmak",
+      "Karmaşık sorguyu okunabilir adımlara ayırmak",
+      "İndeks oluşturmak",
+      "Log temizlemek"
+    ],
+    "answer": 1,
+    "explanation_tr": "CTE sorgu içinde isimlendirilmiş geçici sonuç kümesi sağlar."
+  },
+  {
+    "id": "Q004",
+    "domain": "SQL",
+    "level": 3,
+    "topic": "Window Functions",
+    "type": "mcq",
+    "difficulty": "medium",
+    "question_tr": "Eşit değerlere aynı sıra verip sonraki sırada boşluk bırakmak için hangisi kullanılır?",
+    "question_en": "Which function gives ties the same rank and leaves gaps after ties?",
+    "choices": [
+      "ROW_NUMBER()",
+      "RANK()",
+      "DENSE_RANK()",
+      "NTILE()"
+    ],
+    "answer": 1,
+    "explanation_tr": "RANK eşit değerlere aynı sıra verir ve sonraki sırada boşluk bırakır."
+  },
+  {
+    "id": "Q005",
+    "domain": "SQL",
+    "level": 3,
+    "topic": "LAG/LEAD",
+    "type": "mcq",
+    "difficulty": "medium",
+    "question_tr": "Bir satırı bir önceki günün geliriyle karşılaştırmak için en uygun fonksiyon hangisidir?",
+    "question_en": "Which function is best for comparing a row with the previous day?",
+    "choices": [
+      "LAG",
+      "LEAD",
+      "FIRST_VALUE",
+      "PERCENT_RANK"
+    ],
+    "answer": 0,
+    "explanation_tr": "LAG önceki satırdaki değere erişir."
+  },
+  {
+    "id": "Q006",
+    "domain": "SQL",
+    "level": 4,
+    "topic": "Sargability",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "İndeksli tarih alanında hangisi genellikle daha sargable'dır?",
+    "question_en": "Which predicate is generally more sargable on an indexed date column?",
+    "choices": [
+      "YEAR(OrderDate)=2026",
+      "OrderDate >= '2026-01-01' AND OrderDate < '2027-01-01'",
+      "FORMAT(OrderDate,'yyyy')='2026'",
+      "CAST(OrderDate AS varchar) LIKE '2026%'"
+    ],
+    "answer": 1,
+    "explanation_tr": "Sütuna fonksiyon uygulamadan aralık filtresi indeks kullanımını kolaylaştırır."
+  },
+  {
+    "id": "Q007",
+    "domain": "SQL",
+    "level": 4,
+    "topic": "Execution Plan",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Execution plan içindeki table scan tek başına neyi kanıtlar?",
+    "question_en": "What does a table scan prove by itself?",
+    "choices": [
+      "Sorgu mutlaka kötüdür",
+      "İndeks yoktur",
+      "Tarama yapıldığını; fakat tek başına kötü performans kanıtı olmadığını",
+      "Statistics bozuktur"
+    ],
+    "answer": 2,
+    "explanation_tr": "Scan bazen en ucuz doğru plandır; bağlamla değerlendirilir."
+  },
+  {
+    "id": "Q008",
+    "domain": "SQL",
+    "level": 4,
+    "topic": "Cardinality",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Cardinality estimation neden önemlidir?",
+    "question_en": "Why does cardinality estimation matter?",
+    "choices": [
+      "Sütun adlarını değiştirir",
+      "Optimizerın join ve operatör seçimini etkiler",
+      "Transaction açar",
+      "Yetki verir"
+    ],
+    "answer": 1,
+    "explanation_tr": "Tahmini satır sayıları plan maliyetlerini ve fiziksel operatörleri etkiler."
+  },
+  {
+    "id": "Q009",
+    "domain": "SQL",
+    "level": 5,
+    "topic": "Tuning",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Büyük bir ara sonuç birkaç kez yeniden kullanılacaksa test etmeye değer seçenek hangisidir?",
+    "question_en": "If a large intermediate result is reused several times, what is reasonable to test?",
+    "choices": [
+      "Scalar UDF",
+      "Temp table",
+      "Daha fazla nested subquery",
+      "SELECT *"
+    ],
+    "answer": 1,
+    "explanation_tr": "Temp table materialize edilebilir ve gerektiğinde indekslenebilir."
+  },
+  {
+    "id": "Q010",
+    "domain": "SQL",
+    "level": 5,
+    "topic": "Data Quality",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Reconciliation sorgusunun temel amacı nedir?",
+    "question_en": "What is the main purpose of a reconciliation query?",
+    "choices": [
+      "Dashboard rengini belirlemek",
+      "Kaynaklar/katmanlar arasında toplam ve kayıt tutarlılığını doğrulamak",
+      "İndeks oluşturmak",
+      "CSV sıkıştırmak"
+    ],
+    "answer": 1,
+    "explanation_tr": "Reconciliation farklı veri katmanlarının uyuşup uyuşmadığını kontrol eder."
+  },
+  {
+    "id": "Q011",
+    "domain": "Qlik",
+    "level": 2,
+    "topic": "Associations",
+    "type": "mcq",
+    "difficulty": "easy",
+    "question_tr": "Qlik veri modelinde aynı isimli alanların varsayılan davranışı nedir?",
+    "question_en": "What is the default behavior of same-named fields in Qlik?",
+    "choices": [
+      "Otomatik silinir",
+      "Tablolar arasında association oluşturur",
+      "Stringe dönüşür",
+      "Sadece ilk tablo kullanılır"
+    ],
+    "answer": 1,
+    "explanation_tr": "Aynı isimli alanlar ilişki anahtarı olarak kullanılır."
+  },
+  {
+    "id": "Q012",
+    "domain": "Qlik",
+    "level": 2,
+    "topic": "Resident Load",
+    "type": "mcq",
+    "difficulty": "easy",
+    "question_tr": "Resident LOAD ne sağlar?",
+    "question_en": "What does Resident LOAD allow?",
+    "choices": [
+      "Harici API çağrısı",
+      "Belleğe yüklenmiş tablodan yeniden LOAD yapmak",
+      "Dashboard export etmek",
+      "Section Access açmak"
+    ],
+    "answer": 1,
+    "explanation_tr": "Resident LOAD mevcut bir iç tablodan yeni dönüşüm yapar."
+  },
+  {
+    "id": "Q013",
+    "domain": "Qlik",
+    "level": 3,
+    "topic": "ApplyMap",
+    "type": "mcq",
+    "difficulty": "medium",
+    "question_tr": "ApplyMap için en doğru kullanım hangisidir?",
+    "question_en": "What is the most appropriate use of ApplyMap?",
+    "choices": [
+      "Tekrarlı key-value eşlemesini scriptte uygulamak",
+      "Chart rengini değiştirmek",
+      "Kullanıcı silmek",
+      "QVD şifrelemek"
+    ],
+    "answer": 0,
+    "explanation_tr": "Mapping table ile kod-açıklama gibi eşlemeler için uygundur."
+  },
+  {
+    "id": "Q014",
+    "domain": "Qlik",
+    "level": 3,
+    "topic": "Set Analysis",
+    "type": "mcq",
+    "difficulty": "medium",
+    "question_tr": "Set Analysis içindeki {1} identifier genel olarak neyi ifade eder?",
+    "question_en": "What does the {1} identifier generally represent in Set Analysis?",
+    "choices": [
+      "Current selections",
+      "Full data set ignoring current selections",
+      "Empty set",
+      "Previous selection only"
+    ],
+    "answer": 1,
+    "explanation_tr": "{1} mevcut seçimlerden bağımsız tam veri kümesini temsil eder."
+  },
+  {
+    "id": "Q015",
+    "domain": "Qlik",
+    "level": 3,
+    "topic": "Set Modifier",
+    "type": "mcq",
+    "difficulty": "medium",
+    "question_tr": "<Year={2026}> yapısı ne yapar?",
+    "question_en": "What does <Year={2026}> do?",
+    "choices": [
+      "Alanı siler",
+      "Seti Year=2026 olacak şekilde değiştirir",
+      "Yeni sheet açar",
+      "Scripti reload eder"
+    ],
+    "answer": 1,
+    "explanation_tr": "Modifier ilgili alandaki olası değer kümesini tanımlar."
+  },
+  {
+    "id": "Q016",
+    "domain": "Qlik",
+    "level": 4,
+    "topic": "Synthetic Key",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Synthetic key çoğunlukla neden oluşur?",
+    "question_en": "What commonly causes a synthetic key?",
+    "choices": [
+      "İki tablo arasında birden fazla ortak alan bulunması",
+      "QVD kullanımı",
+      "Master item oluşturmak",
+      "Tema değiştirmek"
+    ],
+    "answer": 0,
+    "explanation_tr": "Birden fazla ortak alan Qlik'in sentetik birleşik anahtar üretmesine yol açabilir."
+  },
+  {
+    "id": "Q017",
+    "domain": "Qlik",
+    "level": 4,
+    "topic": "Circular Reference",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Circular reference neyi ifade eder?",
+    "question_en": "What does a circular reference indicate?",
+    "choices": [
+      "Veri modelinde döngüsel association yolu",
+      "Eksik chart title",
+      "Yanlış renk paleti",
+      "Boş selection"
+    ],
+    "answer": 0,
+    "explanation_tr": "Tablolar arasında birden fazla döngüsel ilişki yolu oluşmuştur."
+  },
+  {
+    "id": "Q018",
+    "domain": "Qlik",
+    "level": 4,
+    "topic": "QVD",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "QVD'nin temel avantajlarından biri nedir?",
+    "question_en": "What is a key benefit of QVD files?",
+    "choices": [
+      "Yalnızca görsel saklar",
+      "Qlik için hızlı ara katman/veri saklama sağlar",
+      "SQL Server'ın yerini tamamen alır",
+      "Kullanıcı şifresi saklar"
+    ],
+    "answer": 1,
+    "explanation_tr": "QVD reload mimarisinde hızlı ve tekrar kullanılabilir veri katmanı sağlar."
+  },
+  {
+    "id": "Q019",
+    "domain": "Qlik",
+    "level": 5,
+    "topic": "Incremental Load",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Incremental load yaklaşımının amacı nedir?",
+    "question_en": "What is the purpose of incremental loading?",
+    "choices": [
+      "Her reload'da tüm geçmişi yeniden çekmek",
+      "Yalnızca yeni/değişen kayıtları işleyerek reload maliyetini azaltmak",
+      "Chart sayısını artırmak",
+      "Section Access kapatmak"
+    ],
+    "answer": 1,
+    "explanation_tr": "Sadece değişen bölümün işlenmesi süreyi ve kaynak tüketimini azaltabilir."
+  },
+  {
+    "id": "Q020",
+    "domain": "Qlik",
+    "level": 5,
+    "topic": "Alternate States",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Alternate states hangi ihtiyacı destekler?",
+    "question_en": "What do alternate states enable?",
+    "choices": [
+      "Aynı uygulamada bağımsız seçim kümelerini karşılaştırmak",
+      "Script debug kapatmak",
+      "QVD sıkıştırmak",
+      "Data connection silmek"
+    ],
+    "answer": 0,
+    "explanation_tr": "Farklı selection state'lerini aynı görsel analizde karşılaştırmaya yarar."
+  },
+  {
+    "id": "Q021",
+    "domain": "Python",
+    "level": 2,
+    "topic": "Indexing",
+    "type": "mcq",
+    "difficulty": "easy",
+    "question_tr": "pandas'ta label tabanlı seçim için hangisi kullanılır?",
+    "question_en": "Which pandas indexer is label-based?",
+    "choices": [
+      "iloc",
+      "loc",
+      "iat only",
+      "shape"
+    ],
+    "answer": 1,
+    "explanation_tr": "loc label tabanlı; iloc konum tabanlıdır."
+  },
+  {
+    "id": "Q022",
+    "domain": "Python",
+    "level": 2,
+    "topic": "GroupBy",
+    "type": "mcq",
+    "difficulty": "easy",
+    "question_tr": "groupby().transform() neden kullanışlıdır?",
+    "question_en": "Why is groupby().transform() useful?",
+    "choices": [
+      "Grubu tek satıra indirger",
+      "Orijinal satır sayısını koruyarak grup istatistiğini satırlara geri yayar",
+      "DataFrame'i siler",
+      "Indexi daima sıfırlar"
+    ],
+    "answer": 1,
+    "explanation_tr": "Transform grup sonucunu orijinal şekille uyumlu döndürür."
+  },
+  {
+    "id": "Q023",
+    "domain": "Python",
+    "level": 3,
+    "topic": "Merge",
+    "type": "mcq",
+    "difficulty": "medium",
+    "question_tr": "merge(validate='many_to_one') neyi kontrol eder?",
+    "question_en": "What does merge(validate='many_to_one') check?",
+    "choices": [
+      "Sol tarafta tekillik zorunludur",
+      "Sağ anahtarların one tarafında tekil olmasını bekler",
+      "Tüm değerler string olmalı",
+      "Join tipi outer olmalı"
+    ],
+    "answer": 1,
+    "explanation_tr": "many_to_one sağ taraftaki join key'in tekil olmasını doğrular."
+  },
+  {
+    "id": "Q024",
+    "domain": "Python",
+    "level": 3,
+    "topic": "Shift",
+    "type": "mcq",
+    "difficulty": "medium",
+    "question_tr": "Bir zaman serisinde önceki satır değerini almak için hangi yöntem uygundur?",
+    "question_en": "Which method is appropriate for previous-row values in a time series?",
+    "choices": [
+      "shift(1)",
+      "dropna()",
+      "astype()",
+      "melt()"
+    ],
+    "answer": 0,
+    "explanation_tr": "shift(1) veriyi bir satır kaydırarak lag üretir."
+  },
+  {
+    "id": "Q025",
+    "domain": "Python",
+    "level": 3,
+    "topic": "Rolling",
+    "type": "mcq",
+    "difficulty": "medium",
+    "question_tr": "7 gözlemlik hareketli ortalama için hangisi uygundur?",
+    "question_en": "Which is appropriate for a 7-observation moving average?",
+    "choices": [
+      "rolling(7).mean()",
+      "groupby(7)",
+      "head(7)",
+      "rank(7)"
+    ],
+    "answer": 0,
+    "explanation_tr": "rolling pencere tabanlı hesaplama yapar."
+  },
+  {
+    "id": "Q026",
+    "domain": "Python",
+    "level": 4,
+    "topic": "Vectorization",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Büyük pandas tablolarında genellikle hangisi daha performanslıdır?",
+    "question_en": "Which is generally faster on large pandas tables?",
+    "choices": [
+      "Satır satır Python for döngüsü",
+      "Vektörize operasyonlar",
+      "Her satırda print",
+      "apply her durumda"
+    ],
+    "answer": 1,
+    "explanation_tr": "NumPy/pandas vektörize işlemleri Python loop overhead'ini azaltır."
+  },
+  {
+    "id": "Q027",
+    "domain": "Python",
+    "level": 4,
+    "topic": "Dtypes",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "read_csv sırasında dtype belirtmenin yararı nedir?",
+    "question_en": "What is a benefit of specifying dtypes in read_csv?",
+    "choices": [
+      "Dosyayı şifreler",
+      "Bellek ve tip tutarlılığını daha kontrollü hale getirir",
+      "Her zaman dosyayı küçültür",
+      "Index zorunlu oluşturur"
+    ],
+    "answer": 1,
+    "explanation_tr": "Doğru dtype bellek kullanımını ve veri tiplerini kontrol etmeye yardımcı olur."
+  },
+  {
+    "id": "Q028",
+    "domain": "Python",
+    "level": 4,
+    "topic": "JSON",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "İç içe JSON verisini tabloya açmak için pandas'ta sık kullanılan araç hangisidir?",
+    "question_en": "Which pandas tool is commonly used to flatten nested JSON?",
+    "choices": [
+      "json_normalize",
+      "cut",
+      "qcut",
+      "factorize only"
+    ],
+    "answer": 0,
+    "explanation_tr": "json_normalize iç içe kayıtları tabular yapıya açabilir."
+  },
+  {
+    "id": "Q029",
+    "domain": "Python",
+    "level": 5,
+    "topic": "Error Handling",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Üretim veri hattında exception yönetiminde en iyi yaklaşım hangisidir?",
+    "question_en": "What is a better production exception-handling approach?",
+    "choices": [
+      "Tüm hataları sessizce pass etmek",
+      "Beklenen hataları yakalayıp loglamak ve uygun şekilde yeniden fırlatmak/işlemek",
+      "Her yerde bare except kullanmak",
+      "Hata mesajını silmek"
+    ],
+    "answer": 1,
+    "explanation_tr": "Hata görünürlüğünü ve kontrol akışını korumak gerekir."
+  },
+  {
+    "id": "Q030",
+    "domain": "Python",
+    "level": 5,
+    "topic": "Performance",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Aynı işlem pandas'ta bellek sınırına çarpıyorsa ilk mantıklı adımlardan biri nedir?",
+    "question_en": "If a pandas workload hits memory limits, what is a reasonable first step?",
+    "choices": [
+      "Daha fazla print",
+      "dtype ve gereksiz kolonları azaltmak, chunk/alternatif engine değerlendirmek",
+      "Tüm veriyi object yapmak",
+      "Indexi stringe çevirmek"
+    ],
+    "answer": 1,
+    "explanation_tr": "Bellek profilini azaltmak ve işlem stratejisini değiştirmek ilk adımlardandır."
+  },
+  {
+    "id": "Q031",
+    "domain": "Excel",
+    "level": 2,
+    "topic": "XLOOKUP",
+    "type": "mcq",
+    "difficulty": "easy",
+    "question_tr": "XLOOKUP'ın VLOOKUP'a göre önemli avantajlarından biri nedir?",
+    "question_en": "What is an important advantage of XLOOKUP over VLOOKUP?",
+    "choices": [
+      "Yalnızca soldan sağa çalışır",
+      "Dönüş sütununun solda veya sağda olması mümkündür",
+      "Sadece sayılarla çalışır",
+      "Power Query gerektirir"
+    ],
+    "answer": 1,
+    "explanation_tr": "XLOOKUP aranan ve döndürülen diziyi ayrı tanımlar."
+  },
+  {
+    "id": "Q032",
+    "domain": "Excel",
+    "level": 2,
+    "topic": "Dynamic Arrays",
+    "type": "mcq",
+    "difficulty": "easy",
+    "question_tr": "FILTER fonksiyonunun temel amacı nedir?",
+    "question_en": "What is the primary purpose of FILTER?",
+    "choices": [
+      "Koşula göre dinamik satır/dizi döndürmek",
+      "Workbook'u şifrelemek",
+      "Pivot cache temizlemek",
+      "VBA çalıştırmak"
+    ],
+    "answer": 0,
+    "explanation_tr": "FILTER koşula uyan kayıtları spill array olarak döndürür."
+  },
+  {
+    "id": "Q033",
+    "domain": "Excel",
+    "level": 3,
+    "topic": "LET",
+    "type": "mcq",
+    "difficulty": "medium",
+    "question_tr": "LET fonksiyonu ne sağlar?",
+    "question_en": "What does LET provide?",
+    "choices": [
+      "Formül içinde ara sonuçlara isim verme ve tekrar kullanma",
+      "Yeni sheet oluşturma",
+      "Makro kaydetme",
+      "SQL bağlantısı silme"
+    ],
+    "answer": 0,
+    "explanation_tr": "LET okunabilirlik ve tekrar hesaplamayı azaltma açısından faydalıdır."
+  },
+  {
+    "id": "Q034",
+    "domain": "Excel",
+    "level": 3,
+    "topic": "LAMBDA",
+    "type": "mcq",
+    "difficulty": "medium",
+    "question_tr": "LAMBDA ile ne yapılabilir?",
+    "question_en": "What can LAMBDA be used for?",
+    "choices": [
+      "VBA olmadan yeniden kullanılabilir özel fonksiyon tanımlamak",
+      "Workbook boyutunu sıfırlamak",
+      "PivotTable silmek",
+      "Power Query servis kurmak"
+    ],
+    "answer": 0,
+    "explanation_tr": "LAMBDA workbook içinde özel fonksiyonlar oluşturabilir."
+  },
+  {
+    "id": "Q035",
+    "domain": "Excel",
+    "level": 3,
+    "topic": "Power Query",
+    "type": "mcq",
+    "difficulty": "medium",
+    "question_tr": "Power Query'de Merge ile Append arasındaki fark nedir?",
+    "question_en": "What is the difference between Merge and Append in Power Query?",
+    "choices": [
+      "Merge satırları alt alta ekler",
+      "Merge join yapar, Append satırları alt alta birleştirir",
+      "İkisi aynıdır",
+      "Append kolon bazlı join yapar"
+    ],
+    "answer": 1,
+    "explanation_tr": "Merge anahtarlarla tablo birleştirir; Append kayıtları dikey ekler."
+  },
+  {
+    "id": "Q036",
+    "domain": "Excel",
+    "level": 4,
+    "topic": "Data Model",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Excel Data Model'in temel amacı nedir?",
+    "question_en": "What is the main purpose of the Excel Data Model?",
+    "choices": [
+      "Yalnızca hücre biçimlendirmek",
+      "Birden fazla tabloyu ilişkilerle analitik modelde birleştirmek",
+      "Dosya sıkıştırmak",
+      "Makro güvenliğini kapatmak"
+    ],
+    "answer": 1,
+    "explanation_tr": "Data Model ilişkisel çok tablolu analiz sağlar."
+  },
+  {
+    "id": "Q037",
+    "domain": "Excel",
+    "level": 4,
+    "topic": "Relationships",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Fact ve dimension arasında tipik ilişki hangisidir?",
+    "question_en": "What is a typical relationship between a fact and dimension table?",
+    "choices": [
+      "many-to-one fact→dimension",
+      "many-to-many her zaman",
+      "one-to-one her zaman",
+      "ilişki kurulmaz"
+    ],
+    "answer": 0,
+    "explanation_tr": "Fact tabloda çok kayıt aynı dimension key'e bağlanır."
+  },
+  {
+    "id": "Q038",
+    "domain": "Excel",
+    "level": 4,
+    "topic": "DAX",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "DAX CALCULATE'ın temel gücü nedir?",
+    "question_en": "What is the core power of DAX CALCULATE?",
+    "choices": [
+      "Filter context'i değiştirerek expression hesaplamak",
+      "Hücre rengi değiştirmek",
+      "CSV export etmek",
+      "VBA derlemek"
+    ],
+    "answer": 0,
+    "explanation_tr": "CALCULATE expression'ı değiştirilmiş filter context altında değerlendirir."
+  },
+  {
+    "id": "Q039",
+    "domain": "Excel",
+    "level": 5,
+    "topic": "Query Folding",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Query folding ne anlama gelir?",
+    "question_en": "What does query folding mean?",
+    "choices": [
+      "Power Query adımlarının mümkün olduğunca kaynak sisteme çevrilip orada çalıştırılması",
+      "Excel formülünün PDF'e dönüşmesi",
+      "Pivot cache temizliği",
+      "Makro kaydı"
+    ],
+    "answer": 0,
+    "explanation_tr": "Kaynak destekliyorsa dönüşümler source query'ye itilebilir."
+  },
+  {
+    "id": "Q040",
+    "domain": "Excel",
+    "level": 5,
+    "topic": "Performance",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Çok büyük modelde performans için hangisi genellikle doğrudur?",
+    "question_en": "Which is generally good practice for a large model?",
+    "choices": [
+      "Gereksiz kolonları tutmak",
+      "Gereksiz kolonları kaldırmak ve doğru veri tipleri kullanmak",
+      "Her şeyi text yapmak",
+      "Tüm hesapları volatile formüllerle yapmak"
+    ],
+    "answer": 1,
+    "explanation_tr": "Model boyutu ve cardinality performansı doğrudan etkileyebilir."
+  },
+  {
+    "id": "Q041",
+    "domain": "English",
+    "level": 2,
+    "topic": "Vocabulary",
+    "type": "mcq",
+    "difficulty": "easy",
+    "question_tr": "Data grain neyi ifade eder?",
+    "question_en": "What does data grain refer to?",
+    "choices": [
+      "Verinin her satırının temsil ettiği ayrıntı seviyesi",
+      "Dosya rengi",
+      "Kullanıcı rolü",
+      "CPU hızı"
+    ],
+    "answer": 0,
+    "explanation_tr": "Grain, bir satırın hangi iş olayını/ayrıntı seviyesini temsil ettiğidir."
+  },
+  {
+    "id": "Q042",
+    "domain": "English",
+    "level": 2,
+    "topic": "Vocabulary",
+    "type": "mcq",
+    "difficulty": "easy",
+    "question_tr": "Cardinality terimi veri modelinde en yakın neyi anlatır?",
+    "question_en": "What does cardinality most closely refer to in data modeling?",
+    "choices": [
+      "Benzersiz değer/ilişki çokluğu",
+      "Grafik tipi",
+      "Renk sayısı",
+      "Dosya uzantısı"
+    ],
+    "answer": 0,
+    "explanation_tr": "Cardinality benzersiz değer sayısı veya ilişki çokluğu bağlamında kullanılır."
+  },
+  {
+    "id": "Q043",
+    "domain": "English",
+    "level": 3,
+    "topic": "Requirement",
+    "type": "mcq",
+    "difficulty": "medium",
+    "question_tr": "'Return the rolling seven-day average revenue' ne ister?",
+    "question_en": "What does 'Return the rolling seven-day average revenue' ask for?",
+    "choices": [
+      "7 günlük hareketli ortalama",
+      "7 günü sil",
+      "Sadece yedinci günü getir",
+      "Yıllık toplam"
+    ],
+    "answer": 0,
+    "explanation_tr": "Rolling seven-day average hareketli 7 günlük ortalamadır."
+  },
+  {
+    "id": "Q044",
+    "domain": "English",
+    "level": 3,
+    "topic": "Vocabulary",
+    "type": "mcq",
+    "difficulty": "medium",
+    "question_tr": "Data lineage en iyi nasıl çevrilir?",
+    "question_en": "What is the best interpretation of data lineage?",
+    "choices": [
+      "Verinin kaynaktan hedefe izlediği köken ve dönüşüm yolu",
+      "Satır yüksekliği",
+      "Kullanıcı listesi",
+      "Dashboard sırası"
+    ],
+    "answer": 0,
+    "explanation_tr": "Lineage verinin nereden gelip hangi dönüşümlerden geçtiğini açıklar."
+  },
+  {
+    "id": "Q045",
+    "domain": "English",
+    "level": 3,
+    "topic": "Vocabulary",
+    "type": "mcq",
+    "difficulty": "medium",
+    "question_tr": "Reconciliation bağlamında amaç nedir?",
+    "question_en": "What is the goal of reconciliation?",
+    "choices": [
+      "Kaynaklar arasındaki rakamları karşılaştırıp uyuşmayı doğrulamak",
+      "Renk seçmek",
+      "Tablo adını değiştirmek",
+      "Parola üretmek"
+    ],
+    "answer": 0,
+    "explanation_tr": "Reconciliation mutabakat/tutarlılık kontrolüdür."
+  },
+  {
+    "id": "Q046",
+    "domain": "English",
+    "level": 4,
+    "topic": "Vocabulary",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Nullability neyi anlatır?",
+    "question_en": "What does nullability describe?",
+    "choices": [
+      "Bir alanın NULL kabul edip edemediğini",
+      "Tablo hızını",
+      "Chart boyutunu",
+      "Kullanıcı sayısını"
+    ],
+    "answer": 0,
+    "explanation_tr": "Nullability alanın null değere izin verip vermediğidir."
+  },
+  {
+    "id": "Q047",
+    "domain": "English",
+    "level": 4,
+    "topic": "Requirement",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "'Exclude complimentary rooms from paid occupancy' talebinin anlamı nedir?",
+    "question_en": "What does 'Exclude complimentary rooms from paid occupancy' mean?",
+    "choices": [
+      "Ücretsiz odaları ücretli doluluk hesabından çıkar",
+      "Tüm odaları sil",
+      "Complimentary rooms'u iki kez say",
+      "ADR'yi sıfırla"
+    ],
+    "answer": 0,
+    "explanation_tr": "Talep comp rooms'un paid occupancy metriğine dahil edilmemesidir."
+  },
+  {
+    "id": "Q048",
+    "domain": "English",
+    "level": 4,
+    "topic": "Performance",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Bottleneck ne anlama gelir?",
+    "question_en": "What does bottleneck mean in performance analysis?",
+    "choices": [
+      "Sistemi sınırlayan dar boğaz",
+      "Yedekleme dosyası",
+      "Kolon başlığı",
+      "Kullanıcı yetkisi"
+    ],
+    "answer": 0,
+    "explanation_tr": "Bottleneck toplam performansı sınırlayan bileşendir."
+  },
+  {
+    "id": "Q049",
+    "domain": "English",
+    "level": 5,
+    "topic": "SQL",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Query execution plan neyi gösterir?",
+    "question_en": "What does a query execution plan show?",
+    "choices": [
+      "Veritabanının sorguyu nasıl yürütmeyi planladığını/gerçekleştirdiğini",
+      "Kullanıcı şifresini",
+      "Excel temasını",
+      "API anahtarını"
+    ],
+    "answer": 0,
+    "explanation_tr": "Execution plan fiziksel/mantıksal operatörleri ve yürütme stratejisini gösterir."
+  },
+  {
+    "id": "Q050",
+    "domain": "English",
+    "level": 5,
+    "topic": "Documentation",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Deprecated ifadesi teknik dokümantasyonda ne demektir?",
+    "question_en": "What does deprecated mean in technical documentation?",
+    "choices": [
+      "Kullanımı artık önerilmeyen ve ileride kaldırılabilecek özellik",
+      "Yeni ve zorunlu özellik",
+      "Şifreli özellik",
+      "Sadece ücretli özellik"
+    ],
+    "answer": 0,
+    "explanation_tr": "Deprecated özellik hâlâ bulunabilir ancak yeni kullanım için önerilmez."
+  }
+]
