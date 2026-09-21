@@ -3,6 +3,153 @@ import {DUCKDB_VERSION,DUCKDB_BUNDLES} from './duckdb-config.mjs';
 import {compareResultSets} from './sql-result-evaluator.mjs';
 
 const FIXTURES=Object.freeze({
+  'sql-index-statistics-plans-v1':{
+    table:'plan_evidence',
+    visibleSetup:`
+      DROP TABLE IF EXISTS plan_evidence;
+      CREATE TABLE plan_evidence(QUERY_ID VARCHAR, EST_ROWS INTEGER, ACT_ROWS INTEGER, ACCESS_METHOD VARCHAR, LOOKUPS INTEGER, LOGICAL_READS INTEGER, EXEC_MS INTEGER);
+      INSERT INTO plan_evidence VALUES
+        ('Q1',100,5000,'Seek',20,200,40),
+        ('Q2',10000,10000,'Scan',0,12000,400),
+        ('Q3',1000,1000,'Seek',3500,4000,300),
+        ('Q4',1000,1200,'Scan',0,1000,30);
+    `,
+    edgeSetup:`
+      DROP TABLE IF EXISTS plan_evidence;
+      CREATE TABLE plan_evidence(QUERY_ID VARCHAR, EST_ROWS INTEGER, ACT_ROWS INTEGER, ACCESS_METHOD VARCHAR, LOOKUPS INTEGER, LOGICAL_READS INTEGER, EXEC_MS INTEGER);
+      INSERT INTO plan_evidence VALUES
+        ('E1',5000,100,'Seek',10,150,25),
+        ('E2',1000,900,'Scan',0,8000,220),
+        ('E3',100,100,'Seek',2000,300,90),
+        ('E4',100,5000,'Scan',2500,10000,600);
+    `,
+    referenceSql:`
+      WITH issues AS (
+        SELECT 'cardinality_misestimation' AS ISSUE_TYPE, QUERY_ID
+        FROM plan_evidence
+        WHERE ACT_ROWS >= EST_ROWS * 10 OR EST_ROWS >= ACT_ROWS * 10
+        UNION ALL
+        SELECT 'lookup_hotspot', QUERY_ID FROM plan_evidence WHERE LOOKUPS >= 1000
+        UNION ALL
+        SELECT 'scan_hotspot', QUERY_ID FROM plan_evidence
+        WHERE ACCESS_METHOD = 'Scan' AND LOGICAL_READS >= 5000
+      )
+      SELECT ISSUE_TYPE, QUERY_ID FROM issues ORDER BY ISSUE_TYPE, QUERY_ID
+    `
+  },
+  'sql-production-tuning-v1':{
+    table:'tuning_variants',
+    visibleSetup:`
+      DROP TABLE IF EXISTS tuning_variants;
+      CREATE TABLE tuning_variants(QUERY_ID VARCHAR, VARIANT VARCHAR, RESULT_HASH VARCHAR, LOGICAL_READS INTEGER, DURATION_MS INTEGER, CPU_MS INTEGER);
+      INSERT INTO tuning_variants VALUES
+        ('Q1','baseline','H1',10000,500,400),
+        ('Q1','sargable','H1',2000,150,120),
+        ('Q1','wrong-fast','HX',100,20,20),
+        ('Q2','baseline','H2',8000,300,250),
+        ('Q2','covering','H2',7000,250,220),
+        ('Q3','baseline','H3',5000,250,200),
+        ('Q3','materialized','H3',3000,180,140);
+    `,
+    edgeSetup:`
+      DROP TABLE IF EXISTS tuning_variants;
+      CREATE TABLE tuning_variants(QUERY_ID VARCHAR, VARIANT VARCHAR, RESULT_HASH VARCHAR, LOGICAL_READS INTEGER, DURATION_MS INTEGER, CPU_MS INTEGER);
+      INSERT INTO tuning_variants VALUES
+        ('E1','baseline','A',20000,1000,800),('E1','rewrite','A',10000,700,550),
+        ('E2','baseline','B',1000,100,80),('E2','index','B',700,90,70),
+        ('E3','baseline','C',6000,400,300),('E3','wrong','Z',1000,100,80),
+        ('E4','baseline','D',4000,200,150),('E4','candidate','D',3000,150,120);
+    `,
+    referenceSql:`
+      WITH baseline AS (
+        SELECT * FROM tuning_variants WHERE VARIANT = 'baseline'
+      )
+      SELECT c.QUERY_ID, c.VARIANT,
+             b.LOGICAL_READS - c.LOGICAL_READS AS READ_SAVING,
+             b.DURATION_MS - c.DURATION_MS AS DURATION_SAVING
+      FROM tuning_variants AS c
+      JOIN baseline AS b ON b.QUERY_ID = c.QUERY_ID
+      WHERE c.VARIANT <> 'baseline'
+        AND c.RESULT_HASH = b.RESULT_HASH
+        AND c.LOGICAL_READS * 100 <= b.LOGICAL_READS * 80
+        AND c.DURATION_MS * 100 <= b.DURATION_MS * 80
+      ORDER BY c.QUERY_ID, c.VARIANT
+    `
+  },
+  'sql-optimizer-concurrency-v1':{
+    table:'workload_signals',
+    visibleSetup:`
+      DROP TABLE IF EXISTS workload_signals;
+      CREATE TABLE workload_signals(CASE_ID VARCHAR, EST_ROWS INTEGER, ACT_ROWS INTEGER, PLAN_COUNT INTEGER, BLOCK_MS INTEGER, DEADLOCK_COUNT INTEGER, VERSION_MB INTEGER);
+      INSERT INTO workload_signals VALUES
+        ('C1',100,5000,4,100,0,50),
+        ('C2',1000,1000,1,1800,0,20),
+        ('C3',1000,1000,1,200,2,20),
+        ('C4',1000,1000,1,100,0,800),
+        ('C5',100,5000,5,2500,1,900);
+    `,
+    edgeSetup:`
+      DROP TABLE IF EXISTS workload_signals;
+      CREATE TABLE workload_signals(CASE_ID VARCHAR, EST_ROWS INTEGER, ACT_ROWS INTEGER, PLAN_COUNT INTEGER, BLOCK_MS INTEGER, DEADLOCK_COUNT INTEGER, VERSION_MB INTEGER);
+      INSERT INTO workload_signals VALUES
+        ('E1',5000,100,3,50,0,20),
+        ('E2',1000,900,1,1200,0,600),
+        ('E3',100,100,1,100,1,50),
+        ('E4',100,5000,4,1600,2,700),
+        ('E5',1000,1000,2,100,0,100);
+    `,
+    referenceSql:`
+      WITH signals AS (
+        SELECT 'plan_instability' AS SIGNAL, CASE_ID
+        FROM workload_signals
+        WHERE PLAN_COUNT >= 3 AND (ACT_ROWS >= EST_ROWS * 10 OR EST_ROWS >= ACT_ROWS * 10)
+        UNION ALL
+        SELECT 'blocking', CASE_ID FROM workload_signals WHERE BLOCK_MS >= 1000
+        UNION ALL
+        SELECT 'deadlock', CASE_ID FROM workload_signals WHERE DEADLOCK_COUNT > 0
+        UNION ALL
+        SELECT 'version_pressure', CASE_ID FROM workload_signals WHERE VERSION_MB >= 500
+      )
+      SELECT SIGNAL, CASE_ID FROM signals ORDER BY SIGNAL, CASE_ID
+    `
+  },
+  'sql-architecture-review-v1':{
+    table:'design_options',
+    visibleSetup:`
+      DROP TABLE IF EXISTS design_options;
+      CREATE TABLE design_options(OPTION_ID VARCHAR, RESULT_VALID BOOLEAN, P95_MS INTEGER, LOGICAL_READS INTEGER, WRITE_OVERHEAD INTEGER, BLOCK_MS INTEGER, MAINT_RISK VARCHAR, ROLLBACK_READY BOOLEAN);
+      INSERT INTO design_options VALUES
+        ('O1',TRUE,320,6000,15,120,'Medium',TRUE),
+        ('O2',FALSE,150,1000,5,50,'Low',TRUE),
+        ('O3',TRUE,250,4000,10,100,'Low',FALSE),
+        ('O4',TRUE,450,8000,20,1500,'Medium',TRUE),
+        ('O5',TRUE,480,9000,25,300,'Low',TRUE),
+        ('O6',TRUE,300,7000,40,200,'Low',TRUE);
+    `,
+    edgeSetup:`
+      DROP TABLE IF EXISTS design_options;
+      CREATE TABLE design_options(OPTION_ID VARCHAR, RESULT_VALID BOOLEAN, P95_MS INTEGER, LOGICAL_READS INTEGER, WRITE_OVERHEAD INTEGER, BLOCK_MS INTEGER, MAINT_RISK VARCHAR, ROLLBACK_READY BOOLEAN);
+      INSERT INTO design_options VALUES
+        ('E1',TRUE,500,10000,30,500,'Medium',TRUE),
+        ('E2',TRUE,501,9000,20,200,'Low',TRUE),
+        ('E3',TRUE,400,10001,20,200,'Low',TRUE),
+        ('E4',TRUE,400,9000,20,200,'High',TRUE),
+        ('E5',TRUE,300,5000,10,100,'Low',TRUE),
+        ('E6',TRUE,300,5000,10,100,'Low',FALSE);
+    `,
+    referenceSql:`
+      SELECT OPTION_ID
+      FROM design_options
+      WHERE RESULT_VALID = TRUE
+        AND P95_MS <= 500
+        AND LOGICAL_READS <= 10000
+        AND WRITE_OVERHEAD <= 30
+        AND BLOCK_MS <= 500
+        AND MAINT_RISK <> 'High'
+        AND ROLLBACK_READY = TRUE
+      ORDER BY OPTION_ID
+    `
+  },
   'sql-model-quality-v1':{
     table:'booking_fact',
     visibleSetup:`

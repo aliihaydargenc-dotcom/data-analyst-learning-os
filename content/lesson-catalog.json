@@ -1,5 +1,5 @@
 {
-  "version": "0.9.0",
+  "version": "1.0.0",
   "production_lessons": [
     {
       "id": "sql.relational-thinking.001",
@@ -80,6 +80,46 @@
       "path": "content/lessons/sql.model-quality.001.json",
       "status": "production-candidate",
       "runtime": "lesson.html?id=sql.model-quality.001"
+    },
+    {
+      "id": "sql.index-statistics-plans.001",
+      "module_id": "sql.index-statistics-plans",
+      "track": "sql",
+      "level": "L5",
+      "order": 9,
+      "path": "content/lessons/sql.index-statistics-plans.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=sql.index-statistics-plans.001"
+    },
+    {
+      "id": "sql.production-tuning.001",
+      "module_id": "sql.production-tuning",
+      "track": "sql",
+      "level": "L5",
+      "order": 10,
+      "path": "content/lessons/sql.production-tuning.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=sql.production-tuning.001"
+    },
+    {
+      "id": "sql.optimizer-concurrency.001",
+      "module_id": "sql.optimizer-concurrency",
+      "track": "sql",
+      "level": "Expert",
+      "order": 11,
+      "path": "content/lessons/sql.optimizer-concurrency.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=sql.optimizer-concurrency.001"
+    },
+    {
+      "id": "sql.architecture-review.001",
+      "module_id": "sql.architecture-review",
+      "track": "sql",
+      "level": "Expert",
+      "order": 12,
+      "path": "content/lessons/sql.architecture-review.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=sql.architecture-review.001"
     }
   ]
 }

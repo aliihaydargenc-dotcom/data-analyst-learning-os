@@ -1,0 +1,194 @@
+{
+  "id": "sql.architecture-review.001",
+  "module_id": "sql.architecture-review",
+  "track": "sql",
+  "level": "Expert",
+  "status": "production-candidate",
+  "title_tr": "SQL mimari ve code review: correctness, performance, concurrency ve operability gate'leri",
+  "title_en": "SQL architecture and code review: correctness, performance, concurrency, and operability gates",
+  "subtitle_tr": "Bilinmeyen bir çözümü 'ben böyle yazmazdım' diye değil, açık acceptance criteria, kanıt, risk, rollback ve maintainability sözleşmesiyle review et.",
+  "subtitle_en": "Review unfamiliar SQL solutions with explicit acceptance criteria, evidence, risk, rollback, and maintainability contracts rather than personal style preferences.",
+  "estimated_minutes_range": [
+    105,
+    160
+  ],
+  "why_it_matters_tr": "Expert SQL işi yalnız sorgu yazmak değildir; başkasının modelini, index önerisini, materialization katmanını, isolation seçimini ve rollout planını review etmeyi gerektirir. Mimari kararlar tek bir metrikte optimize edilmez. Doğru sonuç, p95 latency/reads, write overhead, blocking, bakım riski, observability ve rollback birlikte değerlendirilir. Güçlü review, kesin olmayan alanları assumption olarak işaretler; ölçülmemiş performans iddiasını kabul etmez; production değişikliğini reversible ve monitor edilebilir hale getirir.",
+  "why_it_matters_en": "Expert SQL work includes reviewing other people's models, indexes, materialization layers, isolation choices, and rollout plans. Architecture is not optimized on one metric. Correctness, latency, reads, write overhead, blocking, maintainability, observability, and rollback must be evaluated together.",
+  "prerequisites": [
+    "sql.optimizer-concurrency.001"
+  ],
+  "learning_objectives": [
+    "SQL design review'unda correctness, data grain, performance, concurrency, maintainability, observability ve rollback başlıklarını ayrı gate'ler halinde kullanmak.",
+    "Ölçülmüş evidence, assumption ve preference ifadelerini review yorumlarında birbirinden ayırmak.",
+    "Index/materialization/isolation önerisini tek sorgu yerine workload ve operational lifecycle bağlamında değerlendirmek.",
+    "Acceptance criteria karşılanmıyorsa 'daha hızlı' seçeneği reddedebilmek ve eksik kanıtı açıkça istemek.",
+    "Sentetik design-option tablosunda doğruluk ve operasyon guardrail'lerini birlikte geçen seçenekleri executable review query ile filtrelemek."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "Plan, tuning ve concurrency kanıtlarını ayrı mekanizmalar olarak okuyabiliyor musun?",
+      "if_no_tr": "Önce `sql.optimizer-concurrency.001` dersindeki workload triage ve isolation trade-off kanıtını tamamla."
+    }
+  ],
+  "lab": {
+    "id": "sql-architecture-review-v1",
+    "engine": "DuckDB-Wasm",
+    "target_semantics": "T-SQL-compatible boolean and numeric acceptance-gate filtering over synthetic design options",
+    "requires_for_section": "independent-practice",
+    "title_tr": "Semantic SQL Lab · mimari acceptance gate",
+    "title_en": "Semantic SQL Lab · architecture acceptance gate",
+    "task_tr": "`design_options` tablosunda yalnız tüm guardrail'leri geçen seçenekleri döndür: RESULT_VALID=TRUE, P95_MS<=500, LOGICAL_READS<=10000, WRITE_OVERHEAD<=30, BLOCK_MS<=500, MAINT_RISK 'High' değil ve ROLLBACK_READY=TRUE. Çıktı yalnız OPTION_ID kolonu olsun ve artan sırada gelsin. Herhangi bir tek gate'i kaçıran seçenek elenmelidir.",
+    "task_en": "Return only design options that pass every guardrail: valid result, p95 at most 500 ms, reads at most 10000, write overhead at most 30, blocking at most 500 ms, maintenance risk not High, and rollback ready. Return only OPTION_ID in ascending order.",
+    "schema": "design_options(OPTION_ID VARCHAR, RESULT_VALID BOOLEAN, P95_MS INTEGER, LOGICAL_READS INTEGER, WRITE_OVERHEAD INTEGER, BLOCK_MS INTEGER, MAINT_RISK VARCHAR, ROLLBACK_READY BOOLEAN)",
+    "starter_sql": "SELECT OPTION_ID\nFROM design_options\nWHERE RESULT_VALID = TRUE\nORDER BY OPTION_ID;",
+    "engine_note_tr": "Lab gerçek mimari kararı otomatikleştirmez; önceden tanımlanmış acceptance gate'leri SQL ile uygular. Production review'da eşikler workload/SLA bağlamından gelir ve nicel kanıtla gerekçelendirilir.",
+    "engine_note_en": "The lab does not automate architecture decisions. It applies predefined acceptance gates in SQL. Production thresholds must come from workload and SLA context and be justified with measured evidence."
+  },
+  "sections": [
+    {
+      "id": "review-contract",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: review bir preference listesi değil acceptance contract'tır",
+      "title_en": "1. Mental model: review is an acceptance contract, not a preference list",
+      "body_tr": "Code review'da 'CTE sevmiyorum', 'scan kötü', 'daha fazla index iyi' gibi preference ifadeleri evidence değildir. Önce çözümün hedef grain, business semantics, latency/throughput hedefi, write workload, freshness ve operational constraint'lerini yaz. Sonra her review yorumunu bir gate'e bağla: correctness, performance, concurrency, maintainability, observability veya rollback. Gate'in ölçüsü yoksa 'kanıt eksik' de; çözümü kişisel stile göre reddetme.",
+      "body_en": "Architecture review should not be driven by preferences such as disliking CTEs or assuming scans are bad. Define the business and operational contract first, then attach each comment to correctness, performance, concurrency, maintainability, observability, or rollback evidence."
+    },
+    {
+      "id": "tradeoff-matrix",
+      "layer": "mental_model",
+      "title_tr": "2. Trade-off matrix: tek bir 'best' yok, context'e uygun guardrail vardır",
+      "title_en": "2. Trade-off matrix: there is no universal best, only context-specific guardrails",
+      "body_tr": "Covering index read'i azaltırken writes ve storage artırabilir; materialized aggregate dashboard latency'yi düşürürken freshness ve pipeline karmaşıklığı getirir; stronger isolation belirli anomaly'leri önlerken concurrency maliyeti yaratabilir; row versioning blocking'i azaltırken version-store kullanır. Review amacı bir metriği minimize etmek değil, zorunlu guardrail'ler içinde trade-off'u görünür kılmaktır. Ölçülmeyen risk 'yok' sayılmaz; validation planına dönüşür.",
+      "body_en": "Indexes, materialization, and isolation choices trade one resource or risk for another. Review is not about minimizing one metric; it is about keeping all required guardrails visible and turning unknown risks into validation work."
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "3. Worked example: bir gate'i kaçıran seçenek production-ready değildir",
+      "title_en": "3. Worked example: failing one required gate means the option is not production-ready",
+      "body_tr": "O1 doğru sonuç, 320 ms p95, 6.000 read, düşük write overhead, 120 ms blocking, Medium maintenance risk ve rollback planıyla tüm gate'leri geçsin. O2 150 ms olsa bile RESULT_VALID false ise elenir. O3 performanslı ama rollback-ready değilse rollout gate'ini geçmez. O4 p95 uygun olsa bile blocking 1.500 ms ise concurrency gate'inde kalır. Bu yaklaşım 'en hızlıyı seç' yerine zorunlu koşulları explicit hale getirir.",
+      "body_en": "An option can be very fast and still fail review because it changes results, creates excessive blocking, has unacceptable maintenance risk, or lacks rollback. Explicit gates prevent one attractive metric from hiding a production-critical failure.",
+      "code": "SELECT OPTION_ID\nFROM design_options\nWHERE RESULT_VALID=TRUE\n  AND P95_MS<=500\n  AND LOGICAL_READS<=10000\n  AND WRITE_OVERHEAD<=30\n  AND BLOCK_MS<=500\n  AND MAINT_RISK<>'High'\n  AND ROLLBACK_READY=TRUE\nORDER BY OPTION_ID;",
+      "explanation_tr": "Lab eşikleri eğitim contract'ıdır; gerçek review eşikleri SLA, workload ve ownership modelinden türetilmelidir.",
+      "explanation_en": "The lab thresholds are a learning contract. Real review limits must be derived from SLA, workload, and operational ownership."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "4. Guided practice: yorumunu evidence ve action ile yaz",
+      "title_en": "4. Guided practice: write review comments as evidence plus action",
+      "body_tr": "İyi review yorumu şu yapıyı taşır: gözlenen evidence, riskin hangi contract'ı etkilediği, eksik doğrulama ve kabul için gereken action. Örneğin 'Bu index kötü' yerine 'write-heavy tabloda üç benzer nonclustered index var; önerinin read kazancı ölçülmüş ancak insert/update overhead ölçülmemiş. Representative write benchmark ve consolidation analizi eklenmeden rollout gate'i tamamlanmıyor.' Böylece review kişisel tartışmadan test edilebilir işe dönüşür.",
+      "body_en": "A strong review comment states observed evidence, the contract at risk, missing validation, and the action required for acceptance. This turns subjective debate into testable work and makes approval conditions explicit.",
+      "prompts": [
+        "Bir index PR'ında hangi read ve write kanıtlarını zorunlu istersin?",
+        "Materialized aggregate tasarımında freshness ve reconciliation gate'lerini nasıl yazarsın?",
+        "Isolation değişikliği review'unda correctness regression'ı hangi testlerle kapsarsın?"
+      ]
+    },
+    {
+      "id": "independent-practice",
+      "layer": "independent_practice",
+      "title_tr": "5. Bağımsız üretim: tüm acceptance gate'lerini executable filtreye çevir",
+      "title_en": "5. Independent production: convert all acceptance gates into executable filters",
+      "body_tr": "Semantic SQL Lab'da yedi guardrail'i tek WHERE contract'ında uygula. Edge fixture her gate için ayrı fail örneği içerir; yalnız tüm koşulları geçen OPTION_ID'ler kalmalıdır. Lab geçtikten sonra bu otomatik gate'in mimari kararın yalnız bir parçası olduğunu; qualitative maintainability, ownership, migration ve observability risklerinin nasıl ayrı evidence gerektirdiğini açıkla.",
+      "body_en": "Apply all seven guardrails in one filter. The edge fixture contains options that fail individual gates. After passing, explain why quantitative gates are only part of architecture review and how maintainability, ownership, migration, and observability need additional evidence.",
+      "requires_lab_pass": "sql-architecture-review-v1",
+      "evidence_required": [
+        "semantic_lab_pass_visible_and_edge_fixture",
+        "explicit-review-gates",
+        "evidence-assumption-preference-separation",
+        "rollout-monitoring-rollback-plan"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "6. Debugging: review'da metric cherry-picking ve premature approval",
+      "title_en": "6. Debugging: metric cherry-picking and premature approval",
+      "body_tr": "Yalnız p95 süresini gösterip result reconciliation, write overhead veya blocking'i saklamak cherry-picking'tir. Yalnız staging testine bakıp production data distribution ve concurrency farkını yok saymak external-validity problemidir. Rollback planı olmayan invasive change'de 'CI yeşil' olmak yeterli değildir. Review checklist'i mekanik onay kutusu değil; her kritik riskin evidence veya explicit exception ile kapatıldığı bir ledger olmalıdır.",
+      "body_en": "Showing only p95 while omitting result reconciliation, write cost, or blocking is cherry-picking. Staging evidence may not generalize to production distribution and concurrency. CI success alone does not replace rollout, monitoring, and rollback evidence.",
+      "diagnostic_sequence": [
+        "Business result/grain ve acceptance criteria'yı review başında sabitle.",
+        "Her performans iddiasının baseline, sample window ve workload kapsamını iste.",
+        "Read kazancı yanında write, storage, blocking ve maintenance etkisini kontrol et.",
+        "Unknown/assumption alanlarını explicit validation task'a dönüştür.",
+        "Rollout gözlemleri, monitoring metric'leri ve rollback trigger'larını yaz.",
+        "Approval öncesi tüm kritik gate'lerin evidence veya onaylı exception ile kapandığını doğrula."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "7. Transfer: review contract'ı SQL dışındaki veri ürünlerine taşı",
+      "title_en": "7. Transfer: carry the review contract into other data products",
+      "body_tr": "Qlik app review'da association correctness, reload time, front-end response, governance ve rollback; Python pipeline review'da schema contract, idempotency, memory/runtime, observability ve retry; Excel model review'da source lineage, refresh, formula/data-model correctness ve maintainability aynı gate düşüncesini kullanır. Araç değişir ama evidence→risk→validation→acceptance yapısı sabit kalır.",
+      "body_en": "Qlik applications, Python pipelines, and Excel models can use the same evidence-to-risk-to-validation-to-acceptance structure even though the technical mechanisms differ. The reusable skill is disciplined review, not a SQL-specific checklist.",
+      "transfer_tasks": [
+        {
+          "tool": "Qlik Sense",
+          "task_tr": "Bir dashboard değişikliği için correctness, reload, interaction latency, model risk ve rollback gate'lerinden review şablonu üret."
+        },
+        {
+          "tool": "Python / ETL",
+          "task_tr": "Pipeline PR'ı için schema, idempotency, runtime/memory, retry, observability ve rollback kanıtlarını iste."
+        },
+        {
+          "tool": "Excel / Power Query",
+          "task_tr": "Refresh/folding değişikliği için source lineage, result reconciliation, refresh süresi ve maintainability gate'leri tanımla."
+        }
+      ]
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: expert review'u checklist değil savunulabilir karar kaydı olarak tut",
+      "title_en": "8. Retrieval: treat expert review as a defensible decision record",
+      "body_tr": "D+1'de evidence, assumption ve preference farkını örneklerle açıkla. D+7'de yeni design-options fixture'ında hangi seçeneklerin tüm guardrail'leri geçtiğini elle belirle ve her elenen seçenek için hangi gate'in kırıldığını yaz. D+30'da bilmediğin bir SQL tasarımı için context, correctness, performance, concurrency, operability, validation, rollout, monitoring ve rollback bölümlerinden oluşan tarafsız review memo hazırla.",
+      "body_en": "On D+1, distinguish evidence, assumptions, and preferences. On D+7, manually evaluate a new option matrix. On D+30, produce a neutral architecture review memo covering context, correctness, performance, concurrency, operability, validation, rollout, monitoring, and rollback.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "separate-evidence-assumption-preference"
+        },
+        {
+          "day": 7,
+          "evidence": "evaluate-architecture-gates"
+        },
+        {
+          "day": 30,
+          "evidence": "produce-defensible-architecture-review"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "Architecture review gate'lerini correctness, performance, concurrency, operability ve rollback başlıklarında açıklayıp preference yorumlarından ayır.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Design option matrix'inde hangi gate'in neden kırıldığını ölçülen değer ve acceptance criteria üzerinden yorumla.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Yedi acceptance guardrail'ini iki fixture üzerinde exact OPTION_ID setiyle uygulayan semantic review sorgusunu tamamla.",
+      "weight": 30
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Aynı evidence→risk→validation→acceptance review yapısını Qlik, Python veya Excel veri ürününe taşı ve monitoring/rollback planı ekle.",
+      "weight": 35
+    }
+  ],
+  "sources": [
+    "ms-query-store-scenarios",
+    "ms-index-design",
+    "ms-locking-row-versioning",
+    "ms-execution-plans",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}

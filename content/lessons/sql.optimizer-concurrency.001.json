@@ -1,0 +1,195 @@
+{
+  "id": "sql.optimizer-concurrency.001",
+  "module_id": "sql.optimizer-concurrency",
+  "track": "sql",
+  "level": "Expert",
+  "status": "production-candidate",
+  "title_tr": "Optimizer reasoning ve concurrency: plan variability, blocking, deadlock ve row versioning",
+  "title_en": "Optimizer reasoning and concurrency: plan variability, blocking, deadlocks, and row versioning",
+  "subtitle_tr": "Tek sorgu performansından workload davranışına geç: data distribution ve plan variability'yi, transaction süresi, isolation, blocking, deadlock ve version-store maliyetiyle birlikte yorumla.",
+  "subtitle_en": "Move from single-query tuning to workload reasoning by connecting data distribution and plan variability with transaction duration, isolation, blocking, deadlocks, and row-versioning cost.",
+  "estimated_minutes_range": [
+    110,
+    165
+  ],
+  "why_it_matters_tr": "Production database aynı anda çok sayıda sorgu ve transaction çalıştırır. Tek başına hızlı olan bir plan concurrency altında blocking üretebilir; uzun transaction lock süresini büyütebilir; deadlock döngüsü normal blocking ile karıştırılabilir; row-versioning read blocking'i azaltırken version store maliyeti oluşturabilir. Ayrıca data distribution ve parameter değerleri plan seçimini değiştirebilir. Expert seviye analiz, plan ve concurrency belirtilerini tek kök nedene zorlamak yerine ayrı sinyaller olarak toplar ve isolation/correctness sözleşmesini bozmadan trade-off savunur.",
+  "why_it_matters_en": "A production database runs many queries and transactions concurrently. A plan that is fast in isolation can still create blocking; deadlocks differ from normal waits; row versioning reduces some read blocking while consuming version-store resources; and parameter distribution can change plan behavior. Expert analysis keeps these signals distinct.",
+  "prerequisites": [
+    "sql.production-tuning.001"
+  ],
+  "learning_objectives": [
+    "Plan variability'yi data distribution, statistics ve parameter sensitivity bağlamında yorumlamak; tek cached plan varsayımının sınırlarını açıklamak.",
+    "Blocking ile deadlock'u wait süresi ve cyclic dependency açısından ayırmak.",
+    "READ COMMITTED locking, RCSI/SNAPSHOT row versioning ve write-lock davranışını correctness/concurrency trade-offlarıyla karşılaştırmak.",
+    "Transaction süresinin lock retention ve version-store pressure üzerindeki etkisini teşhis etmek.",
+    "Sentetik workload evidence üzerinde plan instability, blocking, deadlock ve version pressure sinyallerini bağımsız olarak üretmek."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "Correctness-first benchmark ve plan kanıtı disiplinini uygulayabiliyor musun?",
+      "if_no_tr": "Önce `sql.production-tuning.001` dersinde baseline, regression ve rollback kanıtını tamamla."
+    }
+  ],
+  "lab": {
+    "id": "sql-optimizer-concurrency-v1",
+    "engine": "DuckDB-Wasm",
+    "target_semantics": "T-SQL-compatible evidence triage over synthetic workload telemetry",
+    "requires_for_section": "independent-practice",
+    "title_tr": "Semantic SQL Lab · workload sinyallerini birbirine karıştırma",
+    "title_en": "Semantic SQL Lab · keep workload signals distinct",
+    "task_tr": "`workload_signals` tablosunda dört sinyali UNION ALL ile üret. `plan_instability`: PLAN_COUNT en az 3 ve EST_ROWS/ACT_ROWS farkı en az 10x. `blocking`: BLOCK_MS en az 1000. `deadlock`: DEADLOCK_COUNT sıfırdan büyük. `version_pressure`: VERSION_MB en az 500. Aynı CASE_ID birden fazla sinyal üretebilir. Çıktı SIGNAL, CASE_ID kolonlarıyla SIGNAL ve CASE_ID artan sırada olmalı.",
+    "task_en": "From workload_signals emit four independent signals. plan_instability requires at least three plans plus a 10x estimate/actual mismatch; blocking requires at least 1000 ms blocked time; deadlock requires a positive deadlock count; version_pressure requires at least 500 MB. A case may emit multiple signals. Order by SIGNAL and CASE_ID.",
+    "schema": "workload_signals(CASE_ID VARCHAR, EST_ROWS INTEGER, ACT_ROWS INTEGER, PLAN_COUNT INTEGER, BLOCK_MS INTEGER, DEADLOCK_COUNT INTEGER, VERSION_MB INTEGER)",
+    "starter_sql": "SELECT CASE_ID\nFROM workload_signals\nWHERE BLOCK_MS >= 1000\nORDER BY CASE_ID;",
+    "engine_note_tr": "Lab SQL Server locking veya optimizer'ı emüle etmez; yalnız telemetri sınıflandırma mantığını çalıştırır. Isolation, deadlock, row versioning ve PSP davranışları resmi Microsoft dokümantasyonu üzerinden öğretilir.",
+    "engine_note_en": "The lab does not emulate SQL Server locking or the optimizer. It only executes telemetry-classification logic; isolation, deadlocks, row versioning, and parameter-sensitive behavior come from official Microsoft documentation."
+  },
+  "sections": [
+    {
+      "id": "workload-model",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: plan problemi ile concurrency problemini aynı kutuya atma",
+      "title_en": "1. Mental model: do not collapse plan and concurrency problems into one bucket",
+      "body_tr": "Yüksek duration dört farklı sınıftan gelebilir: kötü/uygunsuz plan, normal blocking, deadlock sonrası retry, veya resource/version pressure. Aynı telemetry ekranında görünseler de mekanizmaları farklıdır. Önce sorgunun çalışırken mi yoksa beklerken mi zaman harcadığını; planın değişip değişmediğini; transaction'ın hangi resource'u tuttuğunu; olayın cycle içerip içermediğini ayır. Tek 'SQL yavaş' etiketi yanlış müdahaleye yol açar.",
+      "body_en": "High duration can come from an inefficient plan, normal blocking, deadlock and retry behavior, or resource pressure. These mechanisms require different evidence. Separate running time from waiting time, plan changes from lock conflicts, and ordinary waits from cycles."
+    },
+    {
+      "id": "isolation-versioning",
+      "layer": "mental_model",
+      "title_tr": "2. Isolation ve row versioning: correctness kontratı önce gelir",
+      "title_en": "2. Isolation and row versioning: correctness contract comes first",
+      "body_tr": "Isolation seviyesi yalnız performans ayarı değildir; hangi concurrent değişikliklerin okuyucuya görünür olabileceğini belirleyen correctness sözleşmesidir. Lock-based READ COMMITTED okumalarda shared-lock davranışı blocking yaratabilir; RCSI/SNAPSHOT row versions kullanarak bazı read/write blocking türlerini azaltabilir. Ancak writes yine korunur ve version store kaynak tüketir. 'NOLOCK ile hızlandır' gibi kestirmeler veri tutarlılığı riskini ölçmeden production kararı olamaz.",
+      "body_en": "Isolation is a correctness contract, not just a performance knob. Lock-based reads and row-versioning reads have different blocking behavior and resource trade-offs. Writes still require protection, and versioning consumes resources. Concurrency changes must preserve required semantics."
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "3. Worked example: aynı case birden fazla sinyal taşıyabilir",
+      "title_en": "3. Worked example: one case can carry multiple signals",
+      "body_tr": "C1 üçten fazla plan ve 50x estimate/actual farkıyla plan-instability sinyali üretir. C2 yalnız uzun block time ile normal blocking adaydır. C3 deadlock count ürettiğinde blocking'den farklı olarak cycle kanıtı gerekir. C4 version store 800 MB ile version pressure işaretidir. C5 tüm eşikleri aynı anda geçebilir; bu, tek root-cause olduğu anlamına gelmez. Önce sinyalleri ayır, sonra timeline ve engine kanıtıyla ilişkilerini test et.",
+      "body_en": "A case can trigger several telemetry signals at once. That does not prove a single root cause. Separate plan instability, blocking, deadlock, and version pressure first, then use timelines and engine-specific evidence to test causal relationships.",
+      "code": "WITH signals AS (\n  SELECT 'plan_instability' AS SIGNAL, CASE_ID FROM workload_signals\n  WHERE PLAN_COUNT>=3 AND (ACT_ROWS>=EST_ROWS*10 OR EST_ROWS>=ACT_ROWS*10)\n  UNION ALL SELECT 'blocking', CASE_ID FROM workload_signals WHERE BLOCK_MS>=1000\n  UNION ALL SELECT 'deadlock', CASE_ID FROM workload_signals WHERE DEADLOCK_COUNT>0\n  UNION ALL SELECT 'version_pressure', CASE_ID FROM workload_signals WHERE VERSION_MB>=500\n)\nSELECT SIGNAL,CASE_ID FROM signals ORDER BY SIGNAL,CASE_ID;",
+      "explanation_tr": "Telemetry eşiği teşhis değil triage üretir; SQL Server DMVs, Query Store, Extended Events ve deadlock graph gibi engine kanıtlarıyla doğrulanmalıdır.",
+      "explanation_en": "Telemetry thresholds produce triage, not diagnosis. Confirm them with engine evidence such as Query Store, waits, Extended Events, and deadlock graphs."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "4. Guided practice: blocking, deadlock ve PSP için farklı sorular sor",
+      "title_en": "4. Guided practice: ask different questions for blocking, deadlocks, and plan sensitivity",
+      "body_tr": "Blocking'de blocker kim, hangi lock/resource tutuluyor, transaction ne zamandır açık ve neden commit olmuyor sor. Deadlock'ta cycle içindeki process/resource sırasını ve victim graph'ını incele; normal blocking'i deadlock sanma. Plan variability'de aynı query'nin parameter/data distribution ve statistics değişimiyle farklı plan seçip seçmediğini Query Store geçmişinde karşılaştır. Row-versioning tarafında version-store büyümesi ve uzun transaction'ların cleanup'ı geciktirip geciktirmediğini kontrol et.",
+      "body_en": "For blocking, identify the blocker, resource, and transaction duration. For deadlocks, inspect the cycle and victim graph. For plan variability, compare plans across parameters and data distributions. For row versioning, monitor version-store pressure and long-running transactions.",
+      "prompts": [
+        "10 saniyelik blocking ile deadlock'u hangi kanıt kesin olarak ayırır?",
+        "Aynı stored procedure bazı parametrelerde çok yavaşsa plan-history ve data-distribution açısından ne toplarsın?",
+        "RCSI açmak read blocking'i azaltabilirken hangi correctness ve resource etkilerini ayrıca doğrulaman gerekir?"
+      ]
+    },
+    {
+      "id": "independent-practice",
+      "layer": "independent_practice",
+      "title_tr": "5. Bağımsız üretim: dört workload sinyalini iki fixture'da ayır",
+      "title_en": "5. Independent production: separate four workload signals across two fixtures",
+      "body_tr": "Semantic SQL Lab'da plan instability, blocking, deadlock ve version pressure koşullarını bağımsız UNION ALL dallarında üret. Edge fixture bazı case'lerde birden fazla sinyali aynı anda taşır; evaluator duplicate olmayan exact SIGNAL/CASE_ID satırlarını bekler. Geçtikten sonra her sinyal için SQL Server'da toplayacağın bir engine kanıtını ve yanlış-pozitif ihtimalini yaz.",
+      "body_en": "Produce the four workload signals independently. The edge fixture includes cases with multiple signals. After passing, name one SQL Server engine evidence source and one false-positive risk for each signal.",
+      "requires_lab_pass": "sql-optimizer-concurrency-v1",
+      "evidence_required": [
+        "semantic_lab_pass_visible_and_edge_fixture",
+        "blocking_vs_deadlock_reasoning",
+        "isolation_correctness_tradeoff",
+        "plan_variability_evidence_plan"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "6. Debugging: wait'i query rewrite ile, planı NOLOCK ile düzeltmeye çalışma",
+      "title_en": "6. Debugging: do not fix waits with rewrites or plans with unsafe isolation shortcuts",
+      "body_tr": "Blocking root cause uzun transaction ise query text'i optimize etmek yardımcı olabilir ama asıl lock retention uygulama transaction scope'undan geliyor olabilir. Deadlock'ta index veya erişim sırası etkili olabilir fakat graph olmadan tahmin yürütme. Parameter sensitivity'de cache temizlemek geçici semptom düzeltmesi olabilir; kalıcı çözüm workload ve sürüm özelliklerine göre seçilir. Isolation hint'i ile hızlı sonuç almak, tutarlılık kontratını değiştiriyorsa performans çözümü sayılmaz.",
+      "body_en": "If blocking comes from transaction scope, a query rewrite may not address lock retention. Do not diagnose deadlocks without the graph, or treat cache clearing as a permanent parameter-sensitivity fix. An isolation shortcut that changes correctness is not a valid performance solution.",
+      "diagnostic_sequence": [
+        "Running time ile wait time'ı ayır ve timeline oluştur.",
+        "Blocking ise blocker/session/transaction scope ve locked resource'u belirle.",
+        "Deadlock ise xml_deadlock_report/deadlock graph ile cycle'ı doğrula.",
+        "Plan variability ise Query Store plan/history ve parameter dağılımını karşılaştır.",
+        "Row-versioning kullanılıyorsa version-store kullanımı ve uzun transaction'ları ölç.",
+        "Değişiklik sonrası correctness, throughput, waits ve retry/deadlock oranını birlikte doğrula."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "7. Transfer: concurrency düşüncesi pipeline ve uygulama katmanında da yaşar",
+      "title_en": "7. Transfer: concurrency reasoning also applies to pipelines and applications",
+      "body_tr": "Python ETL aynı dosya/tabloya paralel yazdığında idempotency ve transaction boundary; Qlik reload aynı kaynağı tüketirken source contention; Excel refresh paralel kaynak çağrılarında throttling; web uygulamasında retry ve optimistic concurrency benzer koordinasyon problemleridir. SQL Server lock modlarını bire bir taşımak yerine shared resource, consistency contract, contention evidence ve retry/idempotency kavramlarını transfer et.",
+      "body_en": "Parallel ETL, Qlik reloads, Excel refreshes, and web applications all face shared-resource coordination, consistency, contention, and retry concerns. Transfer the reasoning contract rather than SQL Server lock-mode details.",
+      "transfer_tasks": [
+        {
+          "tool": "Python / ETL",
+          "task_tr": "Aynı target'a paralel yazan iki job için idempotency, transaction boundary ve retry contract'ı tasarla."
+        },
+        {
+          "tool": "Qlik Sense",
+          "task_tr": "Reload kaynak contention'ı ile app expression yavaşlığını hangi timeline ve source evidence ile ayıracağını yaz."
+        },
+        {
+          "tool": "Web / API",
+          "task_tr": "Optimistic concurrency ve retry tasarımında duplicate side-effect'i önleyen idempotency kuralı öner."
+        }
+      ]
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: workload triage ağacını geri çağır",
+      "title_en": "8. Retrieval: retrieve the workload triage tree",
+      "body_tr": "D+1'de blocking/deadlock farkını, isolation correctness rolünü ve row-versioning maliyetini açıkla. D+7'de yeni workload fixture'ında dört signal satırını elle çıkar. D+30'da 'bazı kullanıcılar yavaşlık yaşıyor' vakası için Query Store, waits, blocking chain, deadlock graph, transaction scope ve version-store ölçülerini hangi sırayla toplayacağını; hangi kanıtın hangi hipotezi destekleyeceğini yaz.",
+      "body_en": "On D+1, explain blocking versus deadlock, isolation semantics, and row-versioning cost. On D+7, manually derive the four telemetry signals. On D+30, design an investigation that combines plan history, waits, blocking chains, deadlock graphs, transaction scope, and version-store evidence.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explain-concurrency-contracts"
+        },
+        {
+          "day": 7,
+          "evidence": "predict-workload-signals"
+        },
+        {
+          "day": 30,
+          "evidence": "design-cross-signal-workload-investigation"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "Blocking, deadlock, row versioning, isolation ve parameter-sensitive plan kavramlarını mekanizma ve correctness sınırlarıyla açıkla.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Workload telemetry'de plan instability, blocking, deadlock ve version pressure sinyallerini birbirine karıştırmadan yorumla.",
+      "weight": 25
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Dört sinyali visible/edge fixture üzerinde exact SIGNAL/CASE_ID setiyle üreten semantic triage sorgusunu tamamla.",
+      "weight": 30
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Shared-resource contention ve retry/idempotency mantığını ETL, Qlik veya web application concurrency senaryosuna taşı.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "ms-execution-plans",
+    "ms-statistics",
+    "ms-locking-row-versioning",
+    "ms-deadlocks",
+    "ms-psp",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}

@@ -42,7 +42,7 @@ try{
   assert.match(await page.locator('#lessonTitle').textContent(),/Satır neyi temsil ediyor/);
   assert.equal(await page.locator('#lessonOutline .outline-item').count(),8);
   assert.equal(await page.locator('#sourceList .source-item').count(),3);
-  assert.match(await page.locator('#sequencePosition').textContent(),/1 \/ 8/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/1 \/ 12/);
   assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
   assert.match(await page.locator('#nextLessonLink').getAttribute('href'),/sql\.select-null-filtering\.001/);
 
@@ -63,7 +63,7 @@ try{
   assert.match(await page.locator('#lessonTitle').textContent(),/SELECT gerçekten ne yapıyor/);
   assert.equal(await page.locator('#lessonOutline .outline-item').count(),8);
   assert.equal(await page.locator('#sourceList .source-item').count(),6);
-  assert.match(await page.locator('#sequencePosition').textContent(),/2 \/ 8/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/2 \/ 12/);
   assert.equal(await page.locator('#previousLessonLink').isVisible(),true);
   assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
   assert.match(await page.locator('#nextLessonLink').getAttribute('href'),/sql\.aggregation-grain\.001/);
@@ -120,7 +120,7 @@ ORDER BY STATUS, BOOKING_ID;`);
   await page.locator('#nextLessonLink').click();
   await page.locator('#lessonHero').waitFor({state:'visible'});
   assert.match(await page.locator('#lessonTitle').textContent(),/GROUP BY neyi değiştiriyor/);
-  assert.match(await page.locator('#sequencePosition').textContent(),/3 \/ 8/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/3 \/ 12/);
   assert.equal(await page.locator('#previousLessonLink').isVisible(),true);
   assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
   assert.match(await page.locator('#nextLessonLink').getAttribute('href'),/sql\.join-cardinality\.001/);
@@ -175,7 +175,7 @@ ORDER BY HOTEL, SEGMENT;`);
   await page.locator('#nextLessonLink').click();
   await page.locator('#lessonHero').waitFor({state:'visible'});
   assert.match(await page.locator('#lessonTitle').textContent(),/JOIN neden satır çoğaltır/);
-  assert.match(await page.locator('#sequencePosition').textContent(),/4 \/ 8/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/4 \/ 12/);
   assert.equal(await page.locator('#previousLessonLink').isVisible(),true);
   assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
   assert.match(await page.locator('#nextLessonLink').getAttribute('href'),/sql\.cte-subquery-sets\.001/);
@@ -233,14 +233,14 @@ ORDER BY b.BOOKING_ID;`);
   await page.locator('#lessonWorkspace').waitFor({state:'visible'});
   assert.equal(await page.locator('#lessonSqlLab').isVisible(),true);
   assert.match(await page.locator('#lessonSqlLabStatus').textContent(),/geçti/);
-  assert.match(await page.locator('#sequencePosition').textContent(),/4 \/ 8/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/4 \/ 12/);
   assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
 
   await page.setViewportSize({width:1280,height:900});
   await page.locator('#nextLessonLink').click();
   await page.locator('#lessonHero').waitFor({state:'visible'});
   assert.match(await page.locator('#lessonTitle').textContent(),/CTE, subquery ve EXISTS/);
-  assert.match(await page.locator('#sequencePosition').textContent(),/5 \/ 8/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/5 \/ 12/);
   assert.equal(await page.locator('#previousLessonLink').isVisible(),true);
   assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
   assert.match(await page.locator('#nextLessonLink').getAttribute('href'),/sql\.window-semantics\.001/);
@@ -293,14 +293,14 @@ ORDER BY c.CUSTOMER_ID;`);
   await page.locator('#lessonWorkspace').waitFor({state:'visible'});
   assert.equal(await page.locator('#lessonSqlLab').isVisible(),true);
   assert.match(await page.locator('#lessonSqlLabStatus').textContent(),/geçti/);
-  assert.match(await page.locator('#sequencePosition').textContent(),/5 \/ 8/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/5 \/ 12/);
   assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
 
   await page.setViewportSize({width:1280,height:900});
   await page.locator('#nextLessonLink').click();
   await page.locator('#lessonHero').waitFor({state:'visible'});
   assert.match(await page.locator('#lessonTitle').textContent(),/Window functions/);
-  assert.match(await page.locator('#sequencePosition').textContent(),/6 \/ 8/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/6 \/ 12/);
   assert.equal(await page.locator('#previousLessonLink').isVisible(),true);
   assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
   assert.match(await page.locator('#nextLessonLink').getAttribute('href'),/sql\.analytical-patterns\.001/);
@@ -361,14 +361,14 @@ ORDER BY HOTEL, BUSINESS_DATE, EVENT_ID;`);
   await page.locator('#lessonWorkspace').waitFor({state:'visible'});
   assert.equal(await page.locator('#lessonSqlLab').isVisible(),true);
   assert.match(await page.locator('#lessonSqlLabStatus').textContent(),/geçti/);
-  assert.match(await page.locator('#sequencePosition').textContent(),/6 \/ 8/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/6 \/ 12/);
   assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
 
   await page.setViewportSize({width:1280,height:900});
   await page.locator('#nextLessonLink').click();
   await page.locator('#lessonHero').waitFor({state:'visible'});
   assert.match(await page.locator('#lessonTitle').textContent(),/Analitik SQL desenleri/);
-  assert.match(await page.locator('#sequencePosition').textContent(),/7 \/ 8/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/7 \/ 12/);
   assert.equal(await page.locator('#previousLessonLink').isVisible(),true);
   assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
   assert.match(await page.locator('#nextLessonLink').getAttribute('href'),/sql\.model-quality\.001/);
@@ -432,16 +432,16 @@ ORDER BY HOTEL, DAY_NO, EVENT_ID;`);
   await page.locator('#lessonWorkspace').waitFor({state:'visible'});
   assert.equal(await page.locator('#lessonSqlLab').isVisible(),true);
   assert.match(await page.locator('#lessonSqlLabStatus').textContent(),/geçti/);
-  assert.match(await page.locator('#sequencePosition').textContent(),/7 \/ 8/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/7 \/ 12/);
   assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
 
   await page.setViewportSize({width:1280,height:900});
   await page.locator('#nextLessonLink').click();
   await page.locator('#lessonHero').waitFor({state:'visible'});
   assert.match(await page.locator('#lessonTitle').textContent(),/Şema ve veri kalitesi/);
-  assert.match(await page.locator('#sequencePosition').textContent(),/8 \/ 8/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/8 \/ 12/);
   assert.equal(await page.locator('#previousLessonLink').isVisible(),true);
-  assert.equal(await page.locator('#nextLessonLink').isVisible(),false);
+  assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
   assert.equal(await page.locator('#sourceList .source-item').count(),5);
   assert.equal(await page.locator('#lessonSqlLab').isVisible(),true);
 
@@ -497,7 +497,114 @@ ORDER BY CHECK_NAME;`);
   await page.locator('#lessonWorkspace').waitFor({state:'visible'});
   assert.equal(await page.locator('#lessonSqlLab').isVisible(),true);
   assert.match(await page.locator('#lessonSqlLabStatus').textContent(),/geçti/);
-  assert.match(await page.locator('#sequencePosition').textContent(),/8 \/ 8/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/8 \/ 12/);
+
+
+  await page.setViewportSize({width:1280,height:900});
+  await page.locator('#nextLessonLink').click();
+  await page.locator('#lessonHero').waitFor({state:'visible'});
+  assert.match(await page.locator('#lessonTitle').textContent(),/Index, statistics ve execution plan/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/9 \/ 12/);
+  assert.equal(await page.locator('#sourceList .source-item').count(),5);
+  assert.equal(await page.locator('#lessonSqlLab').isVisible(),true);
+  await page.locator('#lessonOutline .outline-item').nth(4).click();
+  await page.locator('#sectionResponse').fill('Plan triage root-cause değildir; estimate/actual, scan reads ve lookup kanıtlarını ayrı sinyaller olarak üretip SQL Server actual plan, statistics ve workload ölçüleriyle doğrularım.');
+  await page.locator('#lessonSqlEditor').fill(`WITH issues AS (
+  SELECT 'cardinality_misestimation' AS ISSUE_TYPE, QUERY_ID FROM plan_evidence
+  WHERE ACT_ROWS >= EST_ROWS * 10 OR EST_ROWS >= ACT_ROWS * 10
+  UNION ALL SELECT 'lookup_hotspot', QUERY_ID FROM plan_evidence WHERE LOOKUPS >= 1000
+  UNION ALL SELECT 'scan_hotspot', QUERY_ID FROM plan_evidence WHERE ACCESS_METHOD='Scan' AND LOGICAL_READS >= 5000
+)
+SELECT ISSUE_TYPE, QUERY_ID FROM issues ORDER BY ISSUE_TYPE, QUERY_ID;`);
+  await page.locator('#runLessonSql').click();
+  await page.waitForFunction(()=>document.querySelector('#lessonSqlFeedback')?.textContent?.includes('Semantic test geçti'),{timeout:120000});
+  assert.equal(await page.locator('#lessonSqlTable tbody tr').count(),3);
+  assert.match(await page.locator('#lessonSqlFeedback').textContent(),/visible: PASS/);
+  assert.match(await page.locator('#lessonSqlFeedback').textContent(),/edge: PASS/);
+  await page.locator('#completeSection').click();
+
+  await page.locator('#nextLessonLink').click();
+  await page.locator('#lessonHero').waitFor({state:'visible'});
+  assert.match(await page.locator('#lessonTitle').textContent(),/Production tuning/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/10 \/ 12/);
+  assert.equal(await page.locator('#sourceList .source-item').count(),5);
+  assert.equal(await page.locator('#lessonSqlLab').isVisible(),true);
+  await page.locator('#lessonOutline .outline-item').nth(4).click();
+  await page.locator('#sectionResponse').fill('Önce exact result equality, sonra representative baseline; logical reads ve duration birlikte iyileşmeli. CPU, write overhead, concurrency, plan stability ve rollback ayrı production gate olarak kalır.');
+  await page.locator('#lessonSqlEditor').fill(`WITH baseline AS (
+  SELECT * FROM tuning_variants WHERE VARIANT='baseline'
+)
+SELECT c.QUERY_ID, c.VARIANT,
+       b.LOGICAL_READS-c.LOGICAL_READS AS READ_SAVING,
+       b.DURATION_MS-c.DURATION_MS AS DURATION_SAVING
+FROM tuning_variants c
+JOIN baseline b ON b.QUERY_ID=c.QUERY_ID
+WHERE c.VARIANT<>'baseline'
+  AND c.RESULT_HASH=b.RESULT_HASH
+  AND c.LOGICAL_READS*100<=b.LOGICAL_READS*80
+  AND c.DURATION_MS*100<=b.DURATION_MS*80
+ORDER BY c.QUERY_ID,c.VARIANT;`);
+  await page.locator('#runLessonSql').click();
+  await page.waitForFunction(()=>document.querySelector('#lessonSqlFeedback')?.textContent?.includes('Semantic test geçti'),{timeout:120000});
+  assert.equal(await page.locator('#lessonSqlTable tbody tr').count(),2);
+  assert.match(await page.locator('#lessonSqlFeedback').textContent(),/visible: PASS/);
+  assert.match(await page.locator('#lessonSqlFeedback').textContent(),/edge: PASS/);
+  await page.locator('#completeSection').click();
+
+  await page.locator('#nextLessonLink').click();
+  await page.locator('#lessonHero').waitFor({state:'visible'});
+  assert.match(await page.locator('#lessonTitle').textContent(),/Optimizer reasoning ve concurrency/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/11 \/ 12/);
+  assert.equal(await page.locator('#sourceList .source-item').count(),7);
+  assert.equal(await page.locator('#lessonSqlLab').isVisible(),true);
+  await page.locator('#lessonOutline .outline-item').nth(4).click();
+  await page.locator('#sectionResponse').fill('Blocking normal wait zinciridir; deadlock cycle kanıtı ister. Plan variability, version pressure ve transaction scope ayrı sinyallerdir; isolation değişikliği correctness contract ve resource cost ile değerlendirilir.');
+  await page.locator('#lessonSqlEditor').fill(`WITH signals AS (
+  SELECT 'plan_instability' AS SIGNAL, CASE_ID FROM workload_signals
+  WHERE PLAN_COUNT>=3 AND (ACT_ROWS>=EST_ROWS*10 OR EST_ROWS>=ACT_ROWS*10)
+  UNION ALL SELECT 'blocking', CASE_ID FROM workload_signals WHERE BLOCK_MS>=1000
+  UNION ALL SELECT 'deadlock', CASE_ID FROM workload_signals WHERE DEADLOCK_COUNT>0
+  UNION ALL SELECT 'version_pressure', CASE_ID FROM workload_signals WHERE VERSION_MB>=500
+)
+SELECT SIGNAL, CASE_ID FROM signals ORDER BY SIGNAL, CASE_ID;`);
+  await page.locator('#runLessonSql').click();
+  await page.waitForFunction(()=>document.querySelector('#lessonSqlFeedback')?.textContent?.includes('Semantic test geçti'),{timeout:120000});
+  assert.equal(await page.locator('#lessonSqlTable tbody tr').count(),8);
+  assert.match(await page.locator('#lessonSqlFeedback').textContent(),/visible: PASS/);
+  assert.match(await page.locator('#lessonSqlFeedback').textContent(),/edge: PASS/);
+  await page.locator('#completeSection').click();
+
+  await page.locator('#nextLessonLink').click();
+  await page.locator('#lessonHero').waitFor({state:'visible'});
+  assert.match(await page.locator('#lessonTitle').textContent(),/SQL mimari ve code review/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/12 \/ 12/);
+  assert.equal(await page.locator('#previousLessonLink').isVisible(),true);
+  assert.equal(await page.locator('#nextLessonLink').isVisible(),false);
+  assert.equal(await page.locator('#sourceList .source-item').count(),6);
+  assert.equal(await page.locator('#lessonSqlLab').isVisible(),true);
+  await page.locator('#lessonOutline .outline-item').nth(4).click();
+  await page.locator('#sectionResponse').fill('Review preference değil acceptance contracttır: correctness, latency/reads, write overhead, blocking, maintainability, observability ve rollback evidence ile ayrı gate olarak kapanmalıdır.');
+  await page.locator('#lessonSqlEditor').fill(`SELECT OPTION_ID
+FROM design_options
+WHERE RESULT_VALID=TRUE
+  AND P95_MS<=500
+  AND LOGICAL_READS<=10000
+  AND WRITE_OVERHEAD<=30
+  AND BLOCK_MS<=500
+  AND MAINT_RISK<>'High'
+  AND ROLLBACK_READY=TRUE
+ORDER BY OPTION_ID;`);
+  await page.locator('#runLessonSql').click();
+  await page.waitForFunction(()=>document.querySelector('#lessonSqlFeedback')?.textContent?.includes('Semantic test geçti'),{timeout:120000});
+  assert.equal(await page.locator('#lessonSqlTable tbody tr').count(),2);
+  assert.match(await page.locator('#lessonSqlFeedback').textContent(),/visible: PASS/);
+  assert.match(await page.locator('#lessonSqlFeedback').textContent(),/edge: PASS/);
+  await page.locator('#completeSection').click();
+  await page.setViewportSize({width:390,height:844});
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#lessonWorkspace').waitFor({state:'visible'});
+  assert.match(await page.locator('#lessonSqlLabStatus').textContent(),/geçti/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/12 \/ 12/);
 
   assert.deepEqual(pageErrors,[]);
   assert.deepEqual(consoleErrors,[]);

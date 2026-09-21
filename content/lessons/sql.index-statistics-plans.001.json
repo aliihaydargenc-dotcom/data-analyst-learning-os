@@ -1,0 +1,194 @@
+{
+  "id": "sql.index-statistics-plans.001",
+  "module_id": "sql.index-statistics-plans",
+  "track": "sql",
+  "level": "L5",
+  "status": "production-candidate",
+  "title_tr": "Index, statistics ve execution plan: tahmin ile gerçek davranışı ayır",
+  "title_en": "Indexes, statistics, and execution plans: separate estimates from runtime behavior",
+  "subtitle_tr": "Plan ikonlarını ezberlemek yerine optimizer girdilerini, estimated/actual cardinality farkını, access path'i ve index maliyetini aynı kanıt zincirinde yorumla.",
+  "subtitle_en": "Interpret optimizer inputs, estimated-versus-actual cardinality, access paths, and index trade-offs as one evidence chain instead of memorizing plan icons.",
+  "estimated_minutes_range": [
+    95,
+    140
+  ],
+  "why_it_matters_tr": "Bir sorgunun yavaş olması tek başına 'index eksik' demek değildir. SQL Server optimizer sorgu metni, şema/index yapısı ve statistics bilgisinden bir execution plan seçer; planın kalitesi cardinality tahminlerine ve workload gerçekliğine bağlıdır. Seek her zaman iyi, scan her zaman kötü değildir. Güçlü performans teşhisi estimated/actual rows, logical reads, lookup yoğunluğu, operator davranışı ve yazma maliyetini birlikte ölçer; sonra hipotezi kontrollü bir değişiklikle test eder.",
+  "why_it_matters_en": "A slow query does not automatically mean that an index is missing. SQL Server chooses a plan from the query, schema and index design, and statistics. Strong diagnosis compares estimates with actual rows, reads, access methods, lookups, and write cost before proposing a change.",
+  "prerequisites": [
+    "sql.analytical-patterns.001",
+    "sql.model-quality.001"
+  ],
+  "learning_objectives": [
+    "Execution plan'ı sonuç üretme stratejisi olarak okuyup operator ikonundan önce veri akışı ve cardinality'yi yorumlamak.",
+    "Estimated rows ile actual rows arasındaki büyük sapmayı statistics, predicate ve data distribution hipotezleriyle ilişkilendirmek.",
+    "Seek/scan/lookup davranışını tablo boyutu, selectivity, logical reads ve covering ihtiyacıyla birlikte değerlendirmek.",
+    "Index tasarımında key/include sırası, write amplification ve over-indexing trade-offlarını açıklamak.",
+    "Plan kanıtından cardinality, scan ve lookup hotspot sinyallerini executable bir triage sorgusuyla ayırmak."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "Window/analytical sorgularda grain'i ve model-quality invariant'larını açıklayabiliyor musun?",
+      "if_no_tr": "Önce `sql.analytical-patterns.001` ve `sql.model-quality.001` derslerindeki sonuç doğruluğu ve veri kalitesi kanıtlarını tamamla."
+    }
+  ],
+  "lab": {
+    "id": "sql-index-statistics-plans-v1",
+    "engine": "DuckDB-Wasm",
+    "target_semantics": "T-SQL-compatible SELECT / WITH / UNION ALL evidence-triage subset over synthetic plan evidence",
+    "requires_for_section": "independent-practice",
+    "title_tr": "Semantic SQL Lab · plan kanıtını triage et",
+    "title_en": "Semantic SQL Lab · triage plan evidence",
+    "task_tr": "Sentetik `plan_evidence` tablosunda üç sinyali ayrı satırlar halinde üret. `cardinality_misestimation`: ACT_ROWS, EST_ROWS'un en az 10 katıysa veya tersi ise. `lookup_hotspot`: LOOKUPS en az 1000 ise. `scan_hotspot`: ACCESS_METHOD='Scan' ve LOGICAL_READS en az 5000 ise. Aynı QUERY_ID birden fazla sinyal üretebilir. Çıktı ISSUE_TYPE, QUERY_ID kolonlarıyla ISSUE_TYPE ve QUERY_ID artan sırada olmalı.",
+    "task_en": "From synthetic plan_evidence, emit three evidence signals. Flag cardinality_misestimation for a 10x or greater estimate/actual mismatch, lookup_hotspot for at least 1000 lookups, and scan_hotspot for scans with at least 5000 logical reads. A query may emit multiple signals. Return ISSUE_TYPE and QUERY_ID ordered by both columns.",
+    "schema": "plan_evidence(QUERY_ID VARCHAR, EST_ROWS INTEGER, ACT_ROWS INTEGER, ACCESS_METHOD VARCHAR, LOOKUPS INTEGER, LOGICAL_READS INTEGER, EXEC_MS INTEGER)",
+    "starter_sql": "SELECT QUERY_ID\nFROM plan_evidence\nWHERE ACCESS_METHOD = 'Scan'\nORDER BY QUERY_ID;",
+    "engine_note_tr": "Lab gerçek SQL Server execution plan üretmez. DuckDB-Wasm yalnız sentetik plan kanıtlarını sınıflandırır; optimizer, statistics, index ve actual-plan davranışı resmi SQL Server kaynakları üzerinden öğretilir.",
+    "engine_note_en": "The lab does not generate SQL Server execution plans. DuckDB-Wasm only classifies synthetic plan evidence; optimizer, statistics, index, and actual-plan behavior are taught from official SQL Server sources."
+  },
+  "sections": [
+    {
+      "id": "optimizer-evidence-chain",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: plan bir kanıt zincirinin ortasıdır",
+      "title_en": "1. Mental model: a plan sits in the middle of an evidence chain",
+      "body_tr": "Execution plan, sorgu metninin tek başına görsel açıklaması değildir. Optimizer sorgu, şema/index tanımları ve statistics üzerinden cardinality tahminleri üretir; bu tahminler join tipi, access path, memory grant ve operator sırasını etkiler. Bu nedenle önce sonuç doğruluğunu sabitle, sonra estimated/actual rows farkını ve gerçek I/O/zaman ölçülerini incele. Planı 'kötü ikon avı' olarak değil, tahmin → seçim → runtime sonucu zinciri olarak oku.",
+      "body_en": "An execution plan is not merely a visual form of SQL text. The optimizer combines the query, schema and indexes, and statistics to estimate cardinality, and those estimates influence access paths and operator choices. Read the plan as estimate, choice, and runtime evidence."
+    },
+    {
+      "id": "index-statistics-contract",
+      "layer": "mental_model",
+      "title_tr": "2. Index ve statistics aynı şey değildir",
+      "title_en": "2. Indexes and statistics are different contracts",
+      "body_tr": "Index veri erişim yapısıdır; statistics ise optimizer'ın veri dağılımını tahmin etmek için kullandığı bilgidir. Yeni index bazen yeni statistics de getirir ama 'statistics güncel' olmak uygun index olduğu anlamına gelmez; uygun index bulunması da tahminlerin her parametre ve dağılım için kusursuz olacağını garanti etmez. Seek/scan seçimini tek başına puanlama: küçük tabloda scan ucuz olabilir, düşük selectivity'de seek + çok lookup daha pahalı olabilir.",
+      "body_en": "An index is an access structure, while statistics help the optimizer estimate data distribution. Current statistics do not guarantee the right index, and an index does not guarantee perfect estimates. A scan can be reasonable and a seek plus many lookups can be expensive."
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "3. Worked example: üç ayrı hotspot'u aynı tabloda ayır",
+      "title_en": "3. Worked example: separate three hotspot signals",
+      "body_tr": "Bir plan özet tablosunda Q1 için estimate 100 iken actual 5000 ise önce cardinality sapmasını işaretle. Q2 geniş bir scan ile 12.000 logical read üretiyorsa access path ve predicate/index uyumunu incele. Q3 seek kullansa bile 3.500 lookup yapıyorsa 'seek var, sorun yok' sonucu çıkarma. Aynı sorguda birden fazla sinyal olabilir; triage sorgusu tanı koymaz, hangi kanıtın daha derin inceleneceğini deterministik biçimde sıralar.",
+      "body_en": "If Q1 estimates 100 rows but returns 5000, flag cardinality error first. A high-read scan and a seek with thousands of lookups are different evidence signals. The triage query does not diagnose root cause; it identifies where deeper plan inspection should begin.",
+      "code": "WITH issues AS (\n  SELECT 'cardinality_misestimation' AS ISSUE_TYPE, QUERY_ID\n  FROM plan_evidence\n  WHERE ACT_ROWS >= EST_ROWS * 10 OR EST_ROWS >= ACT_ROWS * 10\n  UNION ALL\n  SELECT 'lookup_hotspot', QUERY_ID FROM plan_evidence WHERE LOOKUPS >= 1000\n  UNION ALL\n  SELECT 'scan_hotspot', QUERY_ID FROM plan_evidence\n  WHERE ACCESS_METHOD = 'Scan' AND LOGICAL_READS >= 5000\n)\nSELECT ISSUE_TYPE, QUERY_ID FROM issues ORDER BY ISSUE_TYPE, QUERY_ID;",
+      "explanation_tr": "Bu eşikler eğitim fixture'ı için sabittir; gerçek production eşikleri workload baseline'ına göre belirlenir.",
+      "explanation_en": "These thresholds are fixed for the learning fixture. Production thresholds should be derived from workload baselines."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "4. Guided practice: planı operator adından önce sorgula",
+      "title_en": "4. Guided practice: question the plan before naming operators",
+      "body_tr": "Bir actual plan açtığında önce sorgunun hedef grain ve filter kapsamını doğrula. Sonra yüksek maliyet yüzdesine atlamak yerine actual/estimated row farklarını, satırların hangi operatörde büyüdüğünü, logical read ve elapsed-time ölçülerini, lookup sayısını ve predicate'in SARGable olup olmadığını kontrol et. Missing-index önerisini doğrudan CREATE INDEX komutu sayma; mevcut index'ler, write workload ve benzer sorgularla çakışmayı da incele.",
+      "body_en": "When reading an actual plan, verify the intended result and filters first. Then inspect estimate/actual gaps, row growth, reads, elapsed time, lookups, and predicate shape. Treat missing-index suggestions as evidence, not commands.",
+      "prompts": [
+        "Estimate 100, actual 100.000 olduğunda önce hangi üç hipotezi test edersin?",
+        "Seek + 50.000 key lookup ile scan arasında karar vermek için hangi ölçüleri toplarsın?",
+        "Bir index önerisinin read kazancı ile write/storage maliyetini nasıl birlikte değerlendirirsin?"
+      ]
+    },
+    {
+      "id": "independent-practice",
+      "layer": "independent_practice",
+      "title_tr": "5. Bağımsız üretim: plan evidence triage sorgusunu iki fixture'da kanıtla",
+      "title_en": "5. Independent production: prove plan-evidence triage on two fixtures",
+      "body_tr": "Semantic SQL Lab'da üç issue tipini exact koşullarla üret. Visible fixture her issue tipini ayrı bir query üzerinde gösterir; edge fixture aynı query'nin birden fazla sinyal üretmesini de içerir. Evaluator kolonları ve satır setini exact karşılaştırır. Geçtikten sonra her sinyal için 'kanıt', 'olası hipotez' ve 'sonraki doğrulama' ayrımını yaz; triage sonucunu doğrudan root-cause ilan etme.",
+      "body_en": "Produce all three issue types with the exact rules. The edge fixture includes a query that triggers multiple signals. After passing, separate evidence, hypothesis, and next validation step instead of treating triage output as root cause.",
+      "requires_lab_pass": "sql-index-statistics-plans-v1",
+      "evidence_required": [
+        "semantic_lab_pass_visible_and_edge_fixture",
+        "estimate_actual_reasoning",
+        "index_statistics_tradeoff",
+        "plan_followup_validation"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "6. Debugging: plan tavsiyesini reçeteye çevirmeden önce doğrula",
+      "title_en": "6. Debugging: validate plan suggestions before turning them into prescriptions",
+      "body_tr": "En sık hata 'scan gördüm index ekledim' veya 'missing index çıktı, uyguladım' yaklaşımıdır. Önce baseline al; sonra statistics tazeliği, data skew, implicit conversion, function-wrapped predicate, lookup fan-out ve parameter sensitivity gibi alternatifleri ayır. Index değişikliğini kontrollü ortamda test et ve yalnız tek sorgunun süresine değil logical reads, CPU, write overhead ve komşu workload etkisine bak. Sonuç doğruluğu değişiyorsa performans testi zaten geçersizdir.",
+      "body_en": "Common failures include adding an index merely because a scan or missing-index hint appeared. Establish a baseline, test alternative causes such as skew or non-SARGable predicates, and measure reads, CPU, writes, and neighboring workload impact while preserving identical results.",
+      "diagnostic_sequence": [
+        "Sonuç seti ve parameter/filter kapsamını baseline ile sabitle.",
+        "Estimated/actual cardinality farklarını ve statistics bağlamını incele.",
+        "Predicate, conversion ve function kullanımının access path'i bozup bozmadığını kontrol et.",
+        "Mevcut index ve lookup davranışını read/write maliyetiyle birlikte ölç.",
+        "Tek değişkenli bir tuning deneyi yap ve Query Store/benchmark ile önce-sonra karşılaştır.",
+        "Kazanç yoksa değişikliği geri al; yeni hipotezi ayrı test et."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "7. Transfer: performans kanıtı araçtan bağımsız bir düşünme biçimidir",
+      "title_en": "7. Transfer: performance evidence is a tool-independent reasoning pattern",
+      "body_tr": "Qlik'te reload süresi ve model cardinality'si, pandas'ta memory/CPU profili, Excel Power Query'de folding ve kaynak sorgu davranışı aynı genel döngüyü izler: baseline → bottleneck evidence → tek değişkenli müdahale → regression kontrolü. SQL Server planı bu döngünün database-engine örneğidir. Ama araçlar farklı olduğundan birindeki 'index' kavramını diğerine kelimesi kelimesine taşımak yerine ölçüm ve doğruluk kontratını transfer et.",
+      "body_en": "Qlik reloads, pandas profiling, and Power Query folding follow the same loop: baseline, bottleneck evidence, controlled intervention, and regression check. Transfer the evidence contract rather than copying SQL Server-specific mechanisms into other tools.",
+      "transfer_tasks": [
+        {
+          "tool": "Qlik Sense",
+          "task_tr": "Reload darboğazını script stage, source query ve model-cardinality kanıtlarıyla ayır; SQL planındaki evidence/hypothesis ayrımını koru."
+        },
+        {
+          "tool": "Python / pandas",
+          "task_tr": "Aynı dönüşümün iki implementasyonunu result equality, wall time ve memory ile benchmark et; tek metriğe göre karar verme."
+        },
+        {
+          "tool": "Excel / Power Query",
+          "task_tr": "Query folding kırıldığında kaynak tarafı işi ile local engine işini ayıran bir ölçüm planı yaz."
+        }
+      ]
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: operator ezberi değil teşhis sırası",
+      "title_en": "8. Retrieval: retrieve the diagnostic sequence, not operator trivia",
+      "body_tr": "D+1'de optimizer girdilerini ve index/statistics ayrımını kaynaksız açıkla. D+7'de estimate/actual, scan reads ve lookup sayılarını içeren yeni bir fixture'da hangi sinyallerin çıkacağını sorgu çalıştırmadan tahmin et. D+30'da gerçek bir yavaş sorgu için baseline, plan kanıtı, hipotez, kontrollü değişiklik, regression ölçümü ve rollback adımlarını içeren kısa bir tuning incelemesi yaz.",
+      "body_en": "On D+1, explain optimizer inputs and the difference between indexes and statistics. On D+7, predict evidence signals from a new plan-summary fixture. On D+30, write a tuning review with baseline, evidence, hypothesis, controlled change, regression measures, and rollback.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explain-optimizer-inputs-and-plan-evidence"
+        },
+        {
+          "day": 7,
+          "evidence": "predict-plan-triage-signals"
+        },
+        {
+          "day": 30,
+          "evidence": "design-controlled-plan-diagnosis"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "Optimizer, statistics, index ve execution plan rollerini birbirine karıştırmadan açıklayıp estimated/actual cardinality ilişkisinin neden önemli olduğunu göster.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Plan evidence fixture'ında cardinality, scan-read ve lookup hotspot sinyallerini doğru ayır ve her biri için alternatif hipotezleri belirt.",
+      "weight": 25
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Üç issue tipini iki fixture üzerinde exact sonuçla üreten semantic triage sorgusunu tamamla ve kanıtı kaydet.",
+      "weight": 30
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Baseline→evidence→controlled change→regression döngüsünü Qlik, pandas veya Power Query performans problemine taşı.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "ms-execution-plans",
+    "ms-index-design",
+    "ms-statistics",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}
