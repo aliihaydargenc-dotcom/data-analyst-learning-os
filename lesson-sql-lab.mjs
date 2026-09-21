@@ -3,6 +3,63 @@ import {DUCKDB_VERSION,DUCKDB_BUNDLES} from './duckdb-config.mjs';
 import {compareResultSets} from './sql-result-evaluator.mjs';
 
 const FIXTURES=Object.freeze({
+  'sql-analytical-patterns-v1':{
+    table:'analytical_pattern_cases',
+    visibleSetup:`
+      DROP TABLE IF EXISTS analytical_pattern_cases;
+      CREATE TABLE analytical_pattern_cases(EVENT_ID VARCHAR, HOTEL VARCHAR, DAY_NO INTEGER, REVENUE_EUR INTEGER);
+      INSERT INTO analytical_pattern_cases VALUES
+        ('A3','A',4,150),
+        ('B2','B',3,120),
+        ('A1','A',1,100),
+        ('A5','A',5,300),
+        ('B1','B',1,80),
+        ('A2','A',2,200),
+        ('B3','B',4,60),
+        ('A4','A',5,300);
+    `,
+    edgeSetup:`
+      DROP TABLE IF EXISTS analytical_pattern_cases;
+      CREATE TABLE analytical_pattern_cases(EVENT_ID VARCHAR, HOTEL VARCHAR, DAY_NO INTEGER, REVENUE_EUR INTEGER);
+      INSERT INTO analytical_pattern_cases VALUES
+        ('C4','C',7,500),
+        ('D2','D',12,70),
+        ('C2','C',2,400),
+        ('C1','C',2,100),
+        ('D1','D',10,50),
+        ('C3','C',3,200);
+    `,
+    referenceSql:`
+      WITH ordered AS (
+        SELECT
+          EVENT_ID, HOTEL, DAY_NO, REVENUE_EUR,
+          LAG(DAY_NO) OVER (PARTITION BY HOTEL ORDER BY DAY_NO, EVENT_ID) AS PREV_DAY_NO,
+          SUM(REVENUE_EUR) OVER (
+            PARTITION BY HOTEL ORDER BY DAY_NO, EVENT_ID
+            ROWS BETWEEN 2 PRECEDING AND CURRENT ROW
+          ) AS ROLLING_3_REVENUE,
+          ROW_NUMBER() OVER (
+            PARTITION BY HOTEL ORDER BY REVENUE_EUR DESC, DAY_NO, EVENT_ID
+          ) AS HOTEL_REVENUE_RANK
+        FROM analytical_pattern_cases
+      ),
+      flagged AS (
+        SELECT *,
+          CASE WHEN PREV_DAY_NO IS NULL OR DAY_NO - PREV_DAY_NO > 1 THEN 1 ELSE 0 END AS IS_NEW_ISLAND
+        FROM ordered
+      )
+      SELECT
+        EVENT_ID, HOTEL, DAY_NO, REVENUE_EUR, PREV_DAY_NO, IS_NEW_ISLAND,
+        SUM(IS_NEW_ISLAND) OVER (
+          PARTITION BY HOTEL ORDER BY DAY_NO, EVENT_ID
+          ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS ISLAND_ID,
+        ROLLING_3_REVENUE,
+        HOTEL_REVENUE_RANK
+      FROM flagged
+      ORDER BY HOTEL, DAY_NO, EVENT_ID
+    `
+  },
   'sql-window-semantics-v1':{
     table:'window_metric_cases',
     visibleSetup:`

@@ -1,0 +1,209 @@
+{
+  "id": "sql.analytical-patterns.001",
+  "module_id": "sql.analytical-patterns",
+  "track": "sql",
+  "level": "L4",
+  "status": "production-candidate",
+  "title_tr": "Analitik SQL desenleri: rolling metric, gaps/islands, top-N ve as-of",
+  "title_en": "Analytical SQL patterns: rolling metrics, gaps/islands, top-N, and as-of",
+  "subtitle_tr": "Fonksiyon ezberlemek yerine iş sorusunun şekline göre analitik deseni seç: observation-window, dönem adası, partition içi top-N ve effective-dated as-of lookup. Her desende grain, order, tie ve zaman yönünü açıkça tanımla.",
+  "subtitle_en": "Choose analytical patterns from the shape of the business question rather than memorizing functions: observation windows, gaps/islands, top-N within partitions, and effective-dated as-of lookups.",
+  "estimated_minutes_range": [
+    90,
+    135
+  ],
+  "why_it_matters_tr": "İleri analitik sorgularda hata çoğu zaman tek bir fonksiyonun yanlış yazılmasından değil, yanlış desenin seçilmesinden doğar. Son üç gözlem ile son üç takvim günü aynı değildir; gaps/islands analizinde duplicate tarih yeni ada yaratmamalıdır; top-N per group sorgusunda tie-break belirtilmezse seçilen satır değişebilir; as-of lookup gelecekteki bir dimension kaydını geçmiş fact satırına bağlarsa leakage oluşur. Bu ders running/rolling, gaps/islands, top-N ve as-of desenlerini ortak bir kontrol modeliyle ele alır: hedef grain, order domain'i, boundary kuralı ve reconciliation.",
+  "why_it_matters_en": "Advanced analytical SQL errors often come from choosing the wrong pattern rather than misspelling a function. The last three observations are not the same as the last three calendar days; duplicate dates must not create false islands; top-N per group needs deterministic tie rules; and as-of lookups must not attach future dimension states to past facts. The lesson uses one control model: target grain, ordering domain, boundary rule, and reconciliation.",
+  "prerequisites": [
+    "sql.window-semantics.001"
+  ],
+  "learning_objectives": [
+    "Running total ile rolling metric'i ayırmak; row-count window ile calendar-time window arasındaki iş anlamı farkını açıklamak.",
+    "LAG ile gap boundary üretip cumulative boundary count üzerinden gaps/islands kimliği oluşturmak.",
+    "Top-N per group deseninde ranking'i ayrı query block'ta üretip deterministik tie-break ile doğru partition içinden filtrelemek.",
+    "As-of lookup deseninde yalnızca fact zamanından önce veya fact zamanında geçerli dimension kaydını seçerek future leakage'i engellemek.",
+    "Aynı iş sorusunu farklı grain ve zaman eksenlerinde yeniden kurup pattern varsayımlarını edge-case fixture ile doğrulamak."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "PARTITION BY, window ORDER BY, explicit ROWS/RANGE frame, LAG ve ROW_NUMBER semantiğini sonuç üzerinden kanıtlayabiliyor musun?",
+      "if_no_tr": "Önce `sql.window-semantics.001` dersini tamamla veya aynı davranışları bağımsız fixture üzerinde kanıtla."
+    }
+  ],
+  "lab": {
+    "id": "sql-analytical-patterns-v1",
+    "engine": "DuckDB-Wasm",
+    "target_semantics": "T-SQL-compatible CTE / LAG / ROW_NUMBER / window SUM / CASE arithmetic subset",
+    "requires_for_section": "independent-practice",
+    "title_tr": "Semantic SQL Lab · rolling + gaps/islands + partition ranking",
+    "title_en": "Semantic SQL Lab · rolling + gaps/islands + partition ranking",
+    "task_tr": "analytical_pattern_cases tablosundaki her satırı koru. EVENT_ID, HOTEL, DAY_NO, REVENUE_EUR, PREV_DAY_NO, IS_NEW_ISLAND, ISLAND_ID, ROLLING_3_REVENUE, HOTEL_REVENUE_RANK kolonlarını bu sırada döndür. PREV_DAY_NO aynı hotel içindeki DAY_NO + EVENT_ID sırasına göre önceki DAY_NO olmalı. İlk satır veya önceki DAY_NO ile farkı 1'den büyük olan satır IS_NEW_ISLAND=1 olmalı; diğerleri 0. ISLAND_ID her hotel için 1'den başlayıp boundary geldiğinde artmalı. ROLLING_3_REVENUE aynı deterministik sırada current row dahil son üç gözlemin gelir toplamıdır. HOTEL_REVENUE_RANK her hotel içinde REVENUE_EUR DESC, DAY_NO ASC, EVENT_ID ASC ile deterministik ROW_NUMBER olmalı. Sonucu HOTEL, DAY_NO, EVENT_ID artan sırada getir.",
+    "task_en": "Preserve every row from analytical_pattern_cases. Return EVENT_ID, HOTEL, DAY_NO, REVENUE_EUR, PREV_DAY_NO, IS_NEW_ISLAND, ISLAND_ID, ROLLING_3_REVENUE, HOTEL_REVENUE_RANK in that order. Use DAY_NO + EVENT_ID for deterministic chronological order, start a new island at the first row or when the gap from the previous DAY_NO exceeds 1, compute a three-observation rolling revenue, rank revenue within each hotel using REVENUE_EUR DESC then DAY_NO and EVENT_ID, and order final output by HOTEL, DAY_NO, EVENT_ID.",
+    "schema": "analytical_pattern_cases(EVENT_ID VARCHAR unique, HOTEL VARCHAR, DAY_NO INTEGER, REVENUE_EUR INTEGER)",
+    "starter_sql": "SELECT EVENT_ID,\n       HOTEL,\n       DAY_NO,\n       REVENUE_EUR,\n       LAG(DAY_NO) OVER (ORDER BY DAY_NO) AS PREV_DAY_NO,\n       SUM(REVENUE_EUR) OVER (ORDER BY DAY_NO ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS ROLLING_3_REVENUE\nFROM analytical_pattern_cases\nORDER BY HOTEL, DAY_NO, EVENT_ID;",
+    "engine_note_tr": "Lab DuckDB-Wasm ile çalışır. CTE, LAG, CASE, ROW_NUMBER ve explicit ROWS window SUM davranışları bu görevde T-SQL hedefiyle uyumlu alt küme olarak kullanılır. Gerçek tarihli gaps/islands örneklerinde T-SQL DATEDIFF/DATEADD gibi tarih fonksiyonları ayrıca kullanılabilir; bu fixture cross-engine semantiği izole etmek için DAY_NO kullanır.",
+    "engine_note_en": "The lab runs in DuckDB-Wasm. CTE, LAG, CASE, ROW_NUMBER, and explicit ROWS window SUM are used as a subset compatible with the T-SQL target. DAY_NO isolates the analytical pattern from date-function dialect differences."
+  },
+  "sections": [
+    {
+      "id": "pattern-selection",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: analitik desen, iş sorusunun veri şeklidir",
+      "title_en": "1. Mental model: an analytical pattern is the data shape of the business question",
+      "body_tr": "İleri sorgularda önce fonksiyon seçme. İş sorusunun hangi satırları birbirine bağladığını tanımla. Running total başlangıçtan current row'a kadar birikimi sorar. Rolling metric current row çevresindeki sınırlı gözlem veya zaman penceresini sorar. Gaps/islands ardışık kayıtların hangi continuity kuralıyla aynı döneme ait olduğunu sorar. Top-N per group her partition içindeki sıralı seçimi sorar. As-of ise fact zamanında geçerli olan en son geçmiş dimension durumunu sorar. Bu desenlerin hepsi window/CTE kullanabilir ama aynı problem değildir.",
+      "body_en": "Do not start advanced queries by choosing a function. First define how the business question relates rows. Running totals accumulate from a boundary to the current row. Rolling metrics use a limited observation or time window. Gaps/islands classify consecutive rows into continuity periods. Top-N per group selects ranked rows within partitions. As-of selects the latest dimension state valid at the fact time.",
+      "checks": [
+        "Hedef grain'i desenden önce yaz.",
+        "Order domain'inin row order mı calendar time mı olduğunu açıkça tanımla.",
+        "Boundary ve tie kurallarını query yazmadan önce test örnekleriyle belirt."
+      ]
+    },
+    {
+      "id": "rolling-vs-calendar",
+      "layer": "mental_model",
+      "title_tr": "2. Rolling metric: son N gözlem ile son N gün aynı değildir",
+      "title_en": "2. Rolling metrics: last N observations and last N days are different",
+      "body_tr": "`ROWS BETWEEN 2 PRECEDING AND CURRENT ROW` current row dahil son üç fiziksel gözlemi kapsar. Veri her gün tam bir satır içeriyorsa bu bazen üç günlük pencereye benzeyebilir; fakat eksik günler veya aynı gün birden fazla olay varsa business anlamı değişir. Calendar-time rolling metric için tarih ekseninin yoğunluğu, missing dates ve aynı gün peer kayıtlarının nasıl davranacağı ayrıca tasarlanmalıdır. Bu nedenle '3 günlük ortalama' talebini doğrudan `ROWS 2 PRECEDING` diye çevirmek yalnızca grain ve takvim varsayımları kanıtlandıysa doğrudur.",
+      "body_en": "`ROWS BETWEEN 2 PRECEDING AND CURRENT ROW` means the current row plus the previous two physical observations. It resembles three calendar days only when the data grain and calendar are dense enough to make that true. Missing days or multiple events per day change the meaning, so a request for a three-day metric must state whether the window is observation-count or calendar-time based.",
+      "checks": [
+        "Eksik tarihlerin window genişliğini değiştirip değiştirmediğini kontrol et.",
+        "Aynı gün birden fazla satır varsa observation window ile day window'ı ayır.",
+        "Rolling metric sonucunu ilk N-1 satır boundary'lerinde ayrıca doğrula."
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "3. Worked example: gap flag → cumulative island id",
+      "title_en": "3. Worked example: gap flag → cumulative island id",
+      "body_tr": "Hotel A için DAY_NO 1,2,4,5,5 olsun. LAG ile önceki DAY_NO bulunur. İlk satır boundary'dir; 2-1=1 continuity devam eder; 4-2=2 olduğunda yeni island başlar; 5-4=1 continuity sürer; aynı DAY_NO 5 için fark 0 olduğundan yeni island oluşmaz. `IS_NEW_ISLAND` flag'i 1,0,1,0,0 olur. Bu flag üzerinde hotel partition'ında cumulative SUM uygulandığında ISLAND_ID 1,1,2,2,2 elde edilir. Aynı query block içinde LAG alias'ını tekrar window expression içinde kullanmaya çalışmak yerine önce ordered CTE, sonra flagged CTE kurmak hem scope'u hem debug edilebilirliği netleştirir.",
+      "body_en": "For Hotel A with DAY_NO values 1,2,4,5,5, LAG provides the previous day index. The first row starts an island; 2-1 continues it; 4-2 starts a new island; 5-4 continues it; and the duplicate 5 does not create a new island. The boundary flags 1,0,1,0,0 become island IDs 1,1,2,2,2 after a cumulative SUM within the hotel partition.",
+      "code": "WITH ordered AS (\n    SELECT *,\n           LAG(DAY_NO) OVER (\n               PARTITION BY HOTEL ORDER BY DAY_NO, EVENT_ID\n           ) AS PREV_DAY_NO\n    FROM analytical_pattern_cases\n),\nflagged AS (\n    SELECT *,\n           CASE WHEN PREV_DAY_NO IS NULL OR DAY_NO - PREV_DAY_NO > 1\n                THEN 1 ELSE 0 END AS IS_NEW_ISLAND\n    FROM ordered\n)\nSELECT *,\n       SUM(IS_NEW_ISLAND) OVER (\n           PARTITION BY HOTEL ORDER BY DAY_NO, EVENT_ID\n           ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW\n       ) AS ISLAND_ID\nFROM flagged;",
+      "explanation_tr": "Desen iki aşamadır: önce local boundary kararı, sonra cumulative group id. Bu yapı gaps/islands problemini 'karmaşık tek fonksiyon' olmaktan çıkarıp iki test edilebilir invariant'a böler.",
+      "explanation_en": "The pattern has two stages: make a local boundary decision, then cumulatively number the groups. This turns gaps/islands into two testable invariants instead of one opaque expression."
+    },
+    {
+      "id": "topn-asof",
+      "layer": "guided_practice",
+      "title_tr": "4. Top-N ve as-of: ranking ile zaman yönünü karıştırma",
+      "title_en": "4. Top-N and as-of: keep ranking separate from time direction",
+      "body_tr": "Top-N per group deseninde önce partition içinde deterministik ranking üret, sonra outer query block'ta `rank <= N` filtresi uygula. Ties iş kuralında birlikte kalacaksa ROW_NUMBER yerine RANK/DENSE_RANK gerekebilir; tam N satır isteniyorsa deterministic tie-break gereklidir. As-of deseninde ise sıralama başka bir soruya hizmet eder: her fact zamanı için `effective_from <= fact_time` koşulunu sağlayan en son dimension kaydını seçmek gerekir. T-SQL'de correlated TOP(1) + ORDER BY veya APPLY ailesi bu deseni ifade edebilir. `effective_from <= fact_time` koşulu eksikse gelecekteki durum geçmiş fact'e bağlanarak leakage yaratır.",
+      "body_en": "For top-N per group, first create deterministic ranking within each partition, then filter rank in an outer query block. If ties must remain together, RANK or DENSE_RANK may be appropriate; if exactly N rows are required, define a deterministic tie-break. As-of solves a different problem: for each fact time, select the latest dimension row whose effective time is not later than the fact. In T-SQL, correlated TOP(1) plus ORDER BY or APPLY patterns can express this; omitting the time boundary creates future leakage.",
+      "prompts": [
+        "Top 2 revenue kaydında aynı revenue değeri varsa tam iki satır mı yoksa tie grubunun tamamı mı isteniyor?",
+        "As-of lookup'ta `effective_from <= fact_time` koşulu olmadan hangi tür leakage oluşur?",
+        "Bir rolling metric ile as-of lookup'ın ikisi de ORDER BY kullanmasına rağmen neden farklı problem sınıfları olduğunu açıkla."
+      ]
+    },
+    {
+      "id": "independent-practice",
+      "layer": "independent_practice",
+      "title_tr": "5. Bağımsız üretim: üç deseni aynı fixture üzerinde kanıtla",
+      "title_en": "5. Independent production: prove three patterns on one fixture",
+      "body_tr": "Semantic SQL Lab'da her kaynak satırı korurken üç bağımsız pattern üret: PREV_DAY_NO + island boundary/id ile gaps/islands, son üç observation için ROLLING_3_REVENUE ve hotel partition'ında deterministic HOTEL_REVENUE_RANK. Visible fixture duplicate DAY_NO ve gerçek gap içerir; edge fixture farklı partition uzunlukları ve başka tie kombinasyonları içerir. Evaluator keyword aramaz; tüm kolonlar ve değerler iki fixture üzerinde referans sonuçla eşleşmelidir. Lab sonrasında bu üç pattern'in ortak grain/order sözleşmesini ve birbirinden farklı boundary kurallarını açıkla.",
+      "body_en": "Preserve every source row while producing three independent patterns: gaps/islands from PREV_DAY_NO plus boundary/island IDs, a three-observation rolling revenue, and deterministic hotel revenue ranking. Visible and edge fixtures contain duplicate day indexes, real gaps, and different partition shapes. The evaluator checks result semantics rather than keywords.",
+      "requires_lab_pass": "sql-analytical-patterns-v1",
+      "evidence_required": [
+        "semantic_lab_pass_visible_and_edge_fixture",
+        "rolling_observation_contract",
+        "gap_boundary_and_island_contract",
+        "deterministic_partition_ranking_contract"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "6. Debugging: desen doğru görünse bile boundary varsayımını boz",
+      "title_en": "6. Debugging: attack the boundary assumptions even when the pattern looks right",
+      "body_tr": "Analytical pattern sorgusunu sadece normal örneklerle test etme. Rolling metric için eksik gün, duplicate gün ve partition başlangıcı ekle. Gaps/islands için aynı gün duplicate, tam bir-unit continuity ve gap>1 sınırını test et. Top-N için tie ve N'den az satırlı partition ekle. As-of için fact'ten önce hiç dimension kaydı olmayan durum, aynı effective timestamp tie'ı ve fact'ten sonraki future record senaryosunu ekle. Pattern doğruluğu syntax'tan çok boundary davranışıyla kanıtlanır.",
+      "body_en": "Do not validate analytical patterns only with normal cases. Add missing days, duplicate days, partition starts, exact continuity boundaries, true gaps, ranking ties, partitions with fewer than N rows, and as-of cases with no prior state or future states. Pattern correctness is demonstrated by boundary behavior, not by syntax alone.",
+      "diagnostic_sequence": [
+        "Hedef pattern için minimum fixture'ı elle hesapla.",
+        "Partition başlangıç/bitiş boundary'lerini ayrı test et.",
+        "Duplicate order key ve tie vakalarını ekle.",
+        "Missing-time ve gap threshold vakalarını ekle.",
+        "Top-N için exact-N ve tie davranışını yazılı sözleşmeyle karşılaştır.",
+        "As-of için future leakage ve no-prior-match durumlarını test et."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "7. Transfer: pattern isimleri değişse de boundary modeli aynı kalır",
+      "title_en": "7. Transfer: tool syntax changes, boundary models remain",
+      "body_tr": "pandas rolling/shift/cumsum, Excel dinamik array veya sıralı hesaplamalar, Qlik Above/RangeSum ve set/context mantığı aynı pattern ailelerini farklı syntax ile kurabilir. Transferde önemli olan fonksiyon eşleştirmek değil: grain, partition, order, window genişliği, gap threshold, tie-break ve as-of zaman yönü sözleşmesini korumaktır. HTML raporunda bile 'son 3 kayıt' ile 'son 3 gün' metriklerini aynı başlık altında sunmak semantik hata üretir.",
+      "body_en": "pandas rolling/shift/cumsum, ordered Excel calculations, and Qlik context functions can express similar pattern families with different syntax. Transfer the grain, partition, order, window width, gap threshold, tie-break, and as-of time-direction contracts rather than mapping function names.",
+      "transfer_tasks": [
+        {
+          "tool": "Python / pandas",
+          "task_tr": "groupby + shift + rolling + cumsum ile aynı three-pattern fixture'ı üretirken sort order ve partition invariant'larını nasıl test edeceğini açıkla."
+        },
+        {
+          "tool": "Excel",
+          "task_tr": "Son 3 satır ile son 3 takvim günü KPI'larını ayrı business tanımları ve ayrı doğrulama örnekleriyle nasıl ayıracağını yaz."
+        },
+        {
+          "tool": "Qlik",
+          "task_tr": "Above/RangeSum kullanan rolling ölçüde dimension sort değişirse hangi sonuçların bozulacağını ve bunu nasıl fixture ile test edeceğini belirt."
+        },
+        {
+          "tool": "HTML",
+          "task_tr": "Rolling observation, rolling calendar ve as-of KPI'larını kullanıcıya isimlendirme/açıklama ile birbirinden nasıl ayıracağını belirt."
+        }
+      ]
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: fonksiyon değil pattern/boundary kararını geri çağır",
+      "title_en": "8. Retrieval: retrieve pattern and boundary decisions, not function names",
+      "body_tr": "D+1'de running, rolling, gaps/islands, top-N ve as-of desenlerini her biri için grain/order/boundary üçlüsüyle açıkla. D+7'de duplicate day ve gap içeren küçük fixture için island id, rolling-3 ve partition rank sonuçlarını sorgu çalıştırmadan hesapla. D+30'da başka bir domain'de en az iki pattern'i birleştir; ardından missing-time, tie ve boundary edge-case'leriyle kendi çözümünü kırmaya çalış.",
+      "body_en": "On D+1, explain running, rolling, gaps/islands, top-N, and as-of through grain/order/boundary contracts. On D+7, manually predict island IDs, rolling-3 values, and partition ranks on a fixture with duplicate days and gaps. On D+30, combine at least two patterns in another domain and attack the solution with missing-time, tie, and boundary edge cases.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explain-analytical-pattern-contracts"
+        },
+        {
+          "day": 7,
+          "evidence": "predict-islands-rolling-ranking-fixture"
+        },
+        {
+          "day": 30,
+          "evidence": "transfer-combine-and-break-patterns"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "Running/rolling, gaps/islands, top-N ve as-of desenlerini grain, order ve boundary sözleşmeleri üzerinden ayır.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Duplicate time, gap ve tie içeren bir fixture'da rolling, island ve ranking sonuçlarını sorgu çalıştırmadan tahmin et.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Gaps/islands, rolling-3 ve deterministic partition ranking'i aynı source grain'i koruyarak bağımsız üret ve edge fixture üzerinde kanıtla.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "En az iki analitik deseni başka araç veya business domain'e taşı; boundary ve time-direction farklarını ayrıca açıkla.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "ms-over",
+    "ms-lag",
+    "ms-row-number",
+    "ms-datediff",
+    "ms-from-join",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}

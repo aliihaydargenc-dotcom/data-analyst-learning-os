@@ -208,5 +208,10 @@
     "type": "official",
     "title": "Microsoft Learn — Ranking functions (Transact-SQL)",
     "url": "https://learn.microsoft.com/en-us/sql/t-sql/functions/ranking-functions-transact-sql?view=sql-server-ver17"
+  },
+  "ms-datediff": {
+    "type": "official",
+    "title": "Microsoft Learn — DATEDIFF (Transact-SQL)",
+    "url": "https://learn.microsoft.com/en-us/sql/t-sql/functions/datediff-transact-sql?view=sql-server-ver17"
   }
 }
