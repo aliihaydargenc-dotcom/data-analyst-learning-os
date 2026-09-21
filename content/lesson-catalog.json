@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "production_lessons": [
     {
       "id": "sql.relational-thinking.001",
@@ -7,7 +7,8 @@
       "track": "sql",
       "level": "L1",
       "path": "content/lessons/sql.relational-thinking.001.json",
-      "status": "production-candidate"
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=sql.relational-thinking.001"
     }
   ]
 }
