@@ -186,5 +186,44 @@
       "technical": "source-verified",
       "pedagogical": "source-verified"
     }
+  },
+  {
+    "id": "lesson.html.data-tables.001",
+    "track": "html",
+    "level": "L2",
+    "objective_ids": [
+      "html.data-tables"
+    ],
+    "prerequisites": [
+      "html.text-links-media",
+      "sql.relational-thinking"
+    ],
+    "mental_model": "Bir HTML veri tablosu yalnızca satır ve hücrelerden oluşan görsel bir grid değildir. Markup, hangi hücrenin veri, hangisinin başlık olduğunu ve başlıkların hangi veri hücreleriyle ilişkili olduğunu makine tarafından okunabilir biçimde ifade eder. Bu yüzden table semantiği, ekrandaki görünümden bağımsız bir veri ilişkisi katmanıdır.",
+    "misconceptions": [
+      "Kalın yazılmış ilk satır otomatik olarak tablo başlığı değildir; semantik olarak th gerekir.",
+      "Table elementi sayfa yerleşimi yapmak için kullanılmamalıdır; veri ilişkisi olan grid içindir.",
+      "Ekranda anlaşılır görünmesi, screen reader veya başka bir tüketicinin header ilişkisini anlayabildiği anlamına gelmez."
+    ],
+    "worked_example": {
+      "problem": "Otel bazında Revenue, Occupancy ve ADR gösteren yönetim tablosunu görsel olarak değil semantik olarak doğru HTML'e dönüştür.",
+      "explanation": "Önce tablonun caption'ını ve veri grain'ini tanımla. Kolon başlıklarını th olarak işaretle ve basit tabloda scope='col' kullan. Hotel adı satır başlığı olarak işlev görüyorsa th scope='row' olarak modellenebilir. Hücreleri CSS için div'e çevirmek yerine veri ilişkisini table semantiğinde koru."
+    },
+    "guided_practice": "Başlık hücreleri td olarak yazılmış ve caption içermeyen bir gelir tablosunu incele. Önce hangi ilişkilerin semantik olarak kaybolduğunu yaz, sonra yalnızca gerekli markup değişiklikleriyle düzelt.",
+    "independent_practice": "Hotel, Month, Revenue, Occupancy ve ADR içeren çok satırlı bir dataset için erişilebilir HTML data table üret. Caption, column headers ve gerektiğinde row header kararlarını gerekçelendir.",
+    "debugging": "Görsel olarak doğru görünen fakat tüm hücreleri div ile kurulmuş bir pseudo-table'ı incele. Keyboard ve assistive-technology bağlamında kaybolan yapıyı teşhis et ve gerçek table markup'a dönüştür.",
+    "transfer": "Aynı semantik ilişki mantığını revenue tablosundan ürün stok/SKT tablosuna taşı. Hangi kolonun row header olmaya uygun olduğunu ve nedenini açıkla.",
+    "retention": [
+      "D+1: th/td/caption/scope rollerini açıklama",
+      "D+7: farklı kolon yapısında bağımsız data table üretme",
+      "D+30: responsive rapor içindeki tabloyu accessibility review ile düzeltme"
+    ],
+    "source_ids": [
+      "w3c-wai-tables",
+      "whatwg-html"
+    ],
+    "review": {
+      "technical": "source-verified",
+      "pedagogical": "source-verified"
+    }
   }
 ]

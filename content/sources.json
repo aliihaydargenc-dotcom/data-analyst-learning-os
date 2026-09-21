@@ -93,5 +93,30 @@
     "type": "academic",
     "title": "Expertise reversal effect review",
     "url": "https://www.tandfonline.com/doi/abs/10.1207/S15326985EP3801_4"
+  },
+  "whatwg-html": {
+    "type": "official",
+    "title": "WHATWG HTML Living Standard",
+    "url": "https://html.spec.whatwg.org/multipage/"
+  },
+  "whatwg-html-forms": {
+    "type": "official",
+    "title": "WHATWG HTML Living Standard — Forms",
+    "url": "https://html.spec.whatwg.org/multipage/forms.html"
+  },
+  "w3c-wai-forms": {
+    "type": "official",
+    "title": "W3C WAI — Forms Tutorial",
+    "url": "https://www.w3.org/WAI/tutorials/forms/"
+  },
+  "w3c-wai-tables": {
+    "type": "official",
+    "title": "W3C WAI — Tables Tutorial",
+    "url": "https://www.w3.org/WAI/tutorials/tables/"
+  },
+  "mdn-html-a11y": {
+    "type": "official",
+    "title": "MDN — HTML: A good basis for accessibility",
+    "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Accessibility/HTML"
   }
 }
