@@ -172,8 +172,8 @@ function showResults(){
   $('#diagCounter').textContent=copy[state.lang].completed;
   const title=state.lang==='tr'?'Tanı sonucu':'Diagnostic result';
   const note=state.lang==='tr'
-    ?'Bu skor hızlı MVP tanısıdır. Kod, Qlik expression ve workbook görevleri eklendiğinde yerleştirme daha kesin olacaktır.'
-    :'This is a fast MVP diagnostic. Coding, Qlik expression and workbook tasks will make placement more precise.';
+    ?'Bu skor yalnızca hızlı ön taramadır. Gerçek placement; kod, workbook, Qlik/HTML artifact, debugging, transfer ve retention kanıtlarıyla oluşur.'
+    :'This is only a quick screen. Final placement requires code, workbook, Qlik/HTML artifacts, debugging, transfer and retention evidence.';
   $('#resultStage').innerHTML=`<h3>${title}</h3>
     <div class="result-grid">${Object.entries(scores).map(([d,x])=>`<div class="result-card"><span>${d}</span><strong>${x.score}%</strong><span>${x.level} · ${x.correct}/${x.total}</span></div>`).join('')}</div>
     <p class="fine">${note}</p>
