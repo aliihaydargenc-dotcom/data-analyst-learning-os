@@ -1,0 +1,190 @@
+[
+  {
+    "id": "lesson.sql.window-semantics.001",
+    "track": "sql",
+    "level": "L3",
+    "objective_ids": [
+      "sql.window-semantics"
+    ],
+    "prerequisites": [
+      "sql.cte-subquery-sets"
+    ],
+    "mental_model": "GROUP BY satırları yeni bir tane üzerinde özetler; window function mevcut satırları korurken her satır için tanımlı pencere üzerinde hesap yapar. PARTITION BY grup sınırını, ORDER BY hesap sırasını, frame ise pencereye giren satırları belirler.",
+    "misconceptions": [
+      "PARTITION BY, GROUP BY ile aynı şey değildir.",
+      "Window içindeki ORDER BY yalnızca görüntü sırası değildir.",
+      "Çalışan bir LAG sorgusu doğru business grain kullandığı anlamına gelmez."
+    ],
+    "worked_example": {
+      "problem": "Her otelin günlük gelirinin yanında aynı otelin bir önceki gün gelirini göster.",
+      "explanation": "Önce grain HOTEL + BUSINESS_DATE olarak sabitlenir. LAG(REVENUE_EUR) OVER (PARTITION BY HOTEL ORDER BY BUSINESS_DATE) kullanılır. Eksik gün varsa LAG takvim günü değil önceki mevcut satırı getirir."
+    },
+    "guided_practice": "PARTITION BY kısmı eksik bir sorguda hangi otelin verisinin başka otele sızabileceğini tahmin et; sonra sorguyu düzeltip sonucu karşılaştır.",
+    "independent_practice": "Her otel için 7 gözlemlik hareketli gelir ortalaması ve önceki gün farkını aynı result set içinde üret; grain ve ordering varsayımını açıkla.",
+    "debugging": "Yalnızca ORDER BY BUSINESS_DATE kullanan ve HOTEL partition'ı olmayan sorgunun ilk hatalı satırını veri üzerinden kanıtla ve sebebini açıkla.",
+    "transfer": "Aynı deseni müşteri bazlı aylık recurring revenue değişimine uygula; yeni grain ve partition kararını yazılı olarak açıkla.",
+    "retention": [
+      "D+1 kavramsal açıklama",
+      "D+7 bağımsız üretim",
+      "D+30 snapshot transfer"
+    ],
+    "source_ids": [
+      "ms-over"
+    ],
+    "review": {
+      "technical": "source-verified",
+      "pedagogical": "source-verified"
+    }
+  },
+  {
+    "id": "lesson.python.merge-cardinality.001",
+    "track": "python",
+    "level": "L3",
+    "objective_ids": [
+      "python.merge-window"
+    ],
+    "prerequisites": [
+      "python.groupby-reshape",
+      "sql.join-cardinality"
+    ],
+    "mental_model": "merge bir kolon ekleme işlemi değil, iki veri tanesinin anahtar üzerinden kombinasyonudur. Satır sayısının değişimi cardinality sonucudur; validate parametresi varsayımı executable contract'a dönüştürür.",
+    "misconceptions": [
+      "Satır artışı pandas hatası değildir.",
+      "drop_duplicates cardinality problemini otomatik çözmez.",
+      "Anahtar tekilliği varsayılmamalı, ölçülmelidir."
+    ],
+    "worked_example": {
+      "problem": "Booking tablosuna channel açıklaması eklenirken revenue iki katına çıkıyor.",
+      "explanation": "Önce sağ tablodaki channel_code tekilliği ölçülür. many_to_one bekleniyorsa merge(validate='many_to_one') kullanılır. Duplicate mapping veri kalitesi problemidir."
+    },
+    "guided_practice": "Mapping tablosunda duplicate key'i bul ve merge(validate=...) ile varsayımı executable hale getir; hatanın nerede üretildiğini kaydet.",
+    "independent_practice": "Booking, hotel ve channel tablolarını birleştir; her adımda satır sayısı, key uniqueness ve beklenen cardinality assertion'ı yaz.",
+    "debugging": "Yanlış many-to-many merge'in toplam revenue'yu neden şişirdiğini minimum örnekle göster ve drop_duplicates ile gizlemenin neden riskli olduğunu açıkla.",
+    "transfer": "Aynı cardinality ve validation yaklaşımını müşteri, sipariş ve kampanya modeline taşı; ilişkilerin beklenen çokluğunu önceden yaz.",
+    "retention": [
+      "D+1 cardinality açıklama",
+      "D+7 hidden merge",
+      "D+30 domain transfer"
+    ],
+    "source_ids": [
+      "pandas-merging"
+    ],
+    "review": {
+      "technical": "source-verified",
+      "pedagogical": "source-verified"
+    }
+  },
+  {
+    "id": "lesson.excel.data-model.001",
+    "track": "excel",
+    "level": "L4",
+    "objective_ids": [
+      "excel.data-model-relations"
+    ],
+    "prerequisites": [
+      "excel.power-query-quality",
+      "sql.join-cardinality"
+    ],
+    "mental_model": "Data Model'de doğruluk hücre formülünden önce grain ve relationship'ten gelir. Fact tabloda tekrar eden dimension key normaldir; dimension tarafında tekillik beklenir. Yanlış ilişki doğru görünen ama hatalı KPI üretebilir.",
+    "misconceptions": [
+      "Relationship kurulması modelin doğru olduğunu kanıtlamaz.",
+      "Flat tablo her zaman daha basit değildir.",
+      "Measure hatası bazen DAX değil grain problemidir."
+    ],
+    "worked_example": {
+      "problem": "Revenue fact ile room type dimension bağlandıktan sonra bazı kategoriler iki kez sayılıyor.",
+      "explanation": "Dimension key tekilliği kontrol edilir, fact grain tanımlanır, relationship yönü doğrulanır ve measure toplamları alt kırılımla reconcile edilir."
+    },
+    "guided_practice": "İki tabloda relationship kurulmadan önce one-side adayını belirle, duplicate key kontrolü yap ve beklenen cardinality'yi not et.",
+    "independent_practice": "FactStayDaily, DimHotel ve DimSegment ile model kur; Revenue, Occupancy ve ADR measure'larını üret ve toplamlarla reconcile et.",
+    "debugging": "Mixed-grain fact tablosunda toplam ADR'nin neden yanlış olduğunu model üzerinden açıkla; önce grain sorununu göster, sonra measure'ı düzelt.",
+    "transfer": "Aynı star model mantığını e-commerce order-line datasına uygula ve fact ile dimension sınırlarını yeniden tanımla.",
+    "retention": [
+      "D+1 fact/dimension grain",
+      "D+7 relationship diagnosis",
+      "D+30 sektör transferi"
+    ],
+    "source_ids": [
+      "excel-pq-pivot"
+    ],
+    "review": {
+      "technical": "source-verified",
+      "pedagogical": "source-verified"
+    }
+  },
+  {
+    "id": "lesson.qlik.set-analysis.001",
+    "track": "qlik",
+    "level": "L3",
+    "objective_ids": [
+      "qlik.set-analysis"
+    ],
+    "prerequisites": [
+      "qlik.associations-calendar",
+      "sql.aggregation-grain"
+    ],
+    "mental_model": "Set Analysis bir filtre fonksiyonu ezberi değildir; aggregation hesaplanmadan önce kullanılacak record setini tanımlar. `$` mevcut selection state'i, `1` tam veri evrenini temel alır; modifier bu tabanı değiştirir.",
+    "misconceptions": [
+      "{1} her zaman doğru benchmark değildir.",
+      "Set modifier ile chart dimension davranışı aynı şey değildir.",
+      "Dollar-sign expansion expression parse edilmeden önce metin üretir."
+    ],
+    "worked_example": {
+      "problem": "Bir KPI YTD 2026'yı, ikinci KPI seçimden bağımsız full-year budget benchmark'ı göstermeli.",
+      "explanation": "İlk KPI mevcut state `$` üzerinden tarih modifier'ı ile daraltılır. Benchmark seçimden bağımsız isteniyorsa `1` tabanı gerekçelendirilir. Date format ve association modeli ayrıca doğrulanır."
+    },
+    "guided_practice": "Aynı expression'ın `$` ve `1` ile nasıl farklı record set kullandığını üç selection senaryosunda tahmin et ve Qlik üzerinde doğrula.",
+    "independent_practice": "Comp House hariç MTD Revenue ve seçimden bağımsız geçen yıl benchmark KPI'larını üret; kullanılan set tabanını gerekçelendir.",
+    "debugging": "Yanlış quoting ve dollar-sign expansion nedeniyle boş dönen expression'ı identifier, modifier ve expansion katmanlarına ayırarak teşhis et.",
+    "transfer": "Aynı scope mantığını segment seçimi açıkken tüm-hotel benchmark'a taşı; hangi seçimlerin korunup hangilerinin ignore edildiğini açıkla.",
+    "retention": [
+      "D+1 identifier/modifier",
+      "D+7 selection senaryosu",
+      "D+30 alternate-state transfer"
+    ],
+    "source_ids": [
+      "qlik-set-analysis"
+    ],
+    "review": {
+      "technical": "source-verified",
+      "pedagogical": "source-verified"
+    }
+  },
+  {
+    "id": "lesson.english.requirement.001",
+    "track": "english",
+    "level": "L2",
+    "objective_ids": [
+      "english.requirement-clarification"
+    ],
+    "prerequisites": [
+      "english.docs-errors"
+    ],
+    "mental_model": "Analistin İngilizcesi terim çevirmek değildir. Metric definition, population, time window, comparison baseline ve output format ayrıştırılmadan analiz başlatılırsa teknik olarak doğru ama yanlış soruya cevap veren sonuç üretilebilir.",
+    "misconceptions": [
+      "Türkçeye çevirmek requirement'ı anlamakla aynı değildir.",
+      "YoY tek başına tarih hizalamasını garanti etmez.",
+      "Metric adı kurum içi tanımla doğrulanmalıdır."
+    ],
+    "worked_example": {
+      "problem": "Find the hotels whose revenue is down versus last year and explain why.",
+      "explanation": "Revenue tanımı, dönem, LY alignment, comparable hotels ve kullanılabilecek driver'lar netleştirilmeden root-cause iddiası kurulmaz."
+    },
+    "guided_practice": "Belirsiz bir İngilizce KPI talebinde eksik population, period ve metric-definition bilgisini işaretle; yalnızca gerekli clarification sorularını seç.",
+    "independent_practice": "Stakeholder mesajına en fazla beş kısa clarification question yaz; her sorunun hangi analitik riski azalttığını bir cümleyle belirt.",
+    "debugging": "Yanlış yorumlanmış requirement'ın ürettiği hatalı analitik sonucu geri izleyip hangi kelimenin veya varsayımın yanlış anlaşıldığını bul.",
+    "transfer": "Aynı requirement-decomposition yaklaşımını churn veya e-commerce conversion talebine uygula ve yeni metric tanımını doğrula.",
+    "retention": [
+      "D+1 requirement bileşenleri",
+      "D+7 yeni stakeholder mesajı",
+      "D+30 root-cause brief"
+    ],
+    "source_ids": [
+      "cefr"
+    ],
+    "review": {
+      "technical": "source-verified",
+      "pedagogical": "source-verified"
+    }
+  }
+]
