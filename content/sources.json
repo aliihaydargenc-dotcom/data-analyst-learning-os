@@ -158,5 +158,15 @@
     "type": "official",
     "title": "Microsoft Learn — Aggregate functions (Transact-SQL)",
     "url": "https://learn.microsoft.com/sql/t-sql/functions/aggregate-functions-transact-sql"
+  },
+  "ms-from-join": {
+    "type": "official",
+    "title": "Microsoft Learn — FROM clause plus JOIN, APPLY, PIVOT (Transact-SQL)",
+    "url": "https://learn.microsoft.com/en-us/sql/t-sql/queries/from-transact-sql?view=sql-server-ver17"
+  },
+  "ms-pk-fk": {
+    "type": "official",
+    "title": "Microsoft Learn — Primary and foreign key constraints",
+    "url": "https://learn.microsoft.com/en-us/sql/relational-databases/tables/primary-and-foreign-key-constraints?view=sql-server-ver17"
   }
 }
