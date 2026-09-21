@@ -72,7 +72,7 @@ for(const entry of catalog.production_lessons||[]){
     if(!lesson.lab.task_tr?.trim()||lesson.lab.task_tr.trim().length<100) fail(`${entry.id}: lab task_tr too shallow`);
     if(!lesson.lab.task_en?.trim()||lesson.lab.task_en.trim().length<80) fail(`${entry.id}: lab task_en too shallow`);
     if(!lesson.lab.schema?.trim()) fail(`${entry.id}: lab schema required`);
-    if(!/^SELECT\b/i.test(lesson.lab.starter_sql?.trim()||'')) fail(`${entry.id}: lab starter_sql must be SELECT`);
+    if(!/^(SELECT|WITH)\b/i.test(lesson.lab.starter_sql?.trim()||'')) fail(`${entry.id}: lab starter_sql must begin with SELECT or WITH`);
     if(!lesson.lab.engine_note_tr?.trim()||!lesson.lab.engine_note_en?.trim()) fail(`${entry.id}: bilingual engine note required`);
     const requiredSection=(lesson.sections||[]).find(section=>section.id===lesson.lab.requires_for_section);
     if(!requiredSection) fail(`${entry.id}: lab requires_for_section not found`);

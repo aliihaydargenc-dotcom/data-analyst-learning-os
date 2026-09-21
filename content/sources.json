@@ -168,5 +168,30 @@
     "type": "official",
     "title": "Microsoft Learn — Primary and foreign key constraints",
     "url": "https://learn.microsoft.com/en-us/sql/relational-databases/tables/primary-and-foreign-key-constraints?view=sql-server-ver17"
+  },
+  "ms-cte": {
+    "type": "official",
+    "title": "Microsoft Learn — WITH common_table_expression (Transact-SQL)",
+    "url": "https://learn.microsoft.com/en-us/sql/t-sql/queries/with-common-table-expression-transact-sql?view=sql-server-ver17"
+  },
+  "ms-subqueries": {
+    "type": "official",
+    "title": "Microsoft Learn — Subqueries (SQL Server)",
+    "url": "https://learn.microsoft.com/en-us/sql/relational-databases/performance/subqueries?view=sql-server-ver17"
+  },
+  "ms-exists": {
+    "type": "official",
+    "title": "Microsoft Learn — EXISTS (Transact-SQL)",
+    "url": "https://learn.microsoft.com/en-us/sql/t-sql/language-elements/exists-transact-sql?view=sql-server-ver17"
+  },
+  "ms-union": {
+    "type": "official",
+    "title": "Microsoft Learn — UNION (Transact-SQL)",
+    "url": "https://learn.microsoft.com/en-us/sql/t-sql/language-elements/set-operators-union-transact-sql?view=sql-server-ver17"
+  },
+  "ms-except-intersect": {
+    "type": "official",
+    "title": "Microsoft Learn — EXCEPT and INTERSECT (Transact-SQL)",
+    "url": "https://learn.microsoft.com/en-us/sql/t-sql/language-elements/set-operators-except-and-intersect-transact-sql?view=sql-server-ver17"
   }
 }

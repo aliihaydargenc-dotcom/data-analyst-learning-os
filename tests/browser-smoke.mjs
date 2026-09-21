@@ -42,7 +42,7 @@ try{
   assert.match(await page.locator('#lessonTitle').textContent(),/Satır neyi temsil ediyor/);
   assert.equal(await page.locator('#lessonOutline .outline-item').count(),8);
   assert.equal(await page.locator('#sourceList .source-item').count(),3);
-  assert.match(await page.locator('#sequencePosition').textContent(),/1 \/ 4/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/1 \/ 5/);
   assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
   assert.match(await page.locator('#nextLessonLink').getAttribute('href'),/sql\.select-null-filtering\.001/);
 
@@ -63,7 +63,7 @@ try{
   assert.match(await page.locator('#lessonTitle').textContent(),/SELECT gerçekten ne yapıyor/);
   assert.equal(await page.locator('#lessonOutline .outline-item').count(),8);
   assert.equal(await page.locator('#sourceList .source-item').count(),6);
-  assert.match(await page.locator('#sequencePosition').textContent(),/2 \/ 4/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/2 \/ 5/);
   assert.equal(await page.locator('#previousLessonLink').isVisible(),true);
   assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
   assert.match(await page.locator('#nextLessonLink').getAttribute('href'),/sql\.aggregation-grain\.001/);
@@ -120,7 +120,7 @@ ORDER BY STATUS, BOOKING_ID;`);
   await page.locator('#nextLessonLink').click();
   await page.locator('#lessonHero').waitFor({state:'visible'});
   assert.match(await page.locator('#lessonTitle').textContent(),/GROUP BY neyi değiştiriyor/);
-  assert.match(await page.locator('#sequencePosition').textContent(),/3 \/ 4/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/3 \/ 5/);
   assert.equal(await page.locator('#previousLessonLink').isVisible(),true);
   assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
   assert.match(await page.locator('#nextLessonLink').getAttribute('href'),/sql\.join-cardinality\.001/);
@@ -175,9 +175,10 @@ ORDER BY HOTEL, SEGMENT;`);
   await page.locator('#nextLessonLink').click();
   await page.locator('#lessonHero').waitFor({state:'visible'});
   assert.match(await page.locator('#lessonTitle').textContent(),/JOIN neden satır çoğaltır/);
-  assert.match(await page.locator('#sequencePosition').textContent(),/4 \/ 4/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/4 \/ 5/);
   assert.equal(await page.locator('#previousLessonLink').isVisible(),true);
-  assert.equal(await page.locator('#nextLessonLink').isVisible(),false);
+  assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
+  assert.match(await page.locator('#nextLessonLink').getAttribute('href'),/sql\.cte-subquery-sets\.001/);
   assert.equal(await page.locator('#sourceList .source-item').count(),4);
   assert.equal(await page.locator('#lessonSqlLab').isVisible(),true);
 
@@ -232,7 +233,66 @@ ORDER BY b.BOOKING_ID;`);
   await page.locator('#lessonWorkspace').waitFor({state:'visible'});
   assert.equal(await page.locator('#lessonSqlLab').isVisible(),true);
   assert.match(await page.locator('#lessonSqlLabStatus').textContent(),/geçti/);
-  assert.match(await page.locator('#sequencePosition').textContent(),/4 \/ 4/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/4 \/ 5/);
+  assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
+
+  await page.setViewportSize({width:1280,height:900});
+  await page.locator('#nextLessonLink').click();
+  await page.locator('#lessonHero').waitFor({state:'visible'});
+  assert.match(await page.locator('#lessonTitle').textContent(),/CTE, subquery ve EXISTS/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/5 \/ 5/);
+  assert.equal(await page.locator('#previousLessonLink').isVisible(),true);
+  assert.equal(await page.locator('#nextLessonLink').isVisible(),false);
+  assert.equal(await page.locator('#sourceList .source-item').count(),7);
+  assert.equal(await page.locator('#lessonSqlLab').isVisible(),true);
+
+  await page.locator('#lessonOutline .outline-item').nth(4).click();
+  await page.locator('#sectionResponse').fill('Ara CTE customer grain Completed revenue üretir; dış sorgu customer grain kalır. Cancelled booking varlığı correlated NOT EXISTS ile test edilir ve aynı Temmuz yarı-açık tarih penceresi korunur.');
+  await page.locator('#completeSection').click();
+  assert.match(await page.locator('#sectionFeedback').textContent(),/Semantic SQL Lab/i);
+
+  await page.locator('#runLessonSql').click();
+  await page.waitForFunction(()=>document.querySelector('#lessonSqlFeedback')?.textContent?.includes('Semantic test geçmedi'),{timeout:120000});
+  assert.match(await page.locator('#lessonSqlFeedback').textContent(),/visible: FAIL|edge: FAIL/);
+
+  await page.locator('#lessonSqlEditor').fill(`WITH completed AS (
+  SELECT CUSTOMER_ID, SUM(REVENUE_EUR) AS JULY_COMPLETED_REVENUE
+  FROM booking_fact
+  WHERE BUSINESS_DATE >= CAST('2026-07-01' AS DATE)
+    AND BUSINESS_DATE < CAST('2026-08-01' AS DATE)
+    AND STATUS = 'Completed'
+  GROUP BY CUSTOMER_ID
+  HAVING SUM(REVENUE_EUR) >= 1000
+)
+SELECT c.CUSTOMER_ID, c.CUSTOMER_NAME, x.JULY_COMPLETED_REVENUE
+FROM customer_dim AS c
+JOIN completed AS x ON x.CUSTOMER_ID = c.CUSTOMER_ID
+WHERE NOT EXISTS (
+  SELECT 1 FROM booking_fact AS b
+  WHERE b.CUSTOMER_ID = c.CUSTOMER_ID
+    AND b.BUSINESS_DATE >= CAST('2026-07-01' AS DATE)
+    AND b.BUSINESS_DATE < CAST('2026-08-01' AS DATE)
+    AND b.STATUS = 'Cancelled'
+)
+ORDER BY c.CUSTOMER_ID;`);
+  await page.locator('#runLessonSql').click();
+  await page.waitForFunction(()=>document.querySelector('#lessonSqlFeedback')?.textContent?.includes('Semantic test geçti'),{timeout:120000});
+  assert.equal(await page.locator('#lessonSqlTable tbody tr').count(),2);
+  const cteRows=await page.locator('#lessonSqlTable tbody tr').allTextContents();
+  assert.match(cteRows[0],/C1Ada.*1100/);
+  assert.match(cteRows[1],/C5Ece.*1000/);
+  assert.match(await page.locator('#lessonSqlFeedback').textContent(),/visible: PASS/);
+  assert.match(await page.locator('#lessonSqlFeedback').textContent(),/edge: PASS/);
+
+  await page.locator('#completeSection').click();
+  assert.match(await page.locator('#progressValue').textContent(),/13%/);
+
+  await page.setViewportSize({width:390,height:844});
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#lessonWorkspace').waitFor({state:'visible'});
+  assert.equal(await page.locator('#lessonSqlLab').isVisible(),true);
+  assert.match(await page.locator('#lessonSqlLabStatus').textContent(),/geçti/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/5 \/ 5/);
 
   assert.deepEqual(pageErrors,[]);
   assert.deepEqual(consoleErrors,[]);

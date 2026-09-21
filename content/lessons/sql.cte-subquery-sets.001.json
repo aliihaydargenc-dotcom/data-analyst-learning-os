@@ -1,0 +1,209 @@
+{
+  "id": "sql.cte-subquery-sets.001",
+  "module_id": "sql.cte-subquery-sets",
+  "track": "sql",
+  "level": "L3",
+  "status": "production-candidate",
+  "title_tr": "CTE, subquery ve EXISTS: sorguyu katmanlara ayır, varlığı fan-out üretmeden test et",
+  "title_en": "CTEs, subqueries, and EXISTS: compose queries without accidental fan-out",
+  "subtitle_tr": "CTE'yi daha temiz syntax olarak ezberlemek yerine query block grain, correlated EXISTS/NOT EXISTS ve set operator duplicate sözleşmelerini tek kompozisyon modeli içinde öğren.",
+  "subtitle_en": "Learn CTEs as query composition, correlated EXISTS/NOT EXISTS as existence semantics, and set operators as explicit duplicate contracts.",
+  "estimated_minutes_range": [
+    75,
+    115
+  ],
+  "why_it_matters_tr": "Analitik SQL büyüdükçe her şeyi tek SELECT içine sıkıştırmak doğruluğu ve debug edilebilirliği düşürür. Sadece varlık sormak için JOIN kullanmak duplicate üretebilir; NOT IN tarafında NULL bulunması üç değerli mantığı devreye sokabilir; CTE'yi otomatik temp table veya cache gibi düşünmek yanlış bir performans modeli kurar; UNION ile UNION ALL arasında bilinçsiz seçim popülasyonu değiştirir. Güçlü analist sorguyu ara grain'lere böler ve her katmanın girişini, çıkışını ve duplicate/existence sözleşmesini açıklar.",
+  "why_it_matters_en": "As analytical SQL grows, forcing everything into a single SELECT harms correctness and debuggability. JOIN can create duplicates when the question is only about existence, NOT IN can interact with NULL, CTEs should not be assumed to be automatic temp tables or caches, and UNION versus UNION ALL changes duplicate semantics. Strong analysts define intermediate grains and contracts explicitly.",
+  "prerequisites": [
+    "sql.join-cardinality.001"
+  ],
+  "learning_objectives": [
+    "CTE, derived table ve subquery'yi ara query-expression katmanları olarak okuyup her katmanın grain'ini tanımlamak.",
+    "EXISTS ve NOT EXISTS ile varlık/yokluk koşullarını outer result grain'ini çoğaltmadan ifade etmek.",
+    "Correlated subquery'de outer alias ile inner sorgu arasındaki scope bağlantısını okuyup accidental correlation hatalarını teşhis etmek.",
+    "UNION ALL, UNION, EXCEPT ve INTERSECT operatörlerinin duplicate ve result-set davranışını açıklamak.",
+    "Bir sorguyu bağımsız doğrulanabilir ara katmanlara bölüp her katman için invariant tanımlamak."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "JOIN cardinality, fan-out ve result grain'i kanıtlayabiliyor musun?",
+      "if_no_tr": "Önce `sql.join-cardinality.001` dersini tamamla veya eşdeğer kanıt üret."
+    }
+  ],
+  "lab": {
+    "id": "sql-cte-exists-v1",
+    "engine": "DuckDB-Wasm",
+    "target_semantics": "T-SQL-compatible WITH / EXISTS / GROUP BY subset",
+    "requires_for_section": "independent-practice",
+    "title_tr": "Semantic SQL Lab · CTE + NOT EXISTS ile eligibility",
+    "title_en": "Semantic SQL Lab · eligibility with CTE + NOT EXISTS",
+    "task_tr": "customer_dim ve booking_fact tablolarından Temmuz 2026'da Completed booking geliri toplamı en az 1000 olan, fakat aynı Temmuz döneminde hiçbir Cancelled booking'i bulunmayan müşterileri getir. CUSTOMER_ID, CUSTOMER_NAME, JULY_COMPLETED_REVENUE kolonlarını bu sırada döndür ve CUSTOMER_ID artan sırada sırala. Hedef grain bir satır/müşteridir.",
+    "task_en": "Return customers whose July 2026 Completed revenue totals at least 1000 and who have no Cancelled booking in July. Return CUSTOMER_ID, CUSTOMER_NAME, JULY_COMPLETED_REVENUE in that order, sorted by CUSTOMER_ID. Target grain is one row per customer.",
+    "schema": "customer_dim(CUSTOMER_ID VARCHAR unique, CUSTOMER_NAME VARCHAR); booking_fact(BOOKING_ID VARCHAR, CUSTOMER_ID VARCHAR, BUSINESS_DATE DATE, STATUS VARCHAR, REVENUE_EUR INTEGER)",
+    "starter_sql": "WITH completed AS (\n  SELECT CUSTOMER_ID,\n         SUM(REVENUE_EUR) AS JULY_COMPLETED_REVENUE\n  FROM booking_fact\n  WHERE BUSINESS_DATE >= CAST('2026-07-01' AS DATE)\n    AND BUSINESS_DATE < CAST('2026-08-01' AS DATE)\n    AND STATUS = 'Completed'\n  GROUP BY CUSTOMER_ID\n  HAVING SUM(REVENUE_EUR) >= 1000\n)\nSELECT c.CUSTOMER_ID, c.CUSTOMER_NAME, x.JULY_COMPLETED_REVENUE\nFROM customer_dim AS c\nJOIN completed AS x ON x.CUSTOMER_ID = c.CUSTOMER_ID\nORDER BY c.CUSTOMER_ID;",
+    "engine_note_tr": "Lab DuckDB-Wasm ile çalışır. WITH, correlated EXISTS/NOT EXISTS, GROUP BY ve temel set-result semantiği bu görevde T-SQL hedefiyle uyumlu alt küme olarak kullanılır; SQL Server optimizer ve execution-plan ayrıntıları ileri performans derslerinde ayrıca ölçülecektir.",
+    "engine_note_en": "The lab runs in DuckDB-Wasm. WITH, correlated EXISTS/NOT EXISTS, GROUP BY, and measured result semantics are used as a subset compatible with the T-SQL target; SQL Server-specific optimizer behavior is handled later."
+  },
+  "sections": [
+    {
+      "id": "composition-model",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: her query block bir ara ilişki üretir",
+      "title_en": "1. Mental model: every query block produces an intermediate relation",
+      "body_tr": "CTE, derived table ve subquery'yi ayrı numaralar gibi değil, daha büyük sorgu içinde ara result set tanımlama yolları olarak düşün. Önce her katmanın grain'ini yaz. `completed` CTE'si bir satır/müşteri grain'inde Temmuz Completed gelirini üretiyorsa dış sorgu bu ilişkiyi müşteri seviyesinde tüketir. CTE okunabilirlik sağlar ama tanım gereği otomatik temp table veya cache değildir; sorguyu katmanlamak performans kanıtı değil, semantik ve debug edilebilirlik aracıdır.",
+      "body_en": "Treat CTEs, derived tables, and subqueries as ways to define intermediate query results. State the grain of each block first. A completed CTE producing one row per customer turns booking detail into a customer-grain relation for the outer query. A CTE can improve structure but is not automatically a temp table or cache.",
+      "checks": [
+        "Her katman için input grain, output grain ve kolon sözleşmesini yaz.",
+        "CTE kullanımını otomatik performans optimizasyonu sayma.",
+        "Bir query block'un neden var olduğunu tek cümleyle açıklayabil."
+      ]
+    },
+    {
+      "id": "existence-and-sets",
+      "layer": "mental_model",
+      "title_tr": "2. EXISTS varlığı test eder; set operatörleri sonuç kümelerinin sözleşmesini belirler",
+      "title_en": "2. EXISTS tests existence; set operators define result-set contracts",
+      "body_tr": "EXISTS alt sorgunun seçtiği değerden çok herhangi bir satır üretip üretmediğini test eder. Bu yüzden 'müşterinin en az bir Cancelled booking'i var mı?' sorusunda outer customer satırını çoğaltmadan kontrol yapılabilir; NOT EXISTS anti-semantics karşılığıdır. UNION ALL duplicate'leri korur, UNION duplicate'leri kaldırır, EXCEPT solda olup sağda olmayan distinct satırları, INTERSECT iki tarafta ortak distinct satırları döndürür. Kritik karar keyword değil duplicate sözleşmesidir.",
+      "body_en": "EXISTS tests whether a subquery returns any rows, making it suitable for existence checks without multiplying the outer row. NOT EXISTS expresses the anti condition. UNION ALL preserves duplicates, UNION removes them, EXCEPT returns distinct left-only rows, and INTERSECT returns distinct rows common to both inputs.",
+      "checks": [
+        "Varlık sorusunu detay JOIN ile çözmenin fan-out riskini fark et.",
+        "UNION ve UNION ALL seçimini duplicate gereksinimiyle gerekçelendir.",
+        "Set operator inputlarında kolon sayısı ve uyumlu tip/pozisyon kontrolü yap."
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "3. Worked example: eligibility kuralını aggregate + anti-existence olarak ayır",
+      "title_en": "3. Worked example: split eligibility into aggregation plus anti-existence",
+      "body_tr": "Eligibility iki parçalıdır: Temmuz Completed gelir toplamı en az 1000 olacak ve Temmuz'da Cancelled booking bulunmayacak. İlk kural aggregate olduğu için CTE içinde CUSTOMER_ID grain'ine indirgenir. İkinci kural bir existence sorusudur; customer-grain dış sorguda correlated NOT EXISTS ile test edilir. Böylece Cancelled booking detaylarını JOIN ederek satır çoğaltmak yerine yalnızca yokluk kanıtlanır. Her iki kuralın aynı yarı-açık tarih penceresini kullanması ayrıca doğrulanır.",
+      "body_en": "Eligibility has two rules: July Completed revenue must total at least 1000 and there must be no July Cancelled booking. The aggregate rule is reduced to customer grain inside a CTE; the existence rule is tested with correlated NOT EXISTS in the outer customer-grain query.",
+      "code": "WITH completed AS (\n  SELECT CUSTOMER_ID, SUM(REVENUE_EUR) AS JULY_COMPLETED_REVENUE\n  FROM booking_fact\n  WHERE BUSINESS_DATE >= CAST('2026-07-01' AS date)\n    AND BUSINESS_DATE < CAST('2026-08-01' AS date)\n    AND STATUS = 'Completed'\n  GROUP BY CUSTOMER_ID\n  HAVING SUM(REVENUE_EUR) >= 1000\n)\nSELECT c.CUSTOMER_ID, c.CUSTOMER_NAME, x.JULY_COMPLETED_REVENUE\nFROM customer_dim AS c\nJOIN completed AS x ON x.CUSTOMER_ID = c.CUSTOMER_ID\nWHERE NOT EXISTS (\n  SELECT 1 FROM booking_fact AS b\n  WHERE b.CUSTOMER_ID = c.CUSTOMER_ID\n    AND b.BUSINESS_DATE >= CAST('2026-07-01' AS date)\n    AND b.BUSINESS_DATE < CAST('2026-08-01' AS date)\n    AND b.STATUS = 'Cancelled'\n)\nORDER BY c.CUSTOMER_ID;",
+      "explanation_tr": "CTE Completed toplamını customer grain'e indirir. Outer query müşteri bilgisini ekler. NOT EXISTS aynı customer ve tarih penceresinde Cancelled satır bulunup bulunmadığını test eder; detay satırları output grain'e taşımaz.",
+      "explanation_en": "The CTE reduces Completed revenue to customer grain. The outer query adds customer attributes. NOT EXISTS tests for cancellation rows correlated to the same customer and date window without adding cancellation detail to the output grain."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "4. Rehberli uygulama: correlation doğru outer key'e bağlı mı?",
+      "title_en": "4. Guided practice: is correlation tied to the correct outer key?",
+      "body_tr": "İki NOT EXISTS varyantını karşılaştır. Birinde inner sorgu `b.CUSTOMER_ID = c.CUSTOMER_ID` ile outer customer'a bağlıdır; diğerinde bu koşul unutulmuştur. Correlation unutulursa herhangi bir müşterinin tek bir Temmuz cancellation kaydı bile alt sorguyu tüm outer satırlar için var hale getirip herkesi eleyebilir. Ardından NOT IN düşün: subquery CUSTOMER_ID alanında NULL varsa UNKNOWN davranışı anti-filter sonucunu değiştirebilir. Amaç operatör ezberi değil scope ve NULL semantiğini tahmin etmektir.",
+      "body_en": "Compare a correctly correlated NOT EXISTS with one that omits b.CUSTOMER_ID = c.CUSTOMER_ID. Without correlation, a single July cancellation anywhere can make the subquery exist for every outer customer. Also reason about NOT IN when the subquery can return NULL and how UNKNOWN can alter the anti-filter.",
+      "prompts": [
+        "Correlation koşulu unutulduğunda inner result neden tüm outer satırlar için ortak hale gelir?",
+        "EXISTS neden inner SELECT listesindeki değerden çok satır varlığına bakar?",
+        "NOT IN anti-filter'ında subquery key NULL profilini nasıl test edersin?"
+      ]
+    },
+    {
+      "id": "independent-practice",
+      "layer": "independent_practice",
+      "title_tr": "5. Bağımsız üretim: eligibility'yi görünür ve edge fixture üzerinde kanıtla",
+      "title_en": "5. Independent production: prove eligibility across visible and edge fixtures",
+      "body_tr": "Semantic SQL Lab'da hedef grain'i bir satır/müşteri olarak koru. Görünür fixture threshold'u geçen, cancellation nedeniyle elenmesi gereken, threshold altında kalan ve tarih penceresi dışında booking'i olan müşteriler içerir. Edge fixture tam 1000 sınırını ve Ağustos cancellation örneğini test eder. Evaluator CTE veya EXISTS keywordü aramaz; kolonlar, revenue değerleri, müşteri kümesi ve sıralama iki fixture üzerinde referansla eşleşmelidir. Lab sonrası ara grain ve existence kuralını kendi cümlelerinle açıkla.",
+      "body_en": "Preserve one row per customer. The visible fixture covers threshold, cancellation, below-threshold, and out-of-period cases. The edge fixture tests an exact 1000 boundary and a cancellation outside July. The evaluator checks results, not keywords.",
+      "requires_lab_pass": "sql-cte-exists-v1",
+      "evidence_required": [
+        "semantic_lab_pass_visible_and_edge_fixture",
+        "intermediate_customer_grain_statement",
+        "correlation_and_existence_reasoning",
+        "date_window_and_threshold_boundary_reasoning"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "6. Debugging: yanlış scope, NULL ve duplicate sözleşmesini katman katman ayır",
+      "title_en": "6. Debugging: separate scope, NULL, and duplicate-contract failures",
+      "body_tr": "Katmanlı sorgu hata verdiğinde 'CTE yavaş' veya 'subquery kötüdür' gibi genellemelerle başlama. Her query block'u bağımsız çalıştır, grain ve row count kaydet. Correlated subquery yanlış outer key'e bağlanmış olabilir; scalar subquery birden fazla satır döndürebilir; NOT IN NULL nedeniyle UNKNOWN üretebilir; UNION ALL duplicate'leri koruyup satır sayısını artırabilir veya UNION gereksiz dedup ile semantiği değiştirebilir. Query shape tek başına performans kanıtı değildir; önce doğruluk sözleşmesini kur.",
+      "body_en": "Do not start debugging with blanket claims such as CTEs are slow or subqueries are bad. Validate each block and its grain. Correlation may target the wrong outer key, scalar subqueries may return multiple rows, NOT IN can interact with NULL, and set-operator choice changes duplicate behavior.",
+      "diagnostic_sequence": [
+        "Her query block'u bağımsız çalıştır ve row count + grain kaydet.",
+        "Correlated subquery outer alias/key referanslarını kontrol et.",
+        "Scalar subquery tek satır garantisini ve IN/NOT IN NULL profilini doğrula.",
+        "EXISTS için match varlığının SELECT değerinden bağımsız olduğunu hatırla.",
+        "UNION/UNION ALL/EXCEPT/INTERSECT duplicate sözleşmesini yaz.",
+        "Doğruluk kanıtından sonra execution plan ve performans ölçümüne geç."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "7. Transfer: staged query thinking diğer veri araçlarında da aynı kalır",
+      "title_en": "7. Transfer: staged-query reasoning remains useful across tools",
+      "body_tr": "CTE'nin taşınabilir öğretici değeri syntax değil ara veri sözleşmesidir. pandas'ta grouped intermediate DataFrame, Power Query'de staging query ve Left Anti join, Qlik'te Resident LOAD, HTML raporunda customer-grain backend sonucu aynı temel soruyu taşır: bu aşamada bir satır neyi temsil ediyor ve hangi kayıtların varlığı/yokluğu sonucu değiştiriyor? Araç değişir; grain ve scope disiplini değişmez.",
+      "body_en": "The transferable lesson is the intermediate data contract, not CTE syntax. pandas intermediate frames, Power Query staging and anti-joins, Qlik Resident LOAD, and customer-grain HTML report data all require the same grain and scope reasoning.",
+      "transfer_tasks": [
+        {
+          "tool": "Python / pandas",
+          "task_tr": "Completed revenue customer grain intermediate DataFrame üretip cancelled customer kümesini anti-filter ile dışla; merge grain'inin neden çoğalmadığını açıkla."
+        },
+        {
+          "tool": "Power Query",
+          "task_tr": "Completed aggregate ve Cancelled customer staging query'lerini ayrı kurup Left Anti join ile eligibility üretmenin sözleşmesini açıkla."
+        },
+        {
+          "tool": "Qlik",
+          "task_tr": "Resident LOAD ile customer grain'e hangi aşamada indiğini ve existence kontrolünü hangi key sözleşmesiyle kuracağını belirt."
+        },
+        {
+          "tool": "HTML",
+          "task_tr": "Eligibility raporunda her satırın booking değil customer summary olduğunu caption ve kolon isimleriyle nasıl netleştireceğini belirt."
+        }
+      ]
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: syntax değil semantik ayrımı geri çağır",
+      "title_en": "8. Retrieval: retrieve semantic separation, not syntax",
+      "body_tr": "D+1'de CTE, subquery ve EXISTS rollerini notlara bakmadan ara grain üzerinden açıkla. D+7'de correlation koşulu eksik NOT EXISTS ve NULL içerebilen NOT IN örneğinin sonucunu sorgu çalıştırmadan tahmin et. D+30'da başka bir domain'de aggregate eligibility + anti-existence kuralını ara katmanlara ayır; ayrıca UNION ALL/UNION veya EXCEPT gereken ayrı bir popülasyon probleminde duplicate sözleşmesini savun.",
+      "body_en": "On D+1, explain CTE, subquery, and EXISTS roles through intermediate grain. On D+7, predict an uncorrelated NOT EXISTS and NULL-sensitive NOT IN result. On D+30, decompose an aggregate eligibility plus anti-existence rule in another domain and justify duplicate semantics for a set-operator problem.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explain-query-block-grain-and-existence"
+        },
+        {
+          "day": 7,
+          "evidence": "predict-correlation-and-null-anti-filter"
+        },
+        {
+          "day": 30,
+          "evidence": "transfer-composition-and-set-operator-contract"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "CTE, correlated subquery, EXISTS/NOT EXISTS ve UNION ALL/UNION farklarını ara grain ve duplicate sözleşmesi üzerinden açıkla.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Correlation koşulu eksik veya duplicate sözleşmesi yanlış bir sorgunun hangi müşteri popülasyonunu yanlış seçeceğini çalıştırmadan tahmin et.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Aggregate eligibility ile anti-existence kuralını ayrı query block'lara ayıran ve customer grain'i koruyan sorguyu bağımsız üret.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Aynı staged grain ve anti-existence modelini pandas, Power Query, Qlik veya başka bir business domain'e taşı ve ara veri sözleşmesini açıkla.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "ms-cte",
+    "ms-subqueries",
+    "ms-exists",
+    "ms-union",
+    "ms-except-intersect",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}
