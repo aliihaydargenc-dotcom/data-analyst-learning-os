@@ -42,7 +42,7 @@ try{
   assert.match(await page.locator('#lessonTitle').textContent(),/Satır neyi temsil ediyor/);
   assert.equal(await page.locator('#lessonOutline .outline-item').count(),8);
   assert.equal(await page.locator('#sourceList .source-item').count(),3);
-  assert.match(await page.locator('#sequencePosition').textContent(),/1 \/ 2/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/1 \/ 3/);
   assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
   assert.match(await page.locator('#nextLessonLink').getAttribute('href'),/sql\.select-null-filtering\.001/);
 
@@ -63,10 +63,10 @@ try{
   assert.match(await page.locator('#lessonTitle').textContent(),/SELECT gerçekten ne yapıyor/);
   assert.equal(await page.locator('#lessonOutline .outline-item').count(),8);
   assert.equal(await page.locator('#sourceList .source-item').count(),6);
-  assert.match(await page.locator('#sequencePosition').textContent(),/2 \/ 2/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/2 \/ 3/);
   assert.equal(await page.locator('#previousLessonLink').isVisible(),true);
   assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
-  assert.match(await page.locator('#nextLessonLink').getAttribute('href'),/sql\\.aggregation-grain\\.001/);
+  assert.match(await page.locator('#nextLessonLink').getAttribute('href'),/sql\.aggregation-grain\.001/);
 
   await page.locator('#lessonOutline .outline-item').nth(1).click();
   assert.match(await page.locator('#sectionBody').textContent(),/UNKNOWN/);
