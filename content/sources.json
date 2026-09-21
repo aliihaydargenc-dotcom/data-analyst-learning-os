@@ -1,0 +1,97 @@
+{
+  "ms-tsql": {
+    "type": "official",
+    "title": "Microsoft Learn — Transact-SQL reference",
+    "url": "https://learn.microsoft.com/sql/t-sql/language-reference"
+  },
+  "ms-over": {
+    "type": "official",
+    "title": "Microsoft Learn — SELECT OVER clause",
+    "url": "https://learn.microsoft.com/sql/t-sql/queries/select-over-clause-transact-sql"
+  },
+  "ms-execution-plans": {
+    "type": "official",
+    "title": "Microsoft Learn — Execution plans",
+    "url": "https://learn.microsoft.com/sql/relational-databases/performance/execution-plans"
+  },
+  "python-tutorial": {
+    "type": "official",
+    "title": "Python Official Tutorial",
+    "url": "https://docs.python.org/3/tutorial/"
+  },
+  "numpy-broadcasting": {
+    "type": "official",
+    "title": "NumPy Broadcasting",
+    "url": "https://numpy.org/doc/stable/user/basics.broadcasting.html"
+  },
+  "pandas-groupby": {
+    "type": "official",
+    "title": "pandas GroupBy",
+    "url": "https://pandas.pydata.org/docs/user_guide/groupby.html"
+  },
+  "pandas-merging": {
+    "type": "official",
+    "title": "pandas Merge/Join",
+    "url": "https://pandas.pydata.org/docs/user_guide/merging.html"
+  },
+  "pandas-window": {
+    "type": "official",
+    "title": "pandas Window",
+    "url": "https://pandas.pydata.org/docs/user_guide/window.html"
+  },
+  "excel-pq-pivot": {
+    "type": "official",
+    "title": "Microsoft — Power Query and Power Pivot in Excel",
+    "url": "https://support.microsoft.com/excel/learn-to-use-power-query-and-power-pivot-in-excel"
+  },
+  "power-query-folding": {
+    "type": "official",
+    "title": "Microsoft Learn — Query folding",
+    "url": "https://learn.microsoft.com/power-query/power-query-folding"
+  },
+  "excel-let": {
+    "type": "official",
+    "title": "Microsoft — LET function",
+    "url": "https://support.microsoft.com/office/let-function-34842dd8-b92b-4d3f-b325-b8b8f9908999"
+  },
+  "excel-lambda": {
+    "type": "official",
+    "title": "Microsoft — LAMBDA function",
+    "url": "https://support.microsoft.com/office/lambda-function-bd212d27-1cd1-4321-a34a-ccbf254b8b67"
+  },
+  "qlik-set-analysis": {
+    "type": "official",
+    "title": "Qlik Help — Set Analysis",
+    "url": "https://help.qlik.com/en-US/cloud-services/Subsystems/Hub/Content/Sense_Hub/ChartFunctions/SetAnalysis/set-analysis-expressions.htm"
+  },
+  "qlik-synthetic": {
+    "type": "official",
+    "title": "Qlik Help — Synthetic keys",
+    "url": "https://help.qlik.com/en-US/cloud-services/Subsystems/Hub/Content/Sense_Hub/Scripting/synthetic-keys.htm"
+  },
+  "qlik-resident": {
+    "type": "official",
+    "title": "Qlik Help — Resident and preceding LOAD",
+    "url": "https://help.qlik.com/en-US/cloud-services/Subsystems/Hub/Content/Sense_Hub/Scripting/load-data-from-previously-loaded-table.htm"
+  },
+  "cefr": {
+    "type": "official",
+    "title": "Council of Europe — CEFR",
+    "url": "https://www.coe.int/en/web/common-european-framework-reference-languages"
+  },
+  "retrieval-practice": {
+    "type": "academic",
+    "title": "Repeated retrieval during learning",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/16507066/"
+  },
+  "spacing-meta": {
+    "type": "academic",
+    "title": "Distributed practice meta-analysis",
+    "url": "https://augmentingcognition.com/assets/Cepeda2006.pdf"
+  },
+  "expertise-reversal": {
+    "type": "academic",
+    "title": "Expertise reversal effect review",
+    "url": "https://www.tandfonline.com/doi/abs/10.1207/S15326985EP3801_4"
+  }
+}

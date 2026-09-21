@@ -10,7 +10,7 @@ const DEFAULT_SQL=`SELECT
     ) AS PREV_DAY_REVENUE
 FROM hotel_daily;`;
 
-const state={lang:'tr',questions:[],exam:[],answers:{},index:0,roadmap:null,duckdbReady:false,duckdbInfo:null};
+const state={lang:'tr',questions:[],exam:[],answers:{},index:0,roadmap:null,curriculum:null,duckdbReady:false,duckdbInfo:null};
 const $=s=>document.querySelector(s);
 let sqlLabModulePromise=null;
 
@@ -18,10 +18,11 @@ const copy={
   tr:{
     heroTitle:'Kurs izlemek değil, seviye ölçmek ve uygulamak.',
     heroText:'Beş alan tek sistemde ilerler. Bildiğin konular atlanır, açıklar konu bazında görünür ve gerçek analist görevleriyle kapanır.',
-    tracksTitle:'Beş paralel uzmanlık yolu',diagTitle:'Seviye Tespit Sınavı',
-    diagIntro:'Her alandan 5 soru seçilir. Sonuçlar SQL, Qlik, Python, Excel ve Technical English için ayrı ayrı L1–L5 seviyesine çevrilir.',
-    start:'25 Soruluk Tanıyı Başlat',topStart:'Seviye Tespitini Başlat',next:'Sonraki',finish:'Sonucu Gör',
-    roadmap:'24 haftalık plan',ready:'Hazır',
+    tracksTitle:'Beş paralel uzmanlık yolu',diagTitle:'Hızlı Ön Tarama',
+    diagIntro:'Her alandan 5 soru seçilir. Bu ekran yalnızca MCQ tabanlı hızlı ön taramadır; gerçek placement yorumlama, üretim, debugging, transfer ve retention kanıtı ister.',
+    start:'25 Soruluk Ön Taramayı Başlat',topStart:'Ön Taramayı Başlat',next:'Sonraki',finish:'Sonucu Gör',
+    academyTitle:'Temelden Expert seviyesine, kanıtla ilerleyen müfredat',academyIntro:'Hafta doldurmak değil; kavramı açıklamak, üretmek, hata ayıklamak, başka probleme taşımak ve daha sonra yeniden hatırlamak gerekiyor.',
+    roadmap:'24 haftalık referans tempo planı',ready:'Hazır',
     sqlTask:'Görev: Her otel için günlük REVENUE_EUR değerini ve bir önceki günün gelirini döndür. BUSINESS_DATE sırasını kullan.',
     runSql:"SQL'i Çalıştır",reset:'Sıfırla',completed:'Tamamlandı',
     duckIdle:'DuckDB · hazır',duckLoading:'DuckDB yükleniyor…',
@@ -33,10 +34,11 @@ const copy={
   en:{
     heroTitle:'Do not just watch courses. Measure, practice, and prove skill.',
     heroText:'Five domains move inside one system. Strong topics are skipped, gaps become visible by topic, and real analyst tasks close them.',
-    tracksTitle:'Five parallel specialization tracks',diagTitle:'Diagnostic Placement Exam',
-    diagIntro:'Five questions are sampled from each domain. SQL, Qlik, Python, Excel and Technical English are scored separately from L1 to L5.',
-    start:'Start 25-Question Diagnostic',topStart:'Start Diagnostic',next:'Next',finish:'View Results',
-    roadmap:'24-week roadmap',ready:'Ready',
+    tracksTitle:'Five parallel specialization tracks',diagTitle:'Quick Screening',
+    diagIntro:'Five questions are sampled from each domain. This MCQ screen is not final placement; interpretation, production, debugging, transfer and retention evidence are required.',
+    start:'Start 25-Question Screen',topStart:'Start Screening',next:'Next',finish:'View Results',
+    academyTitle:'From foundations to Expert, progress by evidence',academyIntro:'Progress requires explanation, production, debugging, transfer and delayed retention — not simply finishing weeks.',
+    roadmap:'24-week reference pace plan',ready:'Ready',
     sqlTask:'Task: For each hotel, return daily REVENUE_EUR and previous-day revenue ordered by BUSINESS_DATE.',
     runSql:'Run SQL',reset:'Reset',completed:'Completed',
     duckIdle:'DuckDB · ready',duckLoading:'Loading DuckDB…',
@@ -63,6 +65,27 @@ function renderTracks(){
   </article>`).join('');
 }
 
+
+function renderMastery(){
+  const items=state.lang==='tr'
+    ?[['01','Bilgi','Kuralı ve kavramı bil'],['02','Yorum','Kod, model ve çıktıyı oku'],['03','Üretim','Sıfırdan doğru çözüm üret'],['04','Transfer','Aynı prensibi yeni probleme taşı'],['05','Retention','Günler sonra yeniden kanıtla']]
+    :[['01','Knowledge','Know the rule and concept'],['02','Interpret','Read code, models and outputs'],['03','Production','Build the solution independently'],['04','Transfer','Apply the principle to a new problem'],['05','Retention','Prove it again after delay']];
+  $('#masteryGrid').innerHTML=items.map(([n,title,desc])=>`<article class="mastery-card"><span>${n}</span><strong>${title}</strong><small>${desc}</small></article>`).join('');
+}
+
+function renderCurriculum(){
+  if(!state.curriculum)return;
+  const order=['L1','L2','L3','L4','L5','Expert'];
+  $('#curriculumGrid').innerHTML=state.curriculum.tracks.map(track=>`<article class="curriculum-card">
+    <div class="curriculum-head"><span>${track.name}</span><strong>${track.modules.length} module</strong></div>
+    <p>${track.purpose_tr}</p>
+    <div class="level-ladder">${order.map(level=>{
+      const list=track.modules.filter(m=>m.level===level);
+      return `<div class="level-step"><span>${level}</span><small>${list.map(m=>state.lang==='tr'?m.title_tr:m.title_en).join(' · ')}</small></div>`;
+    }).join('')}</div>
+  </article>`).join('');
+}
+
 function updateDuckdbStatus(){
   const c=copy[state.lang];
   if(!state.duckdbReady){
@@ -81,6 +104,8 @@ function applyLanguage(){
   $('#heroTitle').textContent=c.heroTitle;
   $('#heroText').textContent=c.heroText;
   $('#tracksTitle').textContent=c.tracksTitle;
+  $('#academyTitle').textContent=c.academyTitle;
+  $('#academyIntro').textContent=c.academyIntro;
   $('#diagTitle').textContent=c.diagTitle;
   $('#diagIntro').textContent=c.diagIntro;
   $('#startDiagnostic').textContent=c.start;
@@ -95,6 +120,8 @@ function applyLanguage(){
   updateDuckdbStatus();
   if(!state.exam.length)$('#diagCounter').textContent=c.ready;
   renderTracks();
+  renderMastery();
+  renderCurriculum();
   renderRoadmap();
   if(state.exam.length&&!$('#questionStage').classList.contains('hidden'))renderQuestion();
 }
@@ -267,9 +294,10 @@ $('#resetSql').addEventListener('click',()=>{
 
 async function init(){
   try{
-    const [q,r]=await Promise.all([fetch('./data/question-bank.json'),fetch('./data/roadmap.json')]);
+    const [q,r,c]=await Promise.all([fetch('./data/question-bank.json'),fetch('./data/roadmap.json'),fetch('./content/curriculum.json')]);
     state.questions=await q.json();
     state.roadmap=await r.json();
+    state.curriculum=await c.json();
     applyLanguage();
     clearSqlTable();
   }catch(err){
