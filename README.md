@@ -18,15 +18,17 @@ Dört teknik alanı birbirinden kopuk kurslar halinde değil, tek bir analist ak
 - Her alandan 5 soru seçen 25 soruluk seviye tespit sınavı
 - L1–L5 yerleştirme
 - TR / EN arayüz
-- SQL window-function yapı kontrolü
+- DuckDB-Wasm ile tarayıcı içinde gerçek SQL execution
+- `hotel_daily.csv` üzerinde çalışan Window Function laboratuvarı
+- Tek statement ve read-only SQL sandbox kuralı
 - 24 haftalık yol haritası
 - 1.460 satırlık sentetik otel veri seti
 - Kaynak ve müfredat dokümantasyonu
-- Node tabanlı temel testler
+- Core + gerçek Chromium browser smoke testleri
 
 ## Çalıştırma
 
-Bağımlılık gerektirmez:
+Statik sunucu yeterlidir:
 
 ```bash
 python -m http.server 8080
@@ -38,27 +40,43 @@ Ardından:
 http://localhost:8080/
 ```
 
-Test:
+SQL Lab, DuckDB-Wasm'ın sabitlenmiş CDN sürümünü ilk sorguda yükler. CSV aynı origin'den tarayıcı belleğine alınır ve DuckDB içinde `hotel_daily` tablosuna aktarılır.
+
+## Test
+
+Core:
 
 ```bash
+npm install
 npm test
 ```
 
+Browser smoke testi için Chromium kurulmalıdır:
+
+```bash
+npx playwright install chromium
+python -m http.server 4173
+npm run test:browser
+```
+
+GitHub Actions bu akışı otomatik olarak çalıştırır.
+
 ## Repo yapısı
 
-- `index.html`: uygulama
+- `index.html`: uygulama ve import map
 - `styles.css`: responsive UI
-- `app.js`: sınav ve arayüz mantığı
+- `app.js`: sınav, dil ve SQL Lab arayüz mantığı
+- `duckdb-lab.mjs`: DuckDB-Wasm başlatma, CSV ingestion ve query execution
 - `core.mjs`: saf değerlendirme fonksiyonları
 - `data/question-bank.json`: 50 özgün soru
 - `data/roadmap.json`: 24 haftalık plan
 - `datasets/hotel_daily.csv`: sentetik otel verisi
 - `docs/`: müfredat, sınav tasarımı ve kaynaklar
-- `tests/`: temel testler
+- `tests/`: core ve browser smoke testleri
 
 ## Sonraki teknik dilimler
 
-1. DuckDB-Wasm ile gerçek SQL execution engine
+1. SQL soru motorunda beklenen sonuç/rubric kontrolü
 2. Pyodide ile tarayıcı içi Python laboratuvarı
 3. Supabase ile kullanıcı, ilerleme ve sınav geçmişi
 4. Soru bazlı spaced repetition
