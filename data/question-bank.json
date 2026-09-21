@@ -898,5 +898,185 @@
     ],
     "answer": 0,
     "explanation_tr": "Deprecated özellik hâlâ bulunabilir ancak yeni kullanım için önerilmez."
+  },
+  {
+    "id": "Q051",
+    "domain": "HTML",
+    "level": 1,
+    "topic": "Semantics",
+    "type": "mcq",
+    "difficulty": "easy",
+    "question_tr": "Bir sayfanın ana içeriği için en uygun semantik element hangisidir?",
+    "question_en": "Which semantic element best represents the main content of a page?",
+    "choices": [
+      "<div>",
+      "<main>",
+      "<span>",
+      "<b>"
+    ],
+    "answer": 1,
+    "explanation_tr": "<main> belgenin baskın ana içeriğini semantik olarak belirtir."
+  },
+  {
+    "id": "Q052",
+    "domain": "HTML",
+    "level": 1,
+    "topic": "Links vs Buttons",
+    "type": "mcq",
+    "difficulty": "easy",
+    "question_tr": "Bir kullanıcı işlemini tetikleyen kontrol için genel olarak hangisi daha doğru seçimdir?",
+    "question_en": "Which is generally the correct choice for a control that triggers an action?",
+    "choices": [
+      "<a>",
+      "<button>",
+      "<em>",
+      "<section>"
+    ],
+    "answer": 1,
+    "explanation_tr": "Navigation için link, eylem için button semantiği kullanılmalıdır."
+  },
+  {
+    "id": "Q053",
+    "domain": "HTML",
+    "level": 2,
+    "topic": "Tables",
+    "type": "mcq",
+    "difficulty": "easy",
+    "question_tr": "Bir veri tablosunda kolon başlığı hangi elementle işaretlenmelidir?",
+    "question_en": "Which element should mark a column header in a data table?",
+    "choices": [
+      "<td>",
+      "<th>",
+      "<div>",
+      "<label>"
+    ],
+    "answer": 1,
+    "explanation_tr": "Header hücreleri <th>, veri hücreleri <td> ile işaretlenir."
+  },
+  {
+    "id": "Q054",
+    "domain": "HTML",
+    "level": 2,
+    "topic": "Tables",
+    "type": "mcq",
+    "difficulty": "easy",
+    "question_tr": "Basit bir tabloda <th scope=\"col\"> neyi ifade eder?",
+    "question_en": "What does <th scope=\"col\"> indicate in a simple table?",
+    "choices": [
+      "Hücrenin tüm sayfayı kapsadığını",
+      "Başlığın ilgili kolonun hücreleriyle ilişkili olduğunu",
+      "Kolonu gizlediğini",
+      "Kolonu sıraladığını"
+    ],
+    "answer": 1,
+    "explanation_tr": "scope='col' başlığın kolon başlığı olduğunu programatik olarak belirtir."
+  },
+  {
+    "id": "Q055",
+    "domain": "HTML",
+    "level": 2,
+    "topic": "Forms",
+    "type": "mcq",
+    "difficulty": "easy",
+    "question_tr": "Bir input ile görünen açıklamasını güvenilir biçimde ilişkilendirmek için hangi yapı tercih edilir?",
+    "question_en": "Which structure is preferred to associate an input with its visible description?",
+    "choices": [
+      "<label for=\"...\">",
+      "placeholder",
+      "title only",
+      "<br>"
+    ],
+    "answer": 0,
+    "explanation_tr": "label ve input id/for ilişkisi form kontrolünün erişilebilir adını destekler."
+  },
+  {
+    "id": "Q056",
+    "domain": "HTML",
+    "level": 2,
+    "topic": "Forms",
+    "type": "mcq",
+    "difficulty": "easy",
+    "question_tr": "HTML required kullanılması veriyi güvenlik açısından tamamen doğrular mı?",
+    "question_en": "Does HTML required fully validate data for security?",
+    "choices": [
+      "Evet",
+      "Hayır; server-side validation yine gerekir",
+      "Yalnızca HTTPS'te evet",
+      "Sadece text inputta evet"
+    ],
+    "answer": 1,
+    "explanation_tr": "Client-side validation kullanıcı deneyimine yardım eder; güvenlik için server-side validation gerekir."
+  },
+  {
+    "id": "Q057",
+    "domain": "HTML",
+    "level": 3,
+    "topic": "Accessibility",
+    "type": "mcq",
+    "difficulty": "medium",
+    "question_tr": "Semantik HTML için temel prensip hangisidir?",
+    "question_en": "What is a core principle of semantic HTML?",
+    "choices": [
+      "Görsel olarak benzer her şeyi div yapmak",
+      "Doğru iş için doğru elementi kullanmak",
+      "ARIA'yı her elemente eklemek",
+      "Başlık seviyelerini görünüme göre seçmek"
+    ],
+    "answer": 1,
+    "explanation_tr": "Native HTML semantiği elementin amacını tarayıcı ve assistive technology'ye taşır."
+  },
+  {
+    "id": "Q058",
+    "domain": "HTML",
+    "level": 3,
+    "topic": "DOM",
+    "type": "mcq",
+    "difficulty": "medium",
+    "question_tr": "id attribute için genel beklenti nedir?",
+    "question_en": "What is the general expectation for an id attribute?",
+    "choices": [
+      "Belge içinde benzersiz olması",
+      "Her elementte aynı olması",
+      "Sadece CSS için kullanılması",
+      "Yalnızca formda kullanılması"
+    ],
+    "answer": 0,
+    "explanation_tr": "id belge içindeki bir elementi benzersiz biçimde tanımlamak için kullanılır."
+  },
+  {
+    "id": "Q059",
+    "domain": "HTML",
+    "level": 4,
+    "topic": "Data reporting",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Bir chart'ın açıklamasını görselle ilişkilendirmek için hangi yapı semantik olarak uygundur?",
+    "question_en": "Which structure is semantically appropriate to associate a chart with its caption?",
+    "choices": [
+      "<figure> + <figcaption>",
+      "<table> + <label>",
+      "<nav> + <small>",
+      "<form> + <legend>"
+    ],
+    "answer": 0,
+    "explanation_tr": "figure ve figcaption bağımsız görsel/medya içeriğini açıklamasıyla ilişkilendirebilir."
+  },
+  {
+    "id": "Q060",
+    "domain": "HTML",
+    "level": 4,
+    "topic": "Accessibility",
+    "type": "mcq",
+    "difficulty": "hard",
+    "question_tr": "Görsel olarak sıralı fakat DOM source order'ı anlamsız olan bir raporda temel risk nedir?",
+    "question_en": "What is a key risk when visual order is correct but DOM source order is illogical?",
+    "choices": [
+      "CSS çalışmaz",
+      "Keyboard ve screen-reader okuma sırası anlamını kaybedebilir",
+      "HTML dosyası açılamaz",
+      "SQL sorgusu bozulur"
+    ],
+    "answer": 1,
+    "explanation_tr": "Source order assistive technology ve keyboard flow açısından anlamlı olmalıdır."
   }
 ]
