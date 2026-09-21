@@ -3,6 +3,74 @@ import {DUCKDB_VERSION,DUCKDB_BUNDLES} from './duckdb-config.mjs';
 import {compareResultSets} from './sql-result-evaluator.mjs';
 
 const FIXTURES=Object.freeze({
+  'sql-model-quality-v1':{
+    table:'booking_fact',
+    visibleSetup:`
+      DROP TABLE IF EXISTS booking_fact;
+      DROP TABLE IF EXISTS hotel_dim;
+      CREATE TABLE hotel_dim(HOTEL_ID VARCHAR, HOTEL_NAME VARCHAR);
+      CREATE TABLE booking_fact(BOOKING_ID VARCHAR, HOTEL_ID VARCHAR, STATUS VARCHAR, ROOM_NIGHTS INTEGER, REVENUE_EUR INTEGER);
+      INSERT INTO hotel_dim VALUES
+        ('H1','Aurora'),('H2','Boreal'),('H2','Boreal duplicate'),('H3','Cedar');
+      INSERT INTO booking_fact VALUES
+        ('B1','H1','Active',2,500),
+        ('B2','H2','Active',1,300),
+        ('B2','H2','Active',1,300),
+        ('B3','H9','Active',1,200),
+        ('B4','H3','Unknown',1,100),
+        ('B5','H3','Cancelled',-1,0),
+        ('B6','H1','Active',1,-50);
+    `,
+    edgeSetup:`
+      DROP TABLE IF EXISTS booking_fact;
+      DROP TABLE IF EXISTS hotel_dim;
+      CREATE TABLE hotel_dim(HOTEL_ID VARCHAR, HOTEL_NAME VARCHAR);
+      CREATE TABLE booking_fact(BOOKING_ID VARCHAR, HOTEL_ID VARCHAR, STATUS VARCHAR, ROOM_NIGHTS INTEGER, REVENUE_EUR INTEGER);
+      INSERT INTO hotel_dim VALUES
+        ('X1','Alpha'),('X1','Alpha duplicate'),('X2','Beta'),('X3','Gamma'),('X3','Gamma duplicate');
+      INSERT INTO booking_fact VALUES
+        ('E1','X1','Active',1,100),
+        ('E1','X1','Active',2,200),
+        ('E2','X9','Pending',1,150),
+        ('E3','X8','Closed',1,-10),
+        ('E4','X2','Cancelled',-2,0),
+        ('E5','X3','Active',1,500);
+    `,
+    referenceSql:`
+      WITH hotel_keys AS (
+        SELECT DISTINCT HOTEL_ID FROM hotel_dim
+      ),
+      checks AS (
+        SELECT 'duplicate_booking_id' AS CHECK_NAME,
+               COUNT(*) - COUNT(DISTINCT BOOKING_ID) AS VIOLATION_COUNT
+        FROM booking_fact
+        UNION ALL
+        SELECT 'duplicate_hotel_id',
+               COUNT(*) - COUNT(DISTINCT HOTEL_ID)
+        FROM hotel_dim
+        UNION ALL
+        SELECT 'invalid_status', COUNT(*)
+        FROM booking_fact
+        WHERE STATUS NOT IN ('Active','Pending','Cancelled')
+        UNION ALL
+        SELECT 'negative_revenue', COUNT(*)
+        FROM booking_fact
+        WHERE REVENUE_EUR < 0
+        UNION ALL
+        SELECT 'negative_room_nights', COUNT(*)
+        FROM booking_fact
+        WHERE ROOM_NIGHTS < 0
+        UNION ALL
+        SELECT 'orphan_hotel_fk', COUNT(*)
+        FROM booking_fact AS b
+        LEFT JOIN hotel_keys AS h ON h.HOTEL_ID = b.HOTEL_ID
+        WHERE b.HOTEL_ID IS NOT NULL AND h.HOTEL_ID IS NULL
+      )
+      SELECT CHECK_NAME, VIOLATION_COUNT
+      FROM checks
+      ORDER BY CHECK_NAME
+    `
+  },
   'sql-analytical-patterns-v1':{
     table:'analytical_pattern_cases',
     visibleSetup:`

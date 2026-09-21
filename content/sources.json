@@ -213,5 +213,15 @@
     "type": "official",
     "title": "Microsoft Learn — DATEDIFF (Transact-SQL)",
     "url": "https://learn.microsoft.com/en-us/sql/t-sql/functions/datediff-transact-sql?view=sql-server-ver17"
+  },
+  "ms-unique-check": {
+    "type": "official",
+    "title": "Microsoft Learn — Unique constraints and check constraints",
+    "url": "https://learn.microsoft.com/en-us/sql/relational-databases/tables/unique-constraints-and-check-constraints?view=sql-server-ver17"
+  },
+  "ms-checkconstraints": {
+    "type": "official",
+    "title": "Microsoft Learn — DBCC CHECKCONSTRAINTS (Transact-SQL)",
+    "url": "https://learn.microsoft.com/en-us/sql/t-sql/database-console-commands/dbcc-checkconstraints-transact-sql?view=sql-server-ver17"
   }
 }
