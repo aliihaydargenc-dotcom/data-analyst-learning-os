@@ -293,5 +293,80 @@
     "type": "official",
     "title": "Qlik Sense for developers May 2023 — Authorization",
     "url": "https://help.qlik.com/en-US/sense-developer/May2023/Subsystems/Platform/Content/Sense_PlatformOverview/Concepts/authorization.htm"
+  },
+  "python-314-docs": {
+    "type": "official",
+    "title": "Python 3.14.7 Documentation",
+    "url": "https://docs.python.org/3/"
+  },
+  "pyodide-stable": {
+    "type": "official",
+    "title": "Pyodide stable — Using Pyodide",
+    "url": "https://pyodide.org/en/stable/usage/index.html"
+  },
+  "python-errors": {
+    "type": "official",
+    "title": "Python Tutorial — Errors and Exceptions",
+    "url": "https://docs.python.org/3/tutorial/errors.html"
+  },
+  "numpy-copies-views": {
+    "type": "official",
+    "title": "NumPy — Copies and views",
+    "url": "https://numpy.org/doc/stable/user/basics.copies.html"
+  },
+  "pandas-dtypes": {
+    "type": "official",
+    "title": "pandas User Guide — dtypes",
+    "url": "https://pandas.pydata.org/docs/user_guide/basics.html#dtypes"
+  },
+  "pandas-missing": {
+    "type": "official",
+    "title": "pandas User Guide — Working with missing data",
+    "url": "https://pandas.pydata.org/docs/user_guide/missing_data.html"
+  },
+  "pandas-reshape": {
+    "type": "official",
+    "title": "pandas User Guide — Reshaping and pivot tables",
+    "url": "https://pandas.pydata.org/docs/user_guide/reshaping.html"
+  },
+  "pandas-descriptive": {
+    "type": "official",
+    "title": "pandas User Guide — Descriptive statistics",
+    "url": "https://pandas.pydata.org/docs/user_guide/basics.html#descriptive-statistics"
+  },
+  "pandas-io": {
+    "type": "official",
+    "title": "pandas User Guide — IO tools",
+    "url": "https://pandas.pydata.org/docs/user_guide/io.html"
+  },
+  "python-json": {
+    "type": "official",
+    "title": "Python Standard Library — json",
+    "url": "https://docs.python.org/3/library/json.html"
+  },
+  "python-unittest": {
+    "type": "official",
+    "title": "Python Standard Library — unittest",
+    "url": "https://docs.python.org/3/library/unittest.html"
+  },
+  "python-typing": {
+    "type": "official",
+    "title": "Python Standard Library — typing",
+    "url": "https://docs.python.org/3/library/typing.html"
+  },
+  "python-logging": {
+    "type": "official",
+    "title": "Python Standard Library — logging",
+    "url": "https://docs.python.org/3/library/logging.html"
+  },
+  "pandas-scaling": {
+    "type": "official",
+    "title": "pandas User Guide — Scaling to large datasets",
+    "url": "https://pandas.pydata.org/docs/user_guide/scale.html"
+  },
+  "python-hashlib": {
+    "type": "official",
+    "title": "Python Standard Library — hashlib",
+    "url": "https://docs.python.org/3/library/hashlib.html"
   }
 }

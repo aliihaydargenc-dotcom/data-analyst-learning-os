@@ -4,7 +4,7 @@ import {
   validateLessonStructure,lessonLayerSummary,REQUIRED_LAYERS,
   createLessonProgress,normalizeLessonProgress,canCompleteSection,
   completionPercent,completeSection,buildRetentionSchedule,saveEvidenceDraft,
-  labPassed,recordLabAttempt,recordCaseLabAttempt
+  labPassed,recordLabAttempt,recordCaseLabAttempt,recordPythonLabAttempt
 } from '../lesson-runtime.mjs';
 
 const lesson=JSON.parse(fs.readFileSync('content/lessons/sql.relational-thinking.001.json','utf8'));
@@ -92,5 +92,18 @@ qlikProgress=recordCaseLabAttempt(qlikLesson,qlikProgress,qlikLesson.case_lab.id
 assert.equal(labPassed(qlikProgress,qlikLesson.case_lab.id),true);
 qlikGated=completeSection(qlikLesson,qlikProgress,qlikIndependent.id,qlikResponse,now);
 assert.equal(qlikGated.ok,true);
+
+// Semantic Python-lab gate supports executable Python production lessons.
+const pythonLesson=JSON.parse(fs.readFileSync('content/lessons/python.language-semantics.001.json','utf8'));
+let pythonProgress=createLessonProgress(pythonLesson,now);
+const pythonIndependent=pythonLesson.sections.find(section=>section.requires_python_lab_pass);
+const pythonResponse='Truthiness, mutability ve type contractını visible ve edge fixture ile doğrulayan gerekçeli production yanıtı.';
+let pythonGated=completeSection(pythonLesson,pythonProgress,pythonIndependent.id,pythonResponse,now);
+assert.equal(pythonGated.ok,false);
+assert.equal(pythonGated.reason,'python_lab_required');
+pythonProgress=recordPythonLabAttempt(pythonLesson,pythonProgress,pythonLesson.python_lab.id,{passed:true,summary:{visible:true,edge:true}},now);
+assert.equal(labPassed(pythonProgress,pythonLesson.python_lab.id),true);
+pythonGated=completeSection(pythonLesson,pythonProgress,pythonIndependent.id,pythonResponse,now);
+assert.equal(pythonGated.ok,true);
 
 console.log('lesson runtime tests: PASS');

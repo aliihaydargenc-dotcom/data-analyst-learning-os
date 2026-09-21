@@ -1,0 +1,196 @@
+{
+  "id": "python.repro-architecture.001",
+  "module_id": "python.repro-architecture",
+  "track": "python",
+  "level": "Expert",
+  "status": "production-candidate",
+  "title_tr": "Reproducibility ve analitik yazılım mimarisi",
+  "title_en": "Reproducibility and analytical software architecture",
+  "subtitle_tr": "Reproducibility ve analitik yazılım mimarisi konusunu gerçek Python execution, edge-case testleri ve production contract düşüncesiyle öğren.",
+  "subtitle_en": "Learn reproducibility and analytical software architecture through real Python execution, edge-case tests, and production contracts.",
+  "estimated_minutes_range": [
+    100,
+    140
+  ],
+  "why_it_matters_tr": "Reproducibility yalnız requirements dosyası değildir; code version, config, data identity/hash, environment ve run metadata aynı analytical result'ın yeniden üretilebilirliğini belirler. Mimari sınırlar source adapter, transform, validation ve output contract'larını ayrıştırmalıdır. Notebook'u kaydetmek reproducibility garantisi değildir; hidden state, hücre çalışma sırası ve değişen external file aynı notebook koduyla farklı sonuç üretebilir. Bu nedenle ders yalnız açıklama okumayı değil, gerçek Python runtime'ında visible ve edge testlerini geçmeyi ve sonucu başka analitik araca transfer etmeyi zorunlu kılar.",
+  "why_it_matters_en": "Reproducibility depends on code version, configuration, data identity, environment, and run metadata. Architecture should separate source adapters, transformations, validation, and output contracts. The lesson therefore requires executable visible and edge tests in a real Python runtime plus transfer of the same analytical contract to another tool.",
+  "prerequisites": [
+    "python.performance-pipelines.001"
+  ],
+  "learning_objectives": [
+    "Reproducibility ve analitik yazılım mimarisi için input/output, type/grain ve error contract'ını açıklar.",
+    "Visible ve edge fixture üzerinde doğru Python implementasyonunu üretir.",
+    "Mutation, missing-data, ordering veya cardinality kaynaklı failure'ı evidence ile debug eder.",
+    "Aynı analitik contract'ı SQL, Qlik veya Excel'e transfer eder."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "Önkoşul kanıtları hazır mı: python.performance-pipelines.001?",
+      "if_no_tr": "Önkoşul production derslerini tamamla veya eşdeğer mastery evidence üret."
+    }
+  ],
+  "python_lab": {
+    "id": "python-repro-architecture-v1",
+    "title_tr": "Semantic Python Lab · Reproducibility ve analitik yazılım mimarisi",
+    "title_en": "Semantic Python Lab · Reproducibility and analytical software architecture",
+    "task_tr": "`build_run_manifest(config, data_hash, code_version)` fonksiyonunu yaz. Config'i deterministic canonical JSON ile normalize et; config+data_hash+code_version üzerinden SHA-256 `manifest_id` üret ve bu dört alanı içeren dict döndür.",
+    "task_en": "`build_run_manifest(config, data_hash, code_version)` fonksiyonunu yaz. Config'i deterministic canonical JSON ile normalize et; config+data_hash+code_version üzerinden SHA-256 `manifest_id` üret ve bu dört alanı içeren dict döndür.",
+    "starter_code": "import hashlib, json\n\ndef build_run_manifest(config, data_hash, code_version):\n    pass",
+    "packages": [],
+    "engine_note_tr": "Kod Pyodide üzerinden tarayıcıda gerçek Python runtime'ında çalışır. Değerlendirme deterministic visible ve edge testleriyle yapılır; production performans benchmark'ı değildir.",
+    "engine_note_en": "Code runs in a real browser Python runtime through Pyodide. Deterministic visible and edge tests grade semantics; this is not a production performance benchmark.",
+    "requires_for_section": "repro-architecture-production"
+  },
+  "sections": [
+    {
+      "id": "mental-model",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: contract önce, kod sonra",
+      "title_en": "1. Mental model: contract before code",
+      "body_tr": "Reproducibility yalnız requirements dosyası değildir; code version, config, data identity/hash, environment ve run metadata aynı analytical result'ın yeniden üretilebilirliğini belirler. Mimari sınırlar source adapter, transform, validation ve output contract'larını ayrıştırmalıdır. Bu derste önce input shape/type ve beklenen output contract yazılır; ardından kod bu contract'ı uygular ve testler boundary davranışını kanıtlar.",
+      "body_en": "Reproducibility depends on code version, configuration, data identity, environment, and run metadata. Architecture should separate source adapters, transformations, validation, and output contracts. Start by defining input and output contracts, then use executable tests to prove boundary behavior rather than relying on code appearance.",
+      "checks": [
+        "Input ve output contract'ını koddan önce yaz.",
+        "Mutation, missing-data ve error davranışını explicit et.",
+        "Çalışan kod ile doğru kodu aynı şey sayma."
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "2. Worked example: küçük fixture ile davranışı görünür yap",
+      "title_en": "2. Worked example: expose behavior with a small fixture",
+      "body_tr": "Config dictionary key sırası değişse bile aynı logical config aynı manifest identity üretmelidir. Buna karşılık data hash veya code version değiştiğinde run manifest de değişerek lineage farkını görünür kılmalıdır. Küçük fixture'ın amacı production datasını taklit etmek değil, semantik kuralı deterministik biçimde görünür kılmaktır; aynı kural edge fixture ile sınır durumda tekrar sınanır.",
+      "body_en": "Use a small deterministic fixture to expose the semantic rule, then challenge the same rule with an edge fixture. The fixture is evidence, not a substitute for production profiling.",
+      "code": "canonical=json.dumps(payload,sort_keys=True,separators=(',',':'))\nmanifest_id=hashlib.sha256(canonical.encode()).hexdigest()",
+      "explanation_tr": "Örnek kod doğrudan kopyalanacak reçete değildir; shape, dtype, cardinality ve error contract gerçek veriyle yeniden doğrulanmalıdır.",
+      "explanation_en": "The example is not a copy-paste prescription. Validate shape, dtype, cardinality, and failure behavior against real data."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "3. Guided practice: sonucu çalıştırmadan tahmin et",
+      "title_en": "3. Guided practice: predict before execution",
+      "body_tr": "Reproducibility yalnız requirements dosyası değildir; code version, config, data identity/hash, environment ve run metadata aynı analytical result'ın yeniden üretilebilirliğini belirler. Mimari sınırlar source adapter, transform, validation ve output contract'larını ayrıştırmalıdır. Kod çalıştırmadan önce visible fixture için beklenen return value, dtype/shape veya exception davranışını yaz. Sonuç farklıysa hemen patch atmak yerine yanlış varsayımın type, grain, ordering, mutability veya missing-data katmanlarından hangisinde olduğunu belirle.",
+      "body_en": "Predict the expected return value, dtype, shape, or exception before execution. If observation differs, identify which assumption about type, grain, ordering, mutation, or missing data was wrong.",
+      "prompts": [
+        "Reproducibility ve analitik yazılım mimarisi için input/output contract'ını iki cümlede yaz.",
+        "Visible fixture çalışmadan önce beklenen sonucu veya exception'ı tahmin et.",
+        "Edge case başarısız olursa hangi invariant'ı önce kontrol edersin?"
+      ]
+    },
+    {
+      "id": "repro-architecture-production",
+      "layer": "independent_practice",
+      "title_tr": "4. Bağımsız üretim: Semantic Python Lab",
+      "title_en": "4. Independent production: Semantic Python Lab",
+      "body_tr": "Tarayıcıdaki gerçek Python runtime'ında görevi tamamla. Visible ve edge testlerinin ikisi de geçmeden bu bölüm tamamlanmaz. Geçtikten sonra yanıt alanında çözümün business contract'ını, mutation/error davranışını ve hangi edge case'in seni en çok zorladığını kısa teknik not olarak yaz.",
+      "body_en": "Complete the task in the real browser Python runtime. Both visible and edge tests must pass before the section can be completed. Then document the business contract and important edge behavior.",
+      "requires_python_lab_pass": "python-repro-architecture-v1",
+      "evidence_required": [
+        "python_lab_visible_pass",
+        "python_lab_edge_pass",
+        "contract_explanation",
+        "edge_case_reasoning"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "5. Debugging: exception ve yanlış sonucu evidence'e çevir",
+      "title_en": "5. Debugging: turn exceptions and wrong results into evidence",
+      "body_tr": "Notebook'u kaydetmek reproducibility garantisi değildir; hidden state, hücre çalışma sırası ve değişen external file aynı notebook koduyla farklı sonuç üretebilir. Debug sırasında aynı anda birden çok şeyi değiştirme. Hata mesajı, minimal fixture, dtype/shape, intermediate value ve input mutation kontrolünü sırayla kullan; ardından tek değişkenli düzeltmeyi edge fixture ile regression'a karşı doğrula.",
+      "body_en": "Notebook'u kaydetmek reproducibility garantisi değildir; hidden state, hücre çalışma sırası ve değişen external file aynı notebook koduyla farklı sonuç üretebilir. Debug one major assumption at a time using the exception, minimal fixture, dtype or shape, intermediate values, and mutation checks, then rerun edge tests for regression evidence.",
+      "diagnostic_sequence": [
+        "Failure'ı en küçük fixture ile yeniden üret.",
+        "Input type/shape/index ve missing değerleri görünür hale getir.",
+        "Intermediate sonucu veya exception context'ini kaydet.",
+        "Tek bir varsayımı düzelt ve visible testi tekrar çalıştır.",
+        "Edge fixture ile boundary davranışını doğrula.",
+        "Aynı output contract'ın downstream adımı bozmadığını kontrol et."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "6. Transfer: aynı contract'ı SQL, Qlik ve Excel'e taşı",
+      "title_en": "6. Transfer: carry the contract into SQL, Qlik, and Excel",
+      "body_tr": "Config dictionary key sırası değişse bile aynı logical config aynı manifest identity üretmelidir. Buna karşılık data hash veya code version değiştiğinde run manifest de değişerek lineage farkını görünür kılmalıdır. Transfer çalışmasında Python syntax'ını diğer araca kopyalamak yerine population, grain, data type, ordering, missing-data ve validation contract'ını taşı. Mekanizma değişse de analitik doğruluk sorusu aynı kalır.",
+      "body_en": "Transfer population, grain, data type, ordering, missing-data, and validation contracts rather than copying Python syntax into another analytical tool.",
+      "transfer_tasks": [
+        {
+          "tool": "SQL",
+          "task_tr": "Reproducibility ve analitik yazılım mimarisi kuralını SQL set/grain contract'ı olarak yeniden ifade et ve Python'daki index/order farkını yaz."
+        },
+        {
+          "tool": "Qlik Sense",
+          "task_tr": "Aynı business logic için associative state, field type ve chart/script layer karşılığını tanımla."
+        },
+        {
+          "tool": "Excel / Power Query",
+          "task_tr": "Aynı dönüşümde type coercion, refresh ve result reconciliation gate'lerini yaz."
+        }
+      ]
+    },
+    {
+      "id": "review",
+      "layer": "mental_model",
+      "title_tr": "7. Review: üretim kalitesini syntax'tan ayır",
+      "title_en": "7. Review: separate production quality from syntax",
+      "body_tr": "Notebook'u kaydetmek reproducibility garantisi değildir; hidden state, hücre çalışma sırası ve değişen external file aynı notebook koduyla farklı sonuç üretebilir. Production review'da readability önemlidir fakat correctness, test coverage, input validation, observability ve resource davranışının yerine geçmez. Review yorumunu gözlenen evidence, risk ve kabul için gereken action şeklinde yaz.",
+      "body_en": "Readable syntax matters, but it does not replace correctness, tests, validation, observability, or resource behavior. Write review comments as evidence, risk, and required action."
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: API ezberi değil invariant'ı geri çağır",
+      "title_en": "8. Retrieval: retrieve the invariant, not API trivia",
+      "body_tr": "D+1'de reproducibility ve analitik yazılım mimarisi konusunun ana invariant'ını dokümana bakmadan açıkla. D+7'de yeni bir fixture için sonucu kod çalıştırmadan tahmin et. D+30'da gerçek bir veri işi seçip test, error handling, performance ve transfer kanıtını kısa bir review memo'da birleştir.",
+      "body_en": "On D+1 explain the core invariant from memory. On D+7 predict a new fixture without executing code. On D+30 combine tests, failure handling, performance evidence, and transfer reasoning in a short review memo.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explain-python-invariant-from-memory"
+        },
+        {
+          "day": 7,
+          "evidence": "predict-new-python-fixture"
+        },
+        {
+          "day": 30,
+          "evidence": "produce-python-production-review"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "Reproducibility ve analitik yazılım mimarisi için ana semantik ve failure sınırlarını açıklayıp API ezberinden ayır.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Yeni fixture'da beklenen return/dtype/shape/exception davranışını execution öncesi tahmin et ve sapmayı açıkla.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Semantic Python Lab visible ve edge testlerini geçiren, input contract'ını koruyan implementasyonu üret.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Aynı correctness contract'ını SQL, Qlik veya Excel'e taşı ve mekanizma farkını açıkla.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "python-hashlib",
+    "python-json",
+    "python-314-docs",
+    "pyodide-stable",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}

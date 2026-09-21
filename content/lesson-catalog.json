@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "production_lessons": [
     {
       "id": "sql.relational-thinking.001",
@@ -240,6 +240,126 @@
       "path": "content/lessons/qlik.engine-review.001.json",
       "status": "production-candidate",
       "runtime": "lesson.html?id=qlik.engine-review.001"
+    },
+    {
+      "id": "python.language-semantics.001",
+      "module_id": "python.language-semantics",
+      "track": "python",
+      "level": "L1",
+      "order": 25,
+      "path": "content/lessons/python.language-semantics.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=python.language-semantics.001"
+    },
+    {
+      "id": "python.functions-errors-files.001",
+      "module_id": "python.functions-errors-files",
+      "track": "python",
+      "level": "L1",
+      "order": 26,
+      "path": "content/lessons/python.functions-errors-files.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=python.functions-errors-files.001"
+    },
+    {
+      "id": "python.numpy-array-thinking.001",
+      "module_id": "python.numpy-array-thinking",
+      "track": "python",
+      "level": "L2",
+      "order": 27,
+      "path": "content/lessons/python.numpy-array-thinking.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=python.numpy-array-thinking.001"
+    },
+    {
+      "id": "python.pandas-dtype-index.001",
+      "module_id": "python.pandas-dtype-index",
+      "track": "python",
+      "level": "L2",
+      "order": 28,
+      "path": "content/lessons/python.pandas-dtype-index.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=python.pandas-dtype-index.001"
+    },
+    {
+      "id": "python.groupby-reshape.001",
+      "module_id": "python.groupby-reshape",
+      "track": "python",
+      "level": "L3",
+      "order": 29,
+      "path": "content/lessons/python.groupby-reshape.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=python.groupby-reshape.001"
+    },
+    {
+      "id": "python.merge-window.001",
+      "module_id": "python.merge-window",
+      "track": "python",
+      "level": "L3",
+      "order": 30,
+      "path": "content/lessons/python.merge-window.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=python.merge-window.001"
+    },
+    {
+      "id": "python.stats-eda.001",
+      "module_id": "python.stats-eda",
+      "track": "python",
+      "level": "L4",
+      "order": 31,
+      "path": "content/lessons/python.stats-eda.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=python.stats-eda.001"
+    },
+    {
+      "id": "python.io-api-sql.001",
+      "module_id": "python.io-api-sql",
+      "track": "python",
+      "level": "L4",
+      "order": 32,
+      "path": "content/lessons/python.io-api-sql.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=python.io-api-sql.001"
+    },
+    {
+      "id": "python.testing-typing-logging.001",
+      "module_id": "python.testing-typing-logging",
+      "track": "python",
+      "level": "L5",
+      "order": 33,
+      "path": "content/lessons/python.testing-typing-logging.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=python.testing-typing-logging.001"
+    },
+    {
+      "id": "python.performance-pipelines.001",
+      "module_id": "python.performance-pipelines",
+      "track": "python",
+      "level": "L5",
+      "order": 34,
+      "path": "content/lessons/python.performance-pipelines.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=python.performance-pipelines.001"
+    },
+    {
+      "id": "python.repro-architecture.001",
+      "module_id": "python.repro-architecture",
+      "track": "python",
+      "level": "Expert",
+      "order": 35,
+      "path": "content/lessons/python.repro-architecture.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=python.repro-architecture.001"
+    },
+    {
+      "id": "python.peer-review.001",
+      "module_id": "python.peer-review",
+      "track": "python",
+      "level": "Expert",
+      "order": 36,
+      "path": "content/lessons/python.peer-review.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=python.peer-review.001"
     }
   ]
 }

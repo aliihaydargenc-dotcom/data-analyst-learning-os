@@ -13,6 +13,7 @@ const paths=new Set();
 const orders=new Set();
 const catalogIds=new Set((catalog.production_lessons||[]).map(entry=>entry.id));
 const labIds=new Set();
+const pythonLabIds=new Set();
 let previousOrder=0;
 
 for(const entry of catalog.production_lessons||[]){
@@ -103,6 +104,25 @@ for(const entry of catalog.production_lessons||[]){
   }
   for(const section of caseLabRequiredSections){
     if(!lesson.case_lab||section.requires_case_lab_pass!==lesson.case_lab.id) fail(`${entry.id}/${section.id}: invalid requires_case_lab_pass`);
+  }
+
+  const pythonLabRequiredSections=(lesson.sections||[]).filter(section=>section.requires_python_lab_pass);
+  if(lesson.python_lab){
+    if(!lesson.python_lab.id?.trim()) fail(`${entry.id}: python_lab id required`);
+    else if(pythonLabIds.has(lesson.python_lab.id)) fail(`${entry.id}: duplicate python_lab id ${lesson.python_lab.id}`);
+    else pythonLabIds.add(lesson.python_lab.id);
+    if(!lesson.python_lab.title_tr?.trim()||!lesson.python_lab.title_en?.trim()) fail(`${entry.id}: bilingual python_lab title required`);
+    if(!lesson.python_lab.task_tr?.trim()||lesson.python_lab.task_tr.trim().length<100) fail(`${entry.id}: python_lab task_tr too shallow`);
+    if(!lesson.python_lab.task_en?.trim()||lesson.python_lab.task_en.trim().length<80) fail(`${entry.id}: python_lab task_en too shallow`);
+    if(!lesson.python_lab.starter_code?.trim()) fail(`${entry.id}: python_lab starter_code required`);
+    if(!Array.isArray(lesson.python_lab.packages)) fail(`${entry.id}: python_lab packages must be an array`);
+    if(!lesson.python_lab.engine_note_tr?.trim()||!lesson.python_lab.engine_note_en?.trim()) fail(`${entry.id}: bilingual python engine note required`);
+    const requiredSection=(lesson.sections||[]).find(section=>section.id===lesson.python_lab.requires_for_section);
+    if(!requiredSection) fail(`${entry.id}: python_lab requires_for_section not found`);
+    else if(requiredSection.requires_python_lab_pass!==lesson.python_lab.id) fail(`${entry.id}: section python-lab gate mismatch`);
+  }
+  for(const section of pythonLabRequiredSections){
+    if(!lesson.python_lab||section.requires_python_lab_pass!==lesson.python_lab.id) fail(`${entry.id}/${section.id}: invalid requires_python_lab_pass`);
   }
 
   const evidence=new Set((lesson.mastery_evidence||[]).map(item=>item.dimension));
