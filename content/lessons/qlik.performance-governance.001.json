@@ -1,0 +1,268 @@
+{
+  "id": "qlik.performance-governance.001",
+  "module_id": "qlik.performance-governance",
+  "track": "qlik",
+  "level": "L5",
+  "status": "production-candidate",
+  "title_tr": "App performansı ve governance",
+  "title_en": "App performance and governance",
+  "subtitle_tr": "App performansını expression micro-tuning'e indirgeme; model cardinality, reload, front-end calculation ve governance kanıtlarını birlikte yönet.",
+  "subtitle_en": "Do not reduce app performance to expression micro-tuning; manage model cardinality, reload behavior, front-end calculation, and governance evidence together.",
+  "estimated_minutes_range": [
+    90,
+    135
+  ],
+  "why_it_matters_tr": "Qlik performansı model boyutu ve cardinality, association topology, reload script maliyeti, expression complexity ve kullanıcı concurrency'sinin bileşimidir. Governance ise master item standardı, naming, ownership, reload SLA, source lineage ve change review gibi tekrar üretilebilir kuralları ekler. `Aggr` veya set expression'ı tek başına suçlamak, asıl sorunun data model veya field cardinality olduğunu kaçırabilir. Governance olmadan aynı metric farklı sheet'lerde farklı tanımlarla çoğalabilir. Bu yüzden ilerleme yalnız metni okumakla değil, senaryo kararlarını doğru verip gerekçeyi üretmek ve aynı sözleşmeyi farklı araca transfer etmekle kanıtlanır.",
+  "why_it_matters_en": "Qlik performance combines model size and cardinality, association topology, reload cost, expression complexity, and concurrency. Governance adds naming, master-item standards, ownership, reload SLAs, lineage, and controlled change. Blaming one expression can miss a model-cardinality problem. Without governance, the same business metric can drift into inconsistent definitions across sheets. Progress therefore requires correct scenario decisions, explicit reasoning, and transfer of the same analytical contract to another tool.",
+  "prerequisites": [
+    "qlik.incremental-security.001"
+  ],
+  "learning_objectives": [
+    "App performansı ve governance mekanizmasını hedef business question ve Qlik context'i üzerinden açıklamak.",
+    "App performansı ve governance senaryosunda beklenen sonucu çalıştırmadan önce tahmin etmek.",
+    "App performansı ve governance probleminde semptom ile root-cause'u evidence kullanarak ayırmak.",
+    "Aynı analitik sözleşmeyi SQL, Python veya Excel bağlamına transfer etmek."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "Önkoşul kanıtları hazır mı: qlik.incremental-security.001?",
+      "if_no_tr": "Önkoşul production derslerini tamamla veya aynı mastery evidence'i ayrı olarak üret."
+    }
+  ],
+  "case_lab": {
+    "id": "qlik-performance-governance-case-v1",
+    "title_tr": "Semantic Case Lab · App performansı ve governance",
+    "title_en": "Semantic Case Lab · App performance and governance",
+    "task_tr": "Her senaryoda en doğru kararı seç. Değerlendirme exact answer key ile yapılır; tüm vakalar doğru olmadan independent-production gate açılmaz.",
+    "task_en": "Choose the best decision for each scenario. All cases must match the answer key before the independent-production gate opens.",
+    "requires_for_section": "performance-governance-production",
+    "cases": [
+      {
+        "id": "case-1",
+        "prompt_tr": "Which is a model-level performance lever?",
+        "prompt_en": "Which is a model-level performance lever?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Remove unused high-cardinality fields",
+            "label_en": "Remove unused high-cardinality fields"
+          },
+          {
+            "id": "b",
+            "label_tr": "Change chart title",
+            "label_en": "Change chart title"
+          },
+          {
+            "id": "c",
+            "label_tr": "Rename bookmark",
+            "label_en": "Rename bookmark"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek, app performansı ve governance konusundaki iş kuralını ve Qlik bağlamını birlikte korur; yalnız görsel semptoma göre karar vermez.",
+        "rationale_en": "The correct option preserves the business rule and Qlik context for app performance and governance instead of choosing from a visual symptom alone."
+      },
+      {
+        "id": "case-2",
+        "prompt_tr": "Can a fast single chart prove the app is production-ready?",
+        "prompt_en": "Can a fast single chart prove the app is production-ready?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Yes",
+            "label_en": "Yes"
+          },
+          {
+            "id": "b",
+            "label_tr": "No",
+            "label_en": "No"
+          }
+        ],
+        "rationale_tr": "Doğru seçenek, app performansı ve governance konusundaki iş kuralını ve Qlik bağlamını birlikte korur; yalnız görsel semptoma göre karar vermez.",
+        "rationale_en": "The correct option preserves the business rule and Qlik context for app performance and governance instead of choosing from a visual symptom alone.",
+        "answer": "b"
+      },
+      {
+        "id": "case-3",
+        "prompt_tr": "What does governance help prevent?",
+        "prompt_en": "What does governance help prevent?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Metric-definition drift and unmanaged changes",
+            "label_en": "Metric-definition drift and unmanaged changes"
+          },
+          {
+            "id": "b",
+            "label_tr": "All user selections",
+            "label_en": "All user selections"
+          },
+          {
+            "id": "c",
+            "label_tr": "QVD creation",
+            "label_en": "QVD creation"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek, app performansı ve governance konusundaki iş kuralını ve Qlik bağlamını birlikte korur; yalnız görsel semptoma göre karar vermez.",
+        "rationale_en": "The correct option preserves the business rule and Qlik context for app performance and governance instead of choosing from a visual symptom alone."
+      }
+    ]
+  },
+  "sections": [
+    {
+      "id": "mental-model",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: davranışı doğru katmanda açıkla",
+      "title_en": "1. Mental model: explain behavior at the correct layer",
+      "body_tr": "Qlik performansı model boyutu ve cardinality, association topology, reload script maliyeti, expression complexity ve kullanıcı concurrency'sinin bileşimidir. Governance ise master item standardı, naming, ownership, reload SLA, source lineage ve change review gibi tekrar üretilebilir kuralları ekler. Bu derste karar sırası business question → model/state context → Qlik mechanism → observable evidence şeklindedir; syntax ancak bu sözleşmeyi uygulayan araçtır.",
+      "body_en": "Qlik performance combines model size and cardinality, association topology, reload cost, expression complexity, and concurrency. Governance adds naming, master-item standards, ownership, reload SLAs, lineage, and controlled change. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "checks": [
+        "Business question ve hedef grain/state'i önce yaz.",
+        "Qlik davranışını SQL veya tablo-filtre sezgisiyle varsayma.",
+        "Selection/model/script katmanlarını birbirinden ayır."
+      ]
+    },
+    {
+      "id": "contract-boundaries",
+      "layer": "mental_model",
+      "title_tr": "2. Sözleşme sınırları: selection, model, script ve presentation",
+      "title_en": "2. Contract boundaries: selection, model, script, and presentation",
+      "body_tr": "`Aggr` veya set expression'ı tek başına suçlamak, asıl sorunun data model veya field cardinality olduğunu kaçırabilir. Governance olmadan aynı metric farklı sheet'lerde farklı tanımlarla çoğalabilir. Bir sonucu debug ederken önce hangi katmanın sorumluluğunda olduğunu belirle: load script veri modelini kurar, associative engine state ve aggregation context'ini değerlendirir, chart ise bu sonucu dimension/measure ve presentation ayarlarıyla gösterir.",
+      "body_en": "Blaming one expression can miss a model-cardinality problem. Without governance, the same business metric can drift into inconsistent definitions across sheets. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "checks": [
+        "Katmanı isimlendirmeden çözüm önermeme.",
+        "Model değişikliği ile chart-only düzeltmeyi karıştırmama.",
+        "Security veya performance etkisini ayrıca not etme."
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "3. Worked example: aynı business sorusunu Qlik contract'ına çevir",
+      "title_en": "3. Worked example: translate the business question into a Qlik contract",
+      "body_tr": "Yüksek cardinality taşıyan kullanılmayan text field'ları modelden çıkarmak memory footprint'i azaltabilir. Ağır nested expression'ı script katmanında ön-hesaplamak bazı durumlarda front-end CPU'yu azaltır; semantics ve reload cost yeniden ölçülmelidir. Örneğin amacı tek bir syntax kalıbını ezberletmek değil; hedef population, grain/state ve beklenen sonucu önceden yazarak expression veya script'in neden doğru olduğunu açıklamaktır.",
+      "body_en": "Removing unused high-cardinality text fields can reduce memory footprint. Moving stable calculations into the load script can reduce front-end work, but semantics and reload cost must be revalidated. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "code": "Performance review:\n1) model size/cardinality\n2) reload duration\n3) chart calc cost\n4) concurrency\n5) KPI governance",
+      "explanation_tr": "Kod parçası bağlam örneğidir; production kullanımında field isimleri, data types, selection state ve model cardinality gerçek app kanıtıyla doğrulanmalıdır.",
+      "explanation_en": "The code is contextual evidence. Production use still requires validation against actual fields, data types, selections, and model cardinality."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "4. Guided practice: sonucu çalıştırmadan önce tahmin et",
+      "title_en": "4. Guided practice: predict the result before running it",
+      "body_tr": "Qlik performansı model boyutu ve cardinality, association topology, reload script maliyeti, expression complexity ve kullanıcı concurrency'sinin bileşimidir. Governance ise master item standardı, naming, ownership, reload SLA, source lineage ve change review gibi tekrar üretilebilir kuralları ekler. Şimdi aynı kavramı yeni bir senaryoya taşı: önce hangi kayıt/değer evreninin mümkün olduğunu, görünür chart grain'ini veya script output'unu tahmin et; sonra Qlik'te gözlenen sonuçla karşılaştır. Tahmin uyuşmazsa syntax değiştirmeden önce mental modelini düzelt.",
+      "body_en": "Apply app performance and governance to a new scenario by predicting state, grain, or script output before running it. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "prompts": [
+        "App performansı ve governance için hedef business question'ı tek cümlede tanımla ve hangi Qlik katmanının sonucu belirlediğini yaz.",
+        "Bir selection veya model değişikliği sonrası hangi değerin/row context'in değişmesini beklersin; neden?",
+        "Beklenen sonuç ile app sonucu farklıysa ilk üç doğrulama adımın nedir?"
+      ]
+    },
+    {
+      "id": "performance-governance-production",
+      "layer": "independent_practice",
+      "title_tr": "5. Bağımsız üretim: Semantic Case Lab + gerekçeli çözüm",
+      "title_en": "5. Independent production: Semantic Case Lab plus reasoned solution",
+      "body_tr": "Semantic Case Lab, app performansı ve governance için üç ayrı karar senaryosunu değerlendirir. Tüm vakaları doğru çözmeden bu bölüm tamamlanmaz. Lab geçtikten sonra business rule, selection/model context, beklenen Qlik davranışı ve doğrulama kanıtını kısa bir decision record olarak yaz.",
+      "body_en": "The Semantic Case Lab evaluates three decisions for app performance and governance. All cases must pass before this section can be completed. After passing, write a short decision record covering business rule, Qlik context, expected behavior, and validation evidence.",
+      "requires_case_lab_pass": "qlik-performance-governance-case-v1",
+      "evidence_required": [
+        "semantic_case_lab_pass",
+        "business_rule_and_context",
+        "expected_behavior",
+        "validation_evidence"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "6. Debugging: semptomu değil katmanı teşhis et",
+      "title_en": "6. Debugging: diagnose the layer, not the symptom",
+      "body_tr": "`Aggr` veya set expression'ı tek başına suçlamak, asıl sorunun data model veya field cardinality olduğunu kaçırabilir. Governance olmadan aynı metric farklı sheet'lerde farklı tanımlarla çoğalabilir. Debugging sırasında aynı anda script, data model ve chart expression değiştirme. Önce selection state ve model viewer/reload log gibi kanıtlarla problemi sınıflandır; sonra tek değişkenli düzeltme yap ve KPI/result reconciliation ile regression kontrolü uygula.",
+      "body_en": "Blaming one expression can miss a model-cardinality problem. Without governance, the same business metric can drift into inconsistent definitions across sheets. Change one major factor at a time and verify the result against an explicit business expectation. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "diagnostic_sequence": [
+        "Business metric ve hedef grain/state sözleşmesini tekrar yaz.",
+        "Selection state veya script reload context'ini yeniden üret.",
+        "Data model associations/cardinality ve field rollerini kontrol et.",
+        "Expression/script expansion veya transformation sonucunu görünür hale getir.",
+        "Tek değişkenli fix uygula ve aynı fixture/selections ile tekrar test et.",
+        "KPI total, row/context ve downstream app davranışında regression olmadığını doğrula."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "7. Transfer: aynı analitik sözleşmeyi SQL, Python ve Excel'e taşı",
+      "title_en": "7. Transfer: carry the analytical contract into SQL, Python, and Excel",
+      "body_tr": "Yüksek cardinality taşıyan kullanılmayan text field'ları modelden çıkarmak memory footprint'i azaltabilir. Ağır nested expression'ı script katmanında ön-hesaplamak bazı durumlarda front-end CPU'yu azaltır; semantics ve reload cost yeniden ölçülmelidir. Transfer çalışmasında Qlik syntax'ını diğer araçlara kopyalamak yerine population, grain, state/context ve validation sözleşmesini taşı. SQL WHERE/GROUP BY, pandas filter/groupby veya Excel Data Model context'i aynı business sorusunu farklı mekanizmalarla çözer.",
+      "body_en": "Transfer population, grain, state or context, and validation rules rather than copying Qlik-specific syntax into another tool. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "transfer_tasks": [
+        {
+          "tool": "SQL",
+          "task_tr": "App performansı ve governance için aynı business sorusunu SQL population/grain tanımıyla yeniden ifade et; Qlik selection state ile farkını yaz."
+        },
+        {
+          "tool": "Python / pandas",
+          "task_tr": "Aynı sonucu filter/merge/groupby adımlarıyla üretirken grain ve null/duplicate contract'ını explicit hale getir."
+        },
+        {
+          "tool": "Excel / Data Model",
+          "task_tr": "Aynı metriğin filter context ve relationship davranışını Qlik associative context'iyle karşılaştır."
+        }
+      ]
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: syntax değil karar modelini geri çağır",
+      "title_en": "8. Retrieval: retrieve the decision model, not syntax trivia",
+      "body_tr": "D+1'de app performansı ve governance konusunu resmi dokümana bakmadan business rule, Qlik context ve tipik failure mode ile açıkla. D+7'de üç yeni senaryoda sonucu çalıştırmadan tahmin et. D+30'da gerçek bir app problemi seçip evidence → hypothesis → controlled fix → regression validation zincirini kısa teknik not olarak yaz.",
+      "body_en": "On D+1 explain app performance and governance from memory using business rule, Qlik context, and a typical failure mode. On D+7 predict new scenarios. On D+30 document evidence, hypothesis, controlled fix, and regression validation for a real app problem.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explain-qlik-contract-from-memory"
+        },
+        {
+          "day": 7,
+          "evidence": "predict-three-new-cases"
+        },
+        {
+          "day": 30,
+          "evidence": "produce-evidence-based-qlik-review"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "App performansı ve governance için temel mekanizmayı ve sınırlarını selection/model/script context'iyle açıkla.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Yeni Qlik senaryosunda beklenen state/grain/model davranışını çalıştırmadan tahmin et ve gözlenen sonuçla karşılaştır.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Semantic Case Lab'ın tüm senaryolarını geç ve gerçek bir app örneği için gerekçeli decision record üret.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Aynı business contract'ı SQL, Python veya Excel'de yeniden kurup Qlik'e özgü mekanizma ile ortak analitik prensibi ayır.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "qlik-may2023-qvd",
+    "qlik-may2023-synthetic",
+    "qlik-may2023-set-analysis",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}

@@ -1,0 +1,273 @@
+{
+  "id": "qlik.enterprise-architecture.001",
+  "module_id": "qlik.enterprise-architecture",
+  "track": "qlik",
+  "level": "Expert",
+  "status": "production-candidate",
+  "title_tr": "Enterprise Qlik mimarisi",
+  "title_en": "Enterprise Qlik architecture",
+  "subtitle_tr": "Source→QVD→app pipeline, reload orchestration, authorization ve ownership sınırlarını enterprise veri ürünü olarak savun.",
+  "subtitle_en": "Defend source-to-QVD-to-app pipelines, reload orchestration, authorization, and ownership boundaries as an enterprise data product.",
+  "estimated_minutes_range": [
+    90,
+    135
+  ],
+  "why_it_matters_tr": "Enterprise Qlik mimarisi tek app script'inden büyüktür. Source extraction, reusable transformation/QVD katmanları, app-specific model, reload task dependencies, platform resource authorization ve Section Access sorumlulukları ayrı katmanlarda yönetilmelidir. Her app'ın source'a doğrudan bağlanması hızlı başlangıç sağlayabilir fakat duplicate extraction, inconsistent transformations ve source load riskini büyütür. Katman sayısı da amaç değil; tekrar kullanım ve ownership için gerekçelendirilmelidir. Bu yüzden ilerleme yalnız metni okumakla değil, senaryo kararlarını doğru verip gerekçeyi üretmek ve aynı sözleşmeyi farklı araca transfer etmekle kanıtlanır.",
+  "why_it_matters_en": "Enterprise Qlik architecture extends beyond a single app script. Extraction, reusable transformations, app-ready models, reload dependencies, platform authorization, Section Access, ownership, and lineage need explicit boundaries. Direct source access from every app can increase duplicate extraction, inconsistent transformations, and source load. Layering should be justified by reuse and ownership, not by architecture fashion. Progress therefore requires correct scenario decisions, explicit reasoning, and transfer of the same analytical contract to another tool.",
+  "prerequisites": [
+    "qlik.performance-governance.001"
+  ],
+  "learning_objectives": [
+    "Enterprise Qlik mimarisi mekanizmasını hedef business question ve Qlik context'i üzerinden açıklamak.",
+    "Enterprise Qlik mimarisi senaryosunda beklenen sonucu çalıştırmadan önce tahmin etmek.",
+    "Enterprise Qlik mimarisi probleminde semptom ile root-cause'u evidence kullanarak ayırmak.",
+    "Aynı analitik sözleşmeyi SQL, Python veya Excel bağlamına transfer etmek."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "Önkoşul kanıtları hazır mı: qlik.performance-governance.001?",
+      "if_no_tr": "Önkoşul production derslerini tamamla veya aynı mastery evidence'i ayrı olarak üret."
+    }
+  ],
+  "case_lab": {
+    "id": "qlik-enterprise-architecture-case-v1",
+    "title_tr": "Semantic Case Lab · Enterprise Qlik mimarisi",
+    "title_en": "Semantic Case Lab · Enterprise Qlik architecture",
+    "task_tr": "Her senaryoda en doğru kararı seç. Değerlendirme exact answer key ile yapılır; tüm vakalar doğru olmadan independent-production gate açılmaz.",
+    "task_en": "Choose the best decision for each scenario. All cases must match the answer key before the independent-production gate opens.",
+    "requires_for_section": "enterprise-architecture-production",
+    "cases": [
+      {
+        "id": "case-1",
+        "prompt_tr": "A shared QVD schema changes. What should treat it as a contract?",
+        "prompt_en": "A shared QVD schema changes. What should treat it as a contract?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Downstream apps and reload dependencies",
+            "label_en": "Downstream apps and reload dependencies"
+          },
+          {
+            "id": "b",
+            "label_tr": "Only sheet colors",
+            "label_en": "Only sheet colors"
+          },
+          {
+            "id": "c",
+            "label_tr": "Only bookmarks",
+            "label_en": "Only bookmarks"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek, enterprise qlik mimarisi konusundaki iş kuralını ve Qlik bağlamını birlikte korur; yalnız görsel semptoma göre karar vermez.",
+        "rationale_en": "The correct option preserves the business rule and Qlik context for enterprise qlik architecture instead of choosing from a visual symptom alone."
+      },
+      {
+        "id": "case-2",
+        "prompt_tr": "Are platform authorization and Section Access tested as one control?",
+        "prompt_en": "Are platform authorization and Section Access tested as one control?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Yes",
+            "label_en": "Yes"
+          },
+          {
+            "id": "b",
+            "label_tr": "No; they are separate controls",
+            "label_en": "No; they are separate controls"
+          },
+          {
+            "id": "c",
+            "label_tr": "Only in desktop mode",
+            "label_en": "Only in desktop mode"
+          }
+        ],
+        "answer": "b",
+        "rationale_tr": "Doğru seçenek, enterprise qlik mimarisi konusundaki iş kuralını ve Qlik bağlamını birlikte korur; yalnız görsel semptoma göre karar vermez.",
+        "rationale_en": "The correct option preserves the business rule and Qlik context for enterprise qlik architecture instead of choosing from a visual symptom alone."
+      },
+      {
+        "id": "case-3",
+        "prompt_tr": "Why avoid direct source extraction in every app?",
+        "prompt_en": "Why avoid direct source extraction in every app?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "It can duplicate load and transformations",
+            "label_en": "It can duplicate load and transformations"
+          },
+          {
+            "id": "b",
+            "label_tr": "It disables dimensions",
+            "label_en": "It disables dimensions"
+          },
+          {
+            "id": "c",
+            "label_tr": "It forces alternate states",
+            "label_en": "It forces alternate states"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek, enterprise qlik mimarisi konusundaki iş kuralını ve Qlik bağlamını birlikte korur; yalnız görsel semptoma göre karar vermez.",
+        "rationale_en": "The correct option preserves the business rule and Qlik context for enterprise qlik architecture instead of choosing from a visual symptom alone."
+      }
+    ]
+  },
+  "sections": [
+    {
+      "id": "mental-model",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: davranışı doğru katmanda açıkla",
+      "title_en": "1. Mental model: explain behavior at the correct layer",
+      "body_tr": "Enterprise Qlik mimarisi tek app script'inden büyüktür. Source extraction, reusable transformation/QVD katmanları, app-specific model, reload task dependencies, platform resource authorization ve Section Access sorumlulukları ayrı katmanlarda yönetilmelidir. Bu derste karar sırası business question → model/state context → Qlik mechanism → observable evidence şeklindedir; syntax ancak bu sözleşmeyi uygulayan araçtır.",
+      "body_en": "Enterprise Qlik architecture extends beyond a single app script. Extraction, reusable transformations, app-ready models, reload dependencies, platform authorization, Section Access, ownership, and lineage need explicit boundaries. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "checks": [
+        "Business question ve hedef grain/state'i önce yaz.",
+        "Qlik davranışını SQL veya tablo-filtre sezgisiyle varsayma.",
+        "Selection/model/script katmanlarını birbirinden ayır."
+      ]
+    },
+    {
+      "id": "contract-boundaries",
+      "layer": "mental_model",
+      "title_tr": "2. Sözleşme sınırları: selection, model, script ve presentation",
+      "title_en": "2. Contract boundaries: selection, model, script, and presentation",
+      "body_tr": "Her app'ın source'a doğrudan bağlanması hızlı başlangıç sağlayabilir fakat duplicate extraction, inconsistent transformations ve source load riskini büyütür. Katman sayısı da amaç değil; tekrar kullanım ve ownership için gerekçelendirilmelidir. Bir sonucu debug ederken önce hangi katmanın sorumluluğunda olduğunu belirle: load script veri modelini kurar, associative engine state ve aggregation context'ini değerlendirir, chart ise bu sonucu dimension/measure ve presentation ayarlarıyla gösterir.",
+      "body_en": "Direct source access from every app can increase duplicate extraction, inconsistent transformations, and source load. Layering should be justified by reuse and ownership, not by architecture fashion. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "checks": [
+        "Katmanı isimlendirmeden çözüm önermeme.",
+        "Model değişikliği ile chart-only düzeltmeyi karıştırmama.",
+        "Security veya performance etkisini ayrıca not etme."
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "3. Worked example: aynı business sorusunu Qlik contract'ına çevir",
+      "title_en": "3. Worked example: translate the business question into a Qlik contract",
+      "body_tr": "Ortak reservation QVD'si birçok app tarafından tüketiliyorsa schema değişikliği downstream contract'tır. Producer version/change policy, reload ordering ve failure alerting tanımlanmalıdır. Sensitive app'te resource authorization ile row-level Section Access ayrı test edilir. Örneğin amacı tek bir syntax kalıbını ezberletmek değil; hedef population, grain/state ve beklenen sonucu önceden yazarak expression veya script'in neden doğru olduğunu açıklamaktır.",
+      "body_en": "A shared reservation QVD becomes a downstream contract. Schema changes need versioning, reload dependency management, and failure monitoring. Resource authorization and row-level data reduction should be tested independently. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "code": "Source → Extract QVD → Transform QVD → App model → Sheets\n         ownership / lineage / SLA / security",
+      "explanation_tr": "Kod parçası bağlam örneğidir; production kullanımında field isimleri, data types, selection state ve model cardinality gerçek app kanıtıyla doğrulanmalıdır.",
+      "explanation_en": "The code is contextual evidence. Production use still requires validation against actual fields, data types, selections, and model cardinality."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "4. Guided practice: sonucu çalıştırmadan önce tahmin et",
+      "title_en": "4. Guided practice: predict the result before running it",
+      "body_tr": "Enterprise Qlik mimarisi tek app script'inden büyüktür. Source extraction, reusable transformation/QVD katmanları, app-specific model, reload task dependencies, platform resource authorization ve Section Access sorumlulukları ayrı katmanlarda yönetilmelidir. Şimdi aynı kavramı yeni bir senaryoya taşı: önce hangi kayıt/değer evreninin mümkün olduğunu, görünür chart grain'ini veya script output'unu tahmin et; sonra Qlik'te gözlenen sonuçla karşılaştır. Tahmin uyuşmazsa syntax değiştirmeden önce mental modelini düzelt.",
+      "body_en": "Apply enterprise qlik architecture to a new scenario by predicting state, grain, or script output before running it. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "prompts": [
+        "Enterprise Qlik mimarisi için hedef business question'ı tek cümlede tanımla ve hangi Qlik katmanının sonucu belirlediğini yaz.",
+        "Bir selection veya model değişikliği sonrası hangi değerin/row context'in değişmesini beklersin; neden?",
+        "Beklenen sonuç ile app sonucu farklıysa ilk üç doğrulama adımın nedir?"
+      ]
+    },
+    {
+      "id": "enterprise-architecture-production",
+      "layer": "independent_practice",
+      "title_tr": "5. Bağımsız üretim: Semantic Case Lab + gerekçeli çözüm",
+      "title_en": "5. Independent production: Semantic Case Lab plus reasoned solution",
+      "body_tr": "Semantic Case Lab, enterprise qlik mimarisi için üç ayrı karar senaryosunu değerlendirir. Tüm vakaları doğru çözmeden bu bölüm tamamlanmaz. Lab geçtikten sonra business rule, selection/model context, beklenen Qlik davranışı ve doğrulama kanıtını kısa bir decision record olarak yaz.",
+      "body_en": "The Semantic Case Lab evaluates three decisions for enterprise qlik architecture. All cases must pass before this section can be completed. After passing, write a short decision record covering business rule, Qlik context, expected behavior, and validation evidence.",
+      "requires_case_lab_pass": "qlik-enterprise-architecture-case-v1",
+      "evidence_required": [
+        "semantic_case_lab_pass",
+        "business_rule_and_context",
+        "expected_behavior",
+        "validation_evidence"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "6. Debugging: semptomu değil katmanı teşhis et",
+      "title_en": "6. Debugging: diagnose the layer, not the symptom",
+      "body_tr": "Her app'ın source'a doğrudan bağlanması hızlı başlangıç sağlayabilir fakat duplicate extraction, inconsistent transformations ve source load riskini büyütür. Katman sayısı da amaç değil; tekrar kullanım ve ownership için gerekçelendirilmelidir. Debugging sırasında aynı anda script, data model ve chart expression değiştirme. Önce selection state ve model viewer/reload log gibi kanıtlarla problemi sınıflandır; sonra tek değişkenli düzeltme yap ve KPI/result reconciliation ile regression kontrolü uygula.",
+      "body_en": "Direct source access from every app can increase duplicate extraction, inconsistent transformations, and source load. Layering should be justified by reuse and ownership, not by architecture fashion. Change one major factor at a time and verify the result against an explicit business expectation. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "diagnostic_sequence": [
+        "Business metric ve hedef grain/state sözleşmesini tekrar yaz.",
+        "Selection state veya script reload context'ini yeniden üret.",
+        "Data model associations/cardinality ve field rollerini kontrol et.",
+        "Expression/script expansion veya transformation sonucunu görünür hale getir.",
+        "Tek değişkenli fix uygula ve aynı fixture/selections ile tekrar test et.",
+        "KPI total, row/context ve downstream app davranışında regression olmadığını doğrula."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "7. Transfer: aynı analitik sözleşmeyi SQL, Python ve Excel'e taşı",
+      "title_en": "7. Transfer: carry the analytical contract into SQL, Python, and Excel",
+      "body_tr": "Ortak reservation QVD'si birçok app tarafından tüketiliyorsa schema değişikliği downstream contract'tır. Producer version/change policy, reload ordering ve failure alerting tanımlanmalıdır. Sensitive app'te resource authorization ile row-level Section Access ayrı test edilir. Transfer çalışmasında Qlik syntax'ını diğer araçlara kopyalamak yerine population, grain, state/context ve validation sözleşmesini taşı. SQL WHERE/GROUP BY, pandas filter/groupby veya Excel Data Model context'i aynı business sorusunu farklı mekanizmalarla çözer.",
+      "body_en": "Transfer population, grain, state or context, and validation rules rather than copying Qlik-specific syntax into another tool. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "transfer_tasks": [
+        {
+          "tool": "SQL",
+          "task_tr": "Enterprise Qlik mimarisi için aynı business sorusunu SQL population/grain tanımıyla yeniden ifade et; Qlik selection state ile farkını yaz."
+        },
+        {
+          "tool": "Python / pandas",
+          "task_tr": "Aynı sonucu filter/merge/groupby adımlarıyla üretirken grain ve null/duplicate contract'ını explicit hale getir."
+        },
+        {
+          "tool": "Excel / Data Model",
+          "task_tr": "Aynı metriğin filter context ve relationship davranışını Qlik associative context'iyle karşılaştır."
+        }
+      ]
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: syntax değil karar modelini geri çağır",
+      "title_en": "8. Retrieval: retrieve the decision model, not syntax trivia",
+      "body_tr": "D+1'de enterprise qlik mimarisi konusunu resmi dokümana bakmadan business rule, Qlik context ve tipik failure mode ile açıkla. D+7'de üç yeni senaryoda sonucu çalıştırmadan tahmin et. D+30'da gerçek bir app problemi seçip evidence → hypothesis → controlled fix → regression validation zincirini kısa teknik not olarak yaz.",
+      "body_en": "On D+1 explain enterprise qlik architecture from memory using business rule, Qlik context, and a typical failure mode. On D+7 predict new scenarios. On D+30 document evidence, hypothesis, controlled fix, and regression validation for a real app problem.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explain-qlik-contract-from-memory"
+        },
+        {
+          "day": 7,
+          "evidence": "predict-three-new-cases"
+        },
+        {
+          "day": 30,
+          "evidence": "produce-evidence-based-qlik-review"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "Enterprise Qlik mimarisi için temel mekanizmayı ve sınırlarını selection/model/script context'iyle açıkla.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Yeni Qlik senaryosunda beklenen state/grain/model davranışını çalıştırmadan tahmin et ve gözlenen sonuçla karşılaştır.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Semantic Case Lab'ın tüm senaryolarını geç ve gerçek bir app örneği için gerekçeli decision record üret.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Aynı business contract'ı SQL, Python veya Excel'de yeniden kurup Qlik'e özgü mekanizma ile ortak analitik prensibi ayır.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "qlik-may2023-qvd",
+    "qlik-may2023-section-access",
+    "qlik-may2023-authorization",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}

@@ -4,7 +4,7 @@ import {
   validateLessonStructure,lessonLayerSummary,REQUIRED_LAYERS,
   createLessonProgress,normalizeLessonProgress,canCompleteSection,
   completionPercent,completeSection,buildRetentionSchedule,saveEvidenceDraft,
-  labPassed,recordLabAttempt
+  labPassed,recordLabAttempt,recordCaseLabAttempt
 } from '../lesson-runtime.mjs';
 
 const lesson=JSON.parse(fs.readFileSync('content/lessons/sql.relational-thinking.001.json','utf8'));
@@ -79,5 +79,18 @@ assert.equal(filterProgress.labEvidence[filterLesson.lab.id].passedAt,now.toISOS
 
 gated=completeSection(filterLesson,filterProgress,independent.id,response,now);
 assert.equal(gated.ok,true);
+
+// Semantic case-lab gate supports non-SQL production lessons.
+const qlikLesson=JSON.parse(fs.readFileSync('content/lessons/qlik.associative-state.001.json','utf8'));
+let qlikProgress=createLessonProgress(qlikLesson,now);
+const qlikIndependent=qlikLesson.sections.find(section=>section.requires_case_lab_pass);
+const qlikResponse='Selection state, associative context ve business population ilişkisini gerekçeli biçimde açıklayan production yanıtı.';
+let qlikGated=completeSection(qlikLesson,qlikProgress,qlikIndependent.id,qlikResponse,now);
+assert.equal(qlikGated.ok,false);
+assert.equal(qlikGated.reason,'case_lab_required');
+qlikProgress=recordCaseLabAttempt(qlikLesson,qlikProgress,qlikLesson.case_lab.id,{passed:true,summary:{'case-1':true,'case-2':true,'case-3':true}},now);
+assert.equal(labPassed(qlikProgress,qlikLesson.case_lab.id),true);
+qlikGated=completeSection(qlikLesson,qlikProgress,qlikIndependent.id,qlikResponse,now);
+assert.equal(qlikGated.ok,true);
 
 console.log('lesson runtime tests: PASS');

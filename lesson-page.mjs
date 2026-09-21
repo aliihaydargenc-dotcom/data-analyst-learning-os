@@ -1,6 +1,6 @@
 import {
   createLessonProgress,normalizeLessonProgress,completeSection,completionPercent,
-  sectionNeedsResponse,saveEvidenceDraft,recordLabAttempt,labPassed
+  sectionNeedsResponse,saveEvidenceDraft,recordLabAttempt,recordCaseLabAttempt,labPassed
 } from './lesson-runtime.mjs';
 
 const $=selector=>document.querySelector(selector);
@@ -27,7 +27,8 @@ const labels={
     labRun:'Semantik testi çalıştır',labReset:'Sıfırla',
     labPass:'Semantic test geçti: görünür ve edge-case fixture sonuçları referansla eşleşti.',
     labFail:'Semantic test geçmedi.',labRequired:'Bu bağımsız üretim bölümü için önce Semantic SQL Lab’ı geçirmen gerekiyor.',
-    labError:'Lab çalıştırılamadı.',labPassed:'Semantik kanıt · geçti',labRows:'satır'
+    labError:'Lab çalıştırılamadı.',labPassed:'Semantik kanıt · geçti',labRows:'satır',
+    caseIdle:'Çalıştırılmadı',caseRun:'Senaryoları değerlendir',casePass:'Semantic Case Lab geçti.',caseFail:'Semantic Case Lab geçmedi.',caseRequired:'Bu bağımsız üretim bölümü için önce Semantic Case Lab’ı geçirmen gerekiyor.',caseMissing:'Tüm senaryolarda bir seçenek işaretle.'
   },
   en:{
     loading:'Loading',progress:'Progress',estimate:'Estimated study',minutes:'min',
@@ -47,7 +48,8 @@ const labels={
     labRun:'Run semantic test',labReset:'Reset',
     labPass:'Semantic test passed: visible and edge-case fixture results match the reference.',
     labFail:'Semantic test did not pass.',labRequired:'Pass the Semantic SQL Lab before completing this independent-production section.',
-    labError:'The lab could not be executed.',labPassed:'Semantic evidence · passed',labRows:'rows'
+    labError:'The lab could not be executed.',labPassed:'Semantic evidence · passed',labRows:'rows',
+    caseIdle:'Not run',caseRun:'Evaluate scenarios',casePass:'Semantic Case Lab passed.',caseFail:'Semantic Case Lab did not pass.',caseRequired:'Pass the Semantic Case Lab before completing this independent-production section.',caseMissing:'Choose one option for every scenario.'
   }
 };
 
@@ -252,6 +254,45 @@ async function runLessonSqlLab(){
   }
 }
 
+function renderLessonCaseLab(){
+  const lab=state.lesson?.case_lab;
+  $('#lessonCaseLab').classList.toggle('hidden',!lab);
+  if(!lab)return;
+  const l=labels[state.lang];
+  $('#lessonCaseLabTitle').textContent=localText(lab,'title');
+  $('#lessonCaseLabTask').textContent=localText(lab,'task');
+  $('#runLessonCase').textContent=l.caseRun;
+  $('#lessonCaseLabStatus').textContent=labPassed(state.progress,lab.id)?l.labPassed:l.caseIdle;
+  $('#lessonCaseGrid').innerHTML=(lab.cases||[]).map((item,index)=>
+    `<fieldset class="case-card" data-case-id="${escapeHtml(item.id)}"><legend>${index+1}. ${escapeHtml(localText(item,'prompt'))}</legend>${(item.options||[]).map(option=>`<label class="case-option"><input type="radio" name="case-${escapeHtml(item.id)}" value="${escapeHtml(option.id)}"><span>${escapeHtml(localText(option,'label'))}</span></label>`).join('')}</fieldset>`
+  ).join('');
+  $('#lessonCaseFeedback').textContent='';
+}
+
+function runLessonCaseLab(){
+  const lab=state.lesson?.case_lab;
+  if(!lab)return;
+  const l=labels[state.lang];
+  const answers={};
+  for(const item of lab.cases||[]){
+    const selected=document.querySelector(`input[name="case-${CSS.escape(item.id)}"]:checked`);
+    if(!selected){
+      $('#lessonCaseFeedback').textContent=l.caseMissing;
+      $('#lessonCaseFeedback').style.color='var(--red)';
+      return;
+    }
+    answers[item.id]=selected.value;
+  }
+  const results=(lab.cases||[]).map(item=>({id:item.id,passed:answers[item.id]===item.answer}));
+  const passed=results.every(item=>item.passed);
+  state.progress=recordCaseLabAttempt(state.lesson,state.progress,lab.id,{passed,summary:Object.fromEntries(results.map(item=>[item.id,item.passed]))});
+  persistProgress();
+  const detail=results.map(item=>`${item.id}: ${item.passed?'PASS':'FAIL'}`).join(' · ');
+  $('#lessonCaseFeedback').textContent=`${passed?l.casePass:l.caseFail} ${detail}`;
+  $('#lessonCaseFeedback').style.color=passed?'var(--green)':'var(--red)';
+  $('#lessonCaseLabStatus').textContent=passed?l.labPassed:l.caseFail;
+}
+
 function renderEvidence(){
   const l=labels[state.lang];
   $('#evidenceTitle').textContent=l.evidenceTitle;
@@ -286,7 +327,7 @@ function renderRetention(){
 
 function renderSequence(){
   const l=labels[state.lang];
-  const entries=[...(state.catalog?.production_lessons||[])].sort((a,b)=>(a.order??999)-(b.order??999));
+  const entries=[...(state.catalog?.production_lessons||[])].filter(item=>item.track===state.entry?.track).sort((a,b)=>(a.order??999)-(b.order??999));
   const index=entries.findIndex(item=>item.id===state.entry?.id);
   const previous=index>0?entries[index-1]:null;
   const next=index>=0&&index<entries.length-1?entries[index+1]:null;
@@ -324,7 +365,7 @@ function renderSources(){
 
 function renderAll(){
   if(!state.lesson)return;
-  renderHero();renderOutline();renderSection();renderLessonSqlLab();renderSequence();renderEvidence();renderRetention();renderSources();
+  renderHero();renderOutline();renderSection();renderLessonSqlLab();renderLessonCaseLab();renderSequence();renderEvidence();renderRetention();renderSources();
 }
 
 function escapeHtml(value){
@@ -332,6 +373,7 @@ function escapeHtml(value){
 }
 
 $('#lessonLanguage').addEventListener('click',()=>setLanguage(state.lang==='tr'?'en':'tr'));
+$('#runLessonCase').addEventListener('click',runLessonCaseLab);
 $('#runLessonSql').addEventListener('click',runLessonSqlLab);
 $('#resetLessonSql').addEventListener('click',()=>{
   const lab=state.lesson?.lab;
@@ -352,6 +394,9 @@ $('#completeSection').addEventListener('click',()=>{
     if(result.reason==='lab_required'){
       $('#sectionFeedback').textContent=l.labRequired;
       $('#lessonSqlLab').scrollIntoView({behavior:'smooth',block:'start'});
+    }else if(result.reason==='case_lab_required'){
+      $('#sectionFeedback').textContent=l.caseRequired;
+      $('#lessonCaseLab').scrollIntoView({behavior:'smooth',block:'start'});
     }else{
       $('#sectionFeedback').textContent=l.responseRequired;
       $('#sectionResponse').focus();

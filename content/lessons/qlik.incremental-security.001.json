@@ -1,0 +1,268 @@
+{
+  "id": "qlik.incremental-security.001",
+  "module_id": "qlik.incremental-security",
+  "track": "qlik",
+  "level": "L5",
+  "status": "production-candidate",
+  "title_tr": "Incremental load ve Section Access",
+  "title_en": "Incremental load and Section Access",
+  "subtitle_tr": "Incremental load correctness'ini insert/update/delete sözleşmesiyle kur; Section Access'i app authorization'dan ayrı data-reduction katmanı olarak test et.",
+  "subtitle_en": "Build incremental-load correctness around insert, update, and delete behavior, and test Section Access as a data-reduction layer distinct from platform authorization.",
+  "estimated_minutes_range": [
+    90,
+    135
+  ],
+  "why_it_matters_tr": "Incremental load yalnız son tarihten büyük kayıtları çekmek değildir. Source'un insert/update/delete davranışına göre watermark, key reconciliation ve delete handling gerekir. Section Access ise load script içindeki security table ile kullanıcıya açılan veri kapsamını azaltır; platform resource authorization mekanizmasıyla aynı şey değildir. Section Access field/value casing kurallarını veya reload service identity gereksinimini göz ardı etmek lockout ya da beklenmedik veri görünürlüğü oluşturabilir. Security script'i kontrollü fixture ile test edilmelidir. Bu yüzden ilerleme yalnız metni okumakla değil, senaryo kararlarını doğru verip gerekçeyi üretmek ve aynı sözleşmeyi farklı araca transfer etmekle kanıtlanır.",
+  "why_it_matters_en": "Incremental loading is not merely filtering on the newest timestamp. The design must match insert, update, and delete behavior. Section Access reduces the data visible to a user and is distinct from platform-level resource authorization. Ignoring Section Access casing or reload-service identity requirements can cause lockout or unexpected visibility. Security changes require controlled identity-based tests. Progress therefore requires correct scenario decisions, explicit reasoning, and transfer of the same analytical contract to another tool.",
+  "prerequisites": [
+    "qlik.qvd-canonical-link.001"
+  ],
+  "learning_objectives": [
+    "Incremental load ve Section Access mekanizmasını hedef business question ve Qlik context'i üzerinden açıklamak.",
+    "Incremental load ve Section Access senaryosunda beklenen sonucu çalıştırmadan önce tahmin etmek.",
+    "Incremental load ve Section Access probleminde semptom ile root-cause'u evidence kullanarak ayırmak.",
+    "Aynı analitik sözleşmeyi SQL, Python veya Excel bağlamına transfer etmek."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "Önkoşul kanıtları hazır mı: qlik.qvd-canonical-link.001?",
+      "if_no_tr": "Önkoşul production derslerini tamamla veya aynı mastery evidence'i ayrı olarak üret."
+    }
+  ],
+  "case_lab": {
+    "id": "qlik-incremental-security-case-v1",
+    "title_tr": "Semantic Case Lab · Incremental load ve Section Access",
+    "title_en": "Semantic Case Lab · Incremental load and Section Access",
+    "task_tr": "Her senaryoda en doğru kararı seç. Değerlendirme exact answer key ile yapılır; tüm vakalar doğru olmadan independent-production gate açılmaz.",
+    "task_en": "Choose the best decision for each scenario. All cases must match the answer key before the independent-production gate opens.",
+    "requires_for_section": "incremental-security-production",
+    "cases": [
+      {
+        "id": "case-1",
+        "prompt_tr": "A source can delete existing rows. Is a max-timestamp incremental filter sufficient?",
+        "prompt_en": "A source can delete existing rows. Is a max-timestamp incremental filter sufficient?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Yes",
+            "label_en": "Yes"
+          },
+          {
+            "id": "b",
+            "label_tr": "No; deletes require additional reconciliation",
+            "label_en": "No; deletes require additional reconciliation"
+          },
+          {
+            "id": "c",
+            "label_tr": "Only with alternate states",
+            "label_en": "Only with alternate states"
+          }
+        ],
+        "answer": "b",
+        "rationale_tr": "Doğru seçenek, incremental load ve section access konusundaki iş kuralını ve Qlik bağlamını birlikte korur; yalnız görsel semptoma göre karar vermez.",
+        "rationale_en": "The correct option preserves the business rule and Qlik context for incremental load and section access instead of choosing from a visual symptom alone."
+      },
+      {
+        "id": "case-2",
+        "prompt_tr": "What is Section Access primarily for?",
+        "prompt_en": "What is Section Access primarily for?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Dynamic app data reduction",
+            "label_en": "Dynamic app data reduction"
+          },
+          {
+            "id": "b",
+            "label_tr": "QVD compression",
+            "label_en": "QVD compression"
+          },
+          {
+            "id": "c",
+            "label_tr": "Chart sorting",
+            "label_en": "Chart sorting"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek, incremental load ve section access konusundaki iş kuralını ve Qlik bağlamını birlikte korur; yalnız görsel semptoma göre karar vermez.",
+        "rationale_en": "The correct option preserves the business rule and Qlik context for incremental load and section access instead of choosing from a visual symptom alone."
+      },
+      {
+        "id": "case-3",
+        "prompt_tr": "Platform resource authorization and Section Access are identical systems. True?",
+        "prompt_en": "Platform resource authorization and Section Access are identical systems. True?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "True",
+            "label_en": "True"
+          },
+          {
+            "id": "b",
+            "label_tr": "False",
+            "label_en": "False"
+          }
+        ],
+        "rationale_tr": "Doğru seçenek, incremental load ve section access konusundaki iş kuralını ve Qlik bağlamını birlikte korur; yalnız görsel semptoma göre karar vermez.",
+        "rationale_en": "The correct option preserves the business rule and Qlik context for incremental load and section access instead of choosing from a visual symptom alone.",
+        "answer": "b"
+      }
+    ]
+  },
+  "sections": [
+    {
+      "id": "mental-model",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: davranışı doğru katmanda açıkla",
+      "title_en": "1. Mental model: explain behavior at the correct layer",
+      "body_tr": "Incremental load yalnız son tarihten büyük kayıtları çekmek değildir. Source'un insert/update/delete davranışına göre watermark, key reconciliation ve delete handling gerekir. Section Access ise load script içindeki security table ile kullanıcıya açılan veri kapsamını azaltır; platform resource authorization mekanizmasıyla aynı şey değildir. Bu derste karar sırası business question → model/state context → Qlik mechanism → observable evidence şeklindedir; syntax ancak bu sözleşmeyi uygulayan araçtır.",
+      "body_en": "Incremental loading is not merely filtering on the newest timestamp. The design must match insert, update, and delete behavior. Section Access reduces the data visible to a user and is distinct from platform-level resource authorization. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "checks": [
+        "Business question ve hedef grain/state'i önce yaz.",
+        "Qlik davranışını SQL veya tablo-filtre sezgisiyle varsayma.",
+        "Selection/model/script katmanlarını birbirinden ayır."
+      ]
+    },
+    {
+      "id": "contract-boundaries",
+      "layer": "mental_model",
+      "title_tr": "2. Sözleşme sınırları: selection, model, script ve presentation",
+      "title_en": "2. Contract boundaries: selection, model, script, and presentation",
+      "body_tr": "Section Access field/value casing kurallarını veya reload service identity gereksinimini göz ardı etmek lockout ya da beklenmedik veri görünürlüğü oluşturabilir. Security script'i kontrollü fixture ile test edilmelidir. Bir sonucu debug ederken önce hangi katmanın sorumluluğunda olduğunu belirle: load script veri modelini kurar, associative engine state ve aggregation context'ini değerlendirir, chart ise bu sonucu dimension/measure ve presentation ayarlarıyla gösterir.",
+      "body_en": "Ignoring Section Access casing or reload-service identity requirements can cause lockout or unexpected visibility. Security changes require controlled identity-based tests. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "checks": [
+        "Katmanı isimlendirmeden çözüm önermeme.",
+        "Model değişikliği ile chart-only düzeltmeyi karıştırmama.",
+        "Security veya performance etkisini ayrıca not etme."
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "3. Worked example: aynı business sorusunu Qlik contract'ına çevir",
+      "title_en": "3. Worked example: translate the business question into a Qlik contract",
+      "body_tr": "Insert+update kaynağında modified timestamp ile yeni/değişen kayıtlar çekilip mevcut QVD'deki aynı primary key kayıtları dışlanarak merge edilebilir. Delete de varsa yalnız watermark yetmez; source key setiyle reconciliation gerekir. Örneğin amacı tek bir syntax kalıbını ezberletmek değil; hedef population, grain/state ve beklenen sonucu önceden yazarak expression veya script'in neden doğru olduğunu açıklamaktır.",
+      "body_en": "For insert-plus-update sources, modified timestamps can identify changed rows before reconciling by key with the existing QVD. Deletes require an additional strategy, and Section Access needs real identity tests. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "code": "Section Access;\nLOAD ACCESS, USERID, REDUCTION INLINE [...];\nSection Application;\n\n// Incremental branch reconciles keys before STORE.",
+      "explanation_tr": "Kod parçası bağlam örneğidir; production kullanımında field isimleri, data types, selection state ve model cardinality gerçek app kanıtıyla doğrulanmalıdır.",
+      "explanation_en": "The code is contextual evidence. Production use still requires validation against actual fields, data types, selections, and model cardinality."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "4. Guided practice: sonucu çalıştırmadan önce tahmin et",
+      "title_en": "4. Guided practice: predict the result before running it",
+      "body_tr": "Incremental load yalnız son tarihten büyük kayıtları çekmek değildir. Source'un insert/update/delete davranışına göre watermark, key reconciliation ve delete handling gerekir. Section Access ise load script içindeki security table ile kullanıcıya açılan veri kapsamını azaltır; platform resource authorization mekanizmasıyla aynı şey değildir. Şimdi aynı kavramı yeni bir senaryoya taşı: önce hangi kayıt/değer evreninin mümkün olduğunu, görünür chart grain'ini veya script output'unu tahmin et; sonra Qlik'te gözlenen sonuçla karşılaştır. Tahmin uyuşmazsa syntax değiştirmeden önce mental modelini düzelt.",
+      "body_en": "Apply incremental load and section access to a new scenario by predicting state, grain, or script output before running it. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "prompts": [
+        "Incremental load ve Section Access için hedef business question'ı tek cümlede tanımla ve hangi Qlik katmanının sonucu belirlediğini yaz.",
+        "Bir selection veya model değişikliği sonrası hangi değerin/row context'in değişmesini beklersin; neden?",
+        "Beklenen sonuç ile app sonucu farklıysa ilk üç doğrulama adımın nedir?"
+      ]
+    },
+    {
+      "id": "incremental-security-production",
+      "layer": "independent_practice",
+      "title_tr": "5. Bağımsız üretim: Semantic Case Lab + gerekçeli çözüm",
+      "title_en": "5. Independent production: Semantic Case Lab plus reasoned solution",
+      "body_tr": "Semantic Case Lab, incremental load ve section access için üç ayrı karar senaryosunu değerlendirir. Tüm vakaları doğru çözmeden bu bölüm tamamlanmaz. Lab geçtikten sonra business rule, selection/model context, beklenen Qlik davranışı ve doğrulama kanıtını kısa bir decision record olarak yaz.",
+      "body_en": "The Semantic Case Lab evaluates three decisions for incremental load and section access. All cases must pass before this section can be completed. After passing, write a short decision record covering business rule, Qlik context, expected behavior, and validation evidence.",
+      "requires_case_lab_pass": "qlik-incremental-security-case-v1",
+      "evidence_required": [
+        "semantic_case_lab_pass",
+        "business_rule_and_context",
+        "expected_behavior",
+        "validation_evidence"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "6. Debugging: semptomu değil katmanı teşhis et",
+      "title_en": "6. Debugging: diagnose the layer, not the symptom",
+      "body_tr": "Section Access field/value casing kurallarını veya reload service identity gereksinimini göz ardı etmek lockout ya da beklenmedik veri görünürlüğü oluşturabilir. Security script'i kontrollü fixture ile test edilmelidir. Debugging sırasında aynı anda script, data model ve chart expression değiştirme. Önce selection state ve model viewer/reload log gibi kanıtlarla problemi sınıflandır; sonra tek değişkenli düzeltme yap ve KPI/result reconciliation ile regression kontrolü uygula.",
+      "body_en": "Ignoring Section Access casing or reload-service identity requirements can cause lockout or unexpected visibility. Security changes require controlled identity-based tests. Change one major factor at a time and verify the result against an explicit business expectation. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "diagnostic_sequence": [
+        "Business metric ve hedef grain/state sözleşmesini tekrar yaz.",
+        "Selection state veya script reload context'ini yeniden üret.",
+        "Data model associations/cardinality ve field rollerini kontrol et.",
+        "Expression/script expansion veya transformation sonucunu görünür hale getir.",
+        "Tek değişkenli fix uygula ve aynı fixture/selections ile tekrar test et.",
+        "KPI total, row/context ve downstream app davranışında regression olmadığını doğrula."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "7. Transfer: aynı analitik sözleşmeyi SQL, Python ve Excel'e taşı",
+      "title_en": "7. Transfer: carry the analytical contract into SQL, Python, and Excel",
+      "body_tr": "Insert+update kaynağında modified timestamp ile yeni/değişen kayıtlar çekilip mevcut QVD'deki aynı primary key kayıtları dışlanarak merge edilebilir. Delete de varsa yalnız watermark yetmez; source key setiyle reconciliation gerekir. Transfer çalışmasında Qlik syntax'ını diğer araçlara kopyalamak yerine population, grain, state/context ve validation sözleşmesini taşı. SQL WHERE/GROUP BY, pandas filter/groupby veya Excel Data Model context'i aynı business sorusunu farklı mekanizmalarla çözer.",
+      "body_en": "Transfer population, grain, state or context, and validation rules rather than copying Qlik-specific syntax into another tool. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "transfer_tasks": [
+        {
+          "tool": "SQL",
+          "task_tr": "Incremental load ve Section Access için aynı business sorusunu SQL population/grain tanımıyla yeniden ifade et; Qlik selection state ile farkını yaz."
+        },
+        {
+          "tool": "Python / pandas",
+          "task_tr": "Aynı sonucu filter/merge/groupby adımlarıyla üretirken grain ve null/duplicate contract'ını explicit hale getir."
+        },
+        {
+          "tool": "Excel / Data Model",
+          "task_tr": "Aynı metriğin filter context ve relationship davranışını Qlik associative context'iyle karşılaştır."
+        }
+      ]
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: syntax değil karar modelini geri çağır",
+      "title_en": "8. Retrieval: retrieve the decision model, not syntax trivia",
+      "body_tr": "D+1'de incremental load ve section access konusunu resmi dokümana bakmadan business rule, Qlik context ve tipik failure mode ile açıkla. D+7'de üç yeni senaryoda sonucu çalıştırmadan tahmin et. D+30'da gerçek bir app problemi seçip evidence → hypothesis → controlled fix → regression validation zincirini kısa teknik not olarak yaz.",
+      "body_en": "On D+1 explain incremental load and section access from memory using business rule, Qlik context, and a typical failure mode. On D+7 predict new scenarios. On D+30 document evidence, hypothesis, controlled fix, and regression validation for a real app problem.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explain-qlik-contract-from-memory"
+        },
+        {
+          "day": 7,
+          "evidence": "predict-three-new-cases"
+        },
+        {
+          "day": 30,
+          "evidence": "produce-evidence-based-qlik-review"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "Incremental load ve Section Access için temel mekanizmayı ve sınırlarını selection/model/script context'iyle açıkla.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Yeni Qlik senaryosunda beklenen state/grain/model davranışını çalıştırmadan tahmin et ve gözlenen sonuçla karşılaştır.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Semantic Case Lab'ın tüm senaryolarını geç ve gerçek bir app örneği için gerekçeli decision record üret.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Aynı business contract'ı SQL, Python veya Excel'de yeniden kurup Qlik'e özgü mekanizma ile ortak analitik prensibi ayır.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "qlik-may2023-qvd",
+    "qlik-may2023-section-access",
+    "qlik-may2023-authorization",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}

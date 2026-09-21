@@ -5,6 +5,7 @@ const browser=await chromium.launch({headless:true});
 const page=await browser.newPage();
 const pageErrors=[];
 const consoleErrors=[];
+const baseUrl='http://127.0.0.1:4173';
 
 page.on('pageerror',err=>pageErrors.push(String(err)));
 page.on('console',msg=>{
@@ -604,6 +605,57 @@ ORDER BY OPTION_ID;`);
   await page.reload({waitUntil:'domcontentloaded'});
   await page.locator('#lessonWorkspace').waitFor({state:'visible'});
   assert.match(await page.locator('#lessonSqlLabStatus').textContent(),/geçti/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/12 \/ 12/);
+
+
+  // Qlik track: track-scoped 12-lesson navigation plus deterministic Semantic Case Lab.
+  await page.setViewportSize({width:1280,height:900});
+  await page.goto(`${baseUrl}/lesson.html?id=qlik.associative-state.001`,{waitUntil:'domcontentloaded'});
+  await page.locator('#lessonHero').waitFor({state:'visible'});
+  assert.match(await page.locator('#lessonTitle').textContent(),/Associative model ve selection state/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/1 \/ 12/);
+  assert.equal(await page.locator('#previousLessonLink').isVisible(),false);
+  assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
+  assert.match(await page.locator('#nextLessonLink').getAttribute('href'),/qlik\.dimension-measure-grain\.001/);
+  assert.equal(await page.locator('#lessonSqlLab').isVisible(),false);
+  assert.equal(await page.locator('#lessonCaseLab').isVisible(),true);
+
+  await page.locator('#lessonOutline .outline-item').nth(4).click();
+  await page.locator('#sectionResponse').fill('Selection state mevcut associative context içindeki possible kayıtları belirler; excluded değer veri modelinden silinmiş değildir ve toplam population ayrıca set/state ile tanımlanır.');
+  await page.locator('#completeSection').click();
+  assert.match(await page.locator('#sectionFeedback').textContent(),/Semantic Case Lab/i);
+
+  await page.locator('input[name="case-case-1"][value="a"]').check();
+  await page.locator('input[name="case-case-2"][value="b"]').check();
+  await page.locator('input[name="case-case-3"][value="a"]').check();
+  await page.locator('#runLessonCase').click();
+  assert.match(await page.locator('#lessonCaseFeedback').textContent(),/geçti/);
+  await page.locator('#completeSection').click();
+  assert.match(await page.locator('#progressValue').textContent(),/13%/);
+
+  await page.locator('#nextLessonLink').click();
+  await page.locator('#lessonHero').waitFor({state:'visible'});
+  assert.match(await page.locator('#lessonTitle').textContent(),/Dimension, measure ve chart grain/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/2 \/ 12/);
+
+  await page.goto(`${baseUrl}/lesson.html?id=qlik.engine-review.001`,{waitUntil:'domcontentloaded'});
+  await page.locator('#lessonHero').waitFor({state:'visible'});
+  assert.match(await page.locator('#lessonTitle').textContent(),/Engine\/API farkındalığı ve design review/);
+  assert.match(await page.locator('#sequencePosition').textContent(),/12 \/ 12/);
+  assert.equal(await page.locator('#previousLessonLink').isVisible(),true);
+  assert.equal(await page.locator('#nextLessonLink').isVisible(),false);
+  assert.equal(await page.locator('#lessonCaseLab').isVisible(),true);
+
+  await page.locator('input[name="case-case-1"][value="a"]').check();
+  await page.locator('input[name="case-case-2"][value="a"]').check();
+  await page.locator('input[name="case-case-3"][value="a"]').check();
+  await page.locator('#runLessonCase').click();
+  assert.match(await page.locator('#lessonCaseFeedback').textContent(),/geçti/);
+
+  await page.setViewportSize({width:390,height:844});
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#lessonWorkspace').waitFor({state:'visible'});
+  assert.match(await page.locator('#lessonCaseLabStatus').textContent(),/geçti/);
   assert.match(await page.locator('#sequencePosition').textContent(),/12 \/ 12/);
 
   assert.deepEqual(pageErrors,[]);

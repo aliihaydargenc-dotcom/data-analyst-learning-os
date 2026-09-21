@@ -253,5 +253,45 @@
     "type": "official",
     "title": "Microsoft Learn — Parameter Sensitive Plan optimization",
     "url": "https://learn.microsoft.com/en-us/sql/relational-databases/performance/parameter-sensitive-plan-optimization?view=sql-server-ver17"
+  },
+  "qlik-may2023-set-analysis": {
+    "type": "official",
+    "title": "Qlik Sense on Windows May 2023 — Set analysis and set expressions",
+    "url": "https://help.qlik.com/en-US/sense/May2023/Subsystems/Hub/Content/Sense_Hub/ChartFunctions/SetAnalysis/set-analysis-expressions.htm"
+  },
+  "qlik-may2023-resident": {
+    "type": "official",
+    "title": "Qlik Sense on Windows May 2023 — Loading data from a previously loaded table",
+    "url": "https://help.qlik.com/en-US/sense/May2023/Subsystems/Hub/Content/Sense_Hub/Scripting/load-data-from-previously-loaded-table.htm"
+  },
+  "qlik-may2023-synthetic": {
+    "type": "official",
+    "title": "Qlik Sense on Windows May 2023 — Synthetic keys",
+    "url": "https://help.qlik.com/en-US/sense/May2023/Subsystems/Hub/Content/Sense_Hub/Scripting/synthetic-keys.htm"
+  },
+  "qlik-may2023-qvd": {
+    "type": "official",
+    "title": "Qlik Sense on Windows May 2023 — Working with QVD files",
+    "url": "https://help.qlik.com/en-US/sense/May2023/Subsystems/Hub/Content/Sense_Hub/Scripting/work-with-QVD-files.htm"
+  },
+  "qlik-may2023-section-access": {
+    "type": "official",
+    "title": "Qlik Sense on Windows May 2023 — Managing security with Section Access",
+    "url": "https://help.qlik.com/en-US/sense/May2023/Subsystems/Hub/Content/Sense_Hub/Scripting/Security/manage-security-with-section-access.htm"
+  },
+  "qlik-may2023-aggr": {
+    "type": "official",
+    "title": "Qlik Sense on Windows May 2023 — Aggr chart function",
+    "url": "https://help.qlik.com/en-US/sense/May2023/Subsystems/Hub/Content/Sense_Hub/ChartFunctions/aggr.htm"
+  },
+  "qlik-may2023-alternate-states": {
+    "type": "official",
+    "title": "Qlik Sense on Windows May 2023 — Alternate states for comparative analysis",
+    "url": "https://help.qlik.com/en-US/sense/May2023/Subsystems/Hub/Content/Sense_Hub/Visualizations/alternate-states-comparative-analysis.htm"
+  },
+  "qlik-may2023-authorization": {
+    "type": "official",
+    "title": "Qlik Sense for developers May 2023 — Authorization",
+    "url": "https://help.qlik.com/en-US/sense-developer/May2023/Subsystems/Platform/Content/Sense_PlatformOverview/Concepts/authorization.htm"
   }
 }
