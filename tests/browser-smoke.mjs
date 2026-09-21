@@ -42,6 +42,9 @@ try{
   assert.match(await page.locator('#lessonTitle').textContent(),/Satır neyi temsil ediyor/);
   assert.equal(await page.locator('#lessonOutline .outline-item').count(),8);
   assert.equal(await page.locator('#sourceList .source-item').count(),3);
+  assert.match(await page.locator('#sequencePosition').textContent(),/1 \/ 2/);
+  assert.equal(await page.locator('#nextLessonLink').isVisible(),true);
+  assert.match(await page.locator('#nextLessonLink').getAttribute('href'),/sql\.select-null-filtering\.001/);
 
   await page.locator('#lessonOutline .outline-item').nth(3).click();
   await page.locator('#completeSection').click();
@@ -55,11 +58,24 @@ try{
   await page.locator('#lessonHero').waitFor({state:'visible'});
   assert.match(await page.locator('#progressValue').textContent(),/13%/);
 
+  await page.locator('#nextLessonLink').click();
+  await page.locator('#lessonHero').waitFor({state:'visible'});
+  assert.match(await page.locator('#lessonTitle').textContent(),/SELECT gerçekten ne yapıyor/);
+  assert.equal(await page.locator('#lessonOutline .outline-item').count(),8);
+  assert.equal(await page.locator('#sourceList .source-item').count(),6);
+  assert.match(await page.locator('#sequencePosition').textContent(),/2 \/ 2/);
+  assert.equal(await page.locator('#previousLessonLink').isVisible(),true);
+  assert.equal(await page.locator('#nextLessonLink').isVisible(),false);
+
+  await page.locator('#lessonOutline .outline-item').nth(1).click();
+  assert.match(await page.locator('#sectionBody').textContent(),/UNKNOWN/);
+
   await page.setViewportSize({width:390,height:844});
   await page.reload({waitUntil:'domcontentloaded'});
   await page.locator('#lessonWorkspace').waitFor({state:'visible'});
   assert.equal(await page.locator('#lessonOutline').isVisible(),true);
   assert.equal(await page.locator('.lesson-reader').isVisible(),true);
+  assert.equal(await page.locator('#lessonSequence').isVisible(),true);
 
   assert.deepEqual(pageErrors,[]);
   assert.deepEqual(consoleErrors,[]);
