@@ -12,6 +12,7 @@ const ids=new Set();
 const paths=new Set();
 const orders=new Set();
 const catalogIds=new Set((catalog.production_lessons||[]).map(entry=>entry.id));
+const labIds=new Set();
 let previousOrder=0;
 
 for(const entry of catalog.production_lessons||[]){
@@ -65,6 +66,8 @@ for(const entry of catalog.production_lessons||[]){
   const labRequiredSections=(lesson.sections||[]).filter(section=>section.requires_lab_pass);
   if(lesson.lab){
     if(!lesson.lab.id?.trim()) fail(`${entry.id}: lab id required`);
+    else if(labIds.has(lesson.lab.id)) fail(`${entry.id}: duplicate lab id ${lesson.lab.id}`);
+    else labIds.add(lesson.lab.id);
     if(!lesson.lab.title_tr?.trim()||!lesson.lab.title_en?.trim()) fail(`${entry.id}: bilingual lab title required`);
     if(!lesson.lab.task_tr?.trim()||lesson.lab.task_tr.trim().length<100) fail(`${entry.id}: lab task_tr too shallow`);
     if(!lesson.lab.task_en?.trim()||lesson.lab.task_en.trim().length<80) fail(`${entry.id}: lab task_en too shallow`);

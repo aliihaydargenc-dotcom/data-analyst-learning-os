@@ -1,5 +1,5 @@
 {
-  "version": "0.3.0",
+  "version": "0.4.0",
   "production_lessons": [
     {
       "id": "sql.relational-thinking.001",
@@ -20,6 +20,16 @@
       "path": "content/lessons/sql.select-null-filtering.001.json",
       "status": "production-candidate",
       "runtime": "lesson.html?id=sql.select-null-filtering.001"
+    },
+    {
+      "id": "sql.aggregation-grain.001",
+      "module_id": "sql.aggregation-grain",
+      "track": "sql",
+      "level": "L2",
+      "order": 3,
+      "path": "content/lessons/sql.aggregation-grain.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=sql.aggregation-grain.001"
     }
   ]
 }

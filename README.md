@@ -2,7 +2,7 @@
 
 Sıfır önkoşulla başlayabilen, fakat hızlı kavrayan öğrenciyi gereksiz tekrarlarla yavaşlatmayan; SQL, Qlik Sense, Python, Excel, HTML/Web Foundations ve Technical English'i tek mastery sistemi altında birleştiren veri analisti akademisi.
 
-## Academy kernel v0.7
+## Academy kernel v0.8
 
 Bu repo artık yalnızca özellik listesiyle ilerlemez. İçerik ve seviye yapısı executable kalite kapılarıyla doğrulanır.
 
@@ -82,10 +82,15 @@ HTML track'i front-end geliştirici eğitimi değildir. Veri analistinin üretti
 
 ## Production ders runtime
 
-İlk iki production-candidate ders `sql.relational-thinking.001` ve `sql.select-null-filtering.001` üzerinden uçtan uca çalışır. Ders; mental model, worked example, guided practice, independent production, debugging, transfer ve retention katmanlarını ayrı bölümler halinde gösterir.
+İlk üç production-candidate ders `sql.relational-thinking.001`, `sql.select-null-filtering.001` ve `sql.aggregation-grain.001` üzerinden uçtan uca çalışır. Ders; mental model, worked example, guided practice, independent production, debugging, transfer ve retention katmanlarını ayrı bölümler halinde gösterir.
 
 Practice bölümlerinde gerekçeli yanıt taslağı olmadan bölüm tamamlanamaz. SQL production görevlerinde gerekli olduğunda bölüm ayrıca semantic lab PASS ister. Evaluator keyword aramaz; aday sorgunun result set'ini referans sorguyla hem görünür fixture hem de farklı edge-case fixture üzerinde karşılaştırır. Bu yine tek başına mastery değildir; üretim kanıtının bir parçasıdır. Mastery evidence taslakları ayrı tutulur ve completion yüzdesine dahil edilmez.
 
 Dersler production catalog içindeki açık sırayla önceki/sonraki navigasyona bağlanır. Sıra, mastery yerine geçmez; yalnızca öğrenme yolunu düzenler.
 
 Ders ilerlemesi şimdilik tarayıcı `localStorage` alanında saklanır. Hesaplar arası senkronizasyon eklenmeden önce bunun local-only olduğu açıkça korunur.
+
+
+### SQL production yolu
+
+İlk üretim hattı relational grain → SELECT/NULL/filtering → GROUP BY/HAVING/aggregate grain şeklinde ilerler. GROUP BY dersi COUNT(*) ile COUNT(column) NULL farkını, WHERE ile HAVING'in farklı aşamalarını ve hedef result grain'i semantic lab üzerinde görünür + edge-case fixture ile kanıtlatır.

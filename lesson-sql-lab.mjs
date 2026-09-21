@@ -3,6 +3,74 @@ import {DUCKDB_VERSION,DUCKDB_BUNDLES} from './duckdb-config.mjs';
 import {compareResultSets} from './sql-result-evaluator.mjs';
 
 const FIXTURES=Object.freeze({
+  'sql-aggregation-grain-v1':{
+    table:'stay_charge_cases',
+    visibleSetup:`
+      DROP TABLE IF EXISTS stay_charge_cases;
+      CREATE TABLE stay_charge_cases(
+        STAY_ID VARCHAR,
+        HOTEL VARCHAR,
+        BUSINESS_DATE DATE,
+        SEGMENT VARCHAR,
+        REVENUE_EUR INTEGER,
+        ROOM_NIGHTS INTEGER
+      );
+      INSERT INTO stay_charge_cases VALUES
+        ('S08','B',DATE '2026-07-12','Corporate',NULL,1),
+        ('S01','A',DATE '2026-07-01','Leisure',1200,1),
+        ('S11','C',DATE '2026-07-20','Leisure',NULL,1),
+        ('S06','B',DATE '2026-07-07','Leisure',1800,1),
+        ('S03','A',DATE '2026-07-03','Leisure',900,1),
+        ('S09','B',DATE '2026-07-13','Corporate',2200,1),
+        ('S05','A',DATE '2026-07-05','Corporate',900,1),
+        ('S07','B',DATE '2026-07-08','Leisure',1200,1),
+        ('S02','A',DATE '2026-07-02','Leisure',NULL,1),
+        ('S10','C',DATE '2026-07-19','Leisure',NULL,1),
+        ('S04','A',DATE '2026-07-04','Corporate',1000,1),
+        ('S12','A',DATE '2026-08-01','Leisure',10000,1),
+        ('S13','B',DATE '2026-06-30','Corporate',9000,1);
+    `,
+    edgeSetup:`
+      DROP TABLE IF EXISTS stay_charge_cases;
+      CREATE TABLE stay_charge_cases(
+        STAY_ID VARCHAR,
+        HOTEL VARCHAR,
+        BUSINESS_DATE DATE,
+        SEGMENT VARCHAR,
+        REVENUE_EUR INTEGER,
+        ROOM_NIGHTS INTEGER
+      );
+      INSERT INTO stay_charge_cases VALUES
+        ('E08','D',DATE '2026-07-11','Business',700,1),
+        ('E01','A',DATE '2026-07-01','Corporate',NULL,1),
+        ('E11','E',DATE '2026-07-15','Leisure',NULL,1),
+        ('E05','C',DATE '2026-07-06','Group',1100,1),
+        ('E03','A',DATE '2026-07-03','Leisure',1000,1),
+        ('E07','D',DATE '2026-07-10','Business',700,1),
+        ('E02','A',DATE '2026-07-02','Corporate',2500,1),
+        ('E06','C',DATE '2026-07-07','Group',NULL,1),
+        ('E04','C',DATE '2026-07-05','Group',1000,1),
+        ('E09','D',DATE '2026-07-12','Business',700,1),
+        ('E10','E',DATE '2026-07-14','Leisure',NULL,1),
+        ('E12','A',DATE '2026-07-04','Leisure',500,1),
+        ('E13','B',DATE '2026-08-03','Leisure',9999,1),
+        ('E14','B',DATE '2026-07-20','Leisure',0,1);
+    `,
+    referenceSql:`
+      SELECT
+        HOTEL,
+        SEGMENT,
+        COUNT(*) AS ROWS_IN_GROUP,
+        COUNT(REVENUE_EUR) AS PRICED_ROWS,
+        SUM(REVENUE_EUR) AS TOTAL_REVENUE
+      FROM stay_charge_cases
+      WHERE BUSINESS_DATE >= CAST('2026-07-01' AS DATE)
+        AND BUSINESS_DATE < CAST('2026-08-01' AS DATE)
+      GROUP BY HOTEL, SEGMENT
+      HAVING SUM(REVENUE_EUR) >= 2000
+      ORDER BY HOTEL, SEGMENT
+    `
+  },
   'sql-null-filtering-v1':{
     table:'reservation_filter_cases',
     visibleSetup:`

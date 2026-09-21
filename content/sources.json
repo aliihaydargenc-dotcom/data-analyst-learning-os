@@ -138,5 +138,25 @@
     "type": "official",
     "title": "Microsoft Learn — ORDER BY clause (Transact-SQL)",
     "url": "https://learn.microsoft.com/sql/t-sql/queries/select-order-by-clause-transact-sql"
+  },
+  "ms-group-by": {
+    "type": "official",
+    "title": "Microsoft Learn — GROUP BY (Transact-SQL)",
+    "url": "https://learn.microsoft.com/sql/t-sql/queries/select-group-by-transact-sql"
+  },
+  "ms-having": {
+    "type": "official",
+    "title": "Microsoft Learn — HAVING (Transact-SQL)",
+    "url": "https://learn.microsoft.com/sql/t-sql/queries/select-having-transact-sql"
+  },
+  "ms-count": {
+    "type": "official",
+    "title": "Microsoft Learn — COUNT (Transact-SQL)",
+    "url": "https://learn.microsoft.com/sql/t-sql/functions/count-transact-sql"
+  },
+  "ms-aggregate-functions": {
+    "type": "official",
+    "title": "Microsoft Learn — Aggregate functions (Transact-SQL)",
+    "url": "https://learn.microsoft.com/sql/t-sql/functions/aggregate-functions-transact-sql"
   }
 }
