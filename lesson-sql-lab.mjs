@@ -4,6 +4,7 @@ import {compareResultSets} from './sql-result-evaluator.mjs';
 
 const FIXTURES=Object.freeze({
   'sql-null-filtering-v1':{
+    table:'reservation_filter_cases',
     visibleSetup:`
       DROP TABLE IF EXISTS reservation_filter_cases;
       CREATE TABLE reservation_filter_cases(
@@ -125,7 +126,8 @@ async function getSession(){
 
 async function setupFixture(conn,fixture,variant){
   const sql=variant==='edge'?fixture.edgeSetup:fixture.visibleSetup;
-  await conn.query(sql);
+  const statements=sql.split(';').map(statement=>statement.trim()).filter(Boolean);
+  for(const statement of statements)await conn.query(statement);
 }
 
 async function runQuery(conn,sql){
@@ -138,7 +140,7 @@ export async function prepareLessonSqlLab(labId){
   if(!fixture)throw new Error(`Unknown lesson SQL lab: ${labId}`);
   const session=await getSession();
   await setupFixture(session.conn,fixture,'visible');
-  const countResult=await session.conn.query('SELECT COUNT(*)::INTEGER AS row_count FROM reservation_filter_cases');
+  const countResult=await session.conn.query(`SELECT COUNT(*)::INTEGER AS row_count FROM ${fixture.table}`);
   const prepared=tableResult(countResult,{maxRows:1});
   return {
     version:session.version,
