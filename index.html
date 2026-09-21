@@ -6,6 +6,15 @@
   <meta name="description" content="SQL, Qlik, Python, Excel ve Technical English için kişisel öğrenme sistemi.">
   <title>Data Analyst Learning OS</title>
   <link rel="stylesheet" href="styles.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "@duckdb/duckdb-wasm": "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.33.1-dev57.0/dist/duckdb-browser.mjs",
+      "apache-arrow": "https://cdn.jsdelivr.net/npm/apache-arrow@17.0.0/+esm",
+      "qs": "https://cdn.jsdelivr.net/npm/qs@6.14.1/+esm"
+    }
+  }
+  </script>
 </head>
 <body>
   <div class="shell">
@@ -76,13 +85,22 @@
       <section id="sql-lab" class="panel lab-panel">
         <div class="section-title row">
           <div><span class="eyebrow">PRACTICE LAB</span><h2>SQL Challenge · LAG / Window Function</h2></div>
-          <span class="pill">Structure checker</span>
+          <span id="duckdbStatus" class="pill">DuckDB · hazır</span>
         </div>
+
         <div class="lab-grid">
           <div>
             <p id="sqlTask">Görev: Her otel için günlük REVENUE_EUR değerini ve bir önceki günün gelirini döndür. BUSINESS_DATE sırasını kullan.</p>
-            <div class="schema"><strong>hotel_daily</strong><code>BUSINESS_DATE · HOTEL · ROOMS_AVAILABLE · ROOMS_SOLD · COMP_ROOMS · OCCUPANCY · ADR_EUR · REVENUE_EUR · DOMINANT_SEGMENT</code></div>
+            <div class="schema">
+              <strong>hotel_daily</strong>
+              <code>BUSINESS_DATE · HOTEL · ROOMS_AVAILABLE · ROOMS_SOLD · COMP_ROOMS · OCCUPANCY · ADR_EUR · REVENUE_EUR · DOMINANT_SEGMENT</code>
+            </div>
+            <div class="lab-note">
+              <strong>Sandbox</strong>
+              <span id="sandboxNote">Bu aşamada tek bir SELECT / WITH / EXPLAIN sorgusu çalıştırılır. Dataset tarayıcı belleğinde açılır.</span>
+            </div>
           </div>
+
           <div>
             <textarea id="sqlEditor" spellcheck="false">SELECT
     HOTEL,
@@ -93,10 +111,28 @@
         ORDER BY BUSINESS_DATE
     ) AS PREV_DAY_REVENUE
 FROM hotel_daily;</textarea>
-            <div class="lab-actions"><button id="checkSql" class="primary">Yapıyı Kontrol Et</button><span id="sqlResult"></span></div>
+            <div class="lab-actions">
+              <button id="runSql" class="primary">SQL'i Çalıştır</button>
+              <button id="resetSql" class="secondary">Sıfırla</button>
+              <span id="sqlResult"></span>
+            </div>
           </div>
         </div>
-        <p class="fine">MVP şu an sorgu yapısını doğrular. Sonraki teknik dilim DuckDB-Wasm ile sorguyu tarayıcıda gerçekten çalıştıracak.</p>
+
+        <div class="sql-output">
+          <div class="output-head">
+            <strong id="sqlOutputTitle">Sorgu Sonucu</strong>
+            <span id="sqlMeta"></span>
+          </div>
+          <div id="sqlError" class="sql-error" role="alert"></div>
+          <div class="table-wrap">
+            <table id="sqlTable" aria-label="SQL query result">
+              <thead></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div id="sqlEmpty" class="empty-output">Sorguyu çalıştırdığında gerçek DuckDB sonucu burada görünecek.</div>
+        </div>
       </section>
 
       <section id="roadmap" class="block">
