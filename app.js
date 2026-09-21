@@ -1,7 +1,18 @@
 import {checkSqlStructure,computeDomainScores} from './core.mjs';
 
-const state={lang:'tr',questions:[],exam:[],answers:{},index:0,roadmap:null};
+const DEFAULT_SQL=`SELECT
+    HOTEL,
+    BUSINESS_DATE,
+    REVENUE_EUR,
+    LAG(REVENUE_EUR) OVER (
+        PARTITION BY HOTEL
+        ORDER BY BUSINESS_DATE
+    ) AS PREV_DAY_REVENUE
+FROM hotel_daily;`;
+
+const state={lang:'tr',questions:[],exam:[],answers:{},index:0,roadmap:null,duckdbReady:false,duckdbInfo:null};
 const $=s=>document.querySelector(s);
+let sqlLabModulePromise=null;
 
 const copy={
   tr:{
@@ -12,7 +23,12 @@ const copy={
     start:'25 Soruluk Tanıyı Başlat',topStart:'Seviye Tespitini Başlat',next:'Sonraki',finish:'Sonucu Gör',
     roadmap:'24 haftalık plan',ready:'Hazır',
     sqlTask:'Görev: Her otel için günlük REVENUE_EUR değerini ve bir önceki günün gelirini döndür. BUSINESS_DATE sırasını kullan.',
-    check:'Yapıyı Kontrol Et',completed:'Tamamlandı'
+    runSql:"SQL'i Çalıştır",reset:'Sıfırla',completed:'Tamamlandı',
+    duckIdle:'DuckDB · hazır',duckLoading:'DuckDB yükleniyor…',
+    sandbox:'Bu aşamada tek bir SELECT / WITH / EXPLAIN sorgusu çalıştırılır. Dataset tarayıcı belleğinde açılır.',
+    outputTitle:'Sorgu Sonucu',empty:'Sorguyu çalıştırdığında gerçek DuckDB sonucu burada görünecek.',
+    challengeOk:'Challenge yapısı uygun.',challengeMissing:'Sorgu çalıştı; challenge için eksik:',
+    rows:'satır',shown:'gösteriliyor',queryFailed:'Sorgu çalıştırılamadı.'
   },
   en:{
     heroTitle:'Do not just watch courses. Measure, practice, and prove skill.',
@@ -22,7 +38,12 @@ const copy={
     start:'Start 25-Question Diagnostic',topStart:'Start Diagnostic',next:'Next',finish:'View Results',
     roadmap:'24-week roadmap',ready:'Ready',
     sqlTask:'Task: For each hotel, return daily REVENUE_EUR and previous-day revenue ordered by BUSINESS_DATE.',
-    check:'Check Structure',completed:'Completed'
+    runSql:'Run SQL',reset:'Reset',completed:'Completed',
+    duckIdle:'DuckDB · ready',duckLoading:'Loading DuckDB…',
+    sandbox:'This stage runs one SELECT / WITH / EXPLAIN statement at a time. The dataset is loaded into browser memory.',
+    outputTitle:'Query Result',empty:'Run a query to see the real DuckDB result here.',
+    challengeOk:'Challenge structure is valid.',challengeMissing:'Query ran; missing challenge criteria:',
+    rows:'rows',shown:'shown',queryFailed:'Query could not be executed.'
   }
 };
 
@@ -42,6 +63,17 @@ function renderTracks(){
   </article>`).join('');
 }
 
+function updateDuckdbStatus(){
+  const c=copy[state.lang];
+  if(!state.duckdbReady){
+    $('#duckdbStatus').textContent=c.duckIdle;
+    return;
+  }
+  const info=state.duckdbInfo;
+  const formatted=new Intl.NumberFormat(state.lang==='tr'?'tr-TR':'en-US').format(info.rowCount);
+  $('#duckdbStatus').textContent=`DuckDB ${info.version} · ${formatted} ${c.rows} · ${info.bundle.toUpperCase()}`;
+}
+
 function applyLanguage(){
   const c=copy[state.lang];
   document.documentElement.lang=state.lang;
@@ -55,7 +87,12 @@ function applyLanguage(){
   $('#startExamTop').textContent=c.topStart;
   $('#roadmapTitle').textContent=c.roadmap;
   $('#sqlTask').textContent=c.sqlTask;
-  $('#checkSql').textContent=c.check;
+  $('#runSql').textContent=c.runSql;
+  $('#resetSql').textContent=c.reset;
+  $('#sandboxNote').textContent=c.sandbox;
+  $('#sqlOutputTitle').textContent=c.outputTitle;
+  if(!$('#sqlEmpty').classList.contains('hidden'))$('#sqlEmpty').textContent=c.empty;
+  updateDuckdbStatus();
   if(!state.exam.length)$('#diagCounter').textContent=c.ready;
   renderTracks();
   renderRoadmap();
@@ -125,16 +162,107 @@ function renderRoadmap(){
   </article>`).join('');
 }
 
+function clearSqlTable(){
+  $('#sqlTable thead').replaceChildren();
+  $('#sqlTable tbody').replaceChildren();
+  $('#sqlTable').classList.add('hidden');
+}
+
+function renderSqlTable(result){
+  clearSqlTable();
+  const thead=$('#sqlTable thead');
+  const tbody=$('#sqlTable tbody');
+
+  const headerRow=document.createElement('tr');
+  for(const column of result.columns){
+    const th=document.createElement('th');
+    th.textContent=column;
+    headerRow.appendChild(th);
+  }
+  thead.appendChild(headerRow);
+
+  for(const row of result.rows){
+    const tr=document.createElement('tr');
+    for(const column of result.columns){
+      const td=document.createElement('td');
+      const value=row[column];
+      td.textContent=value===null?'NULL':String(value);
+      if(value===null)td.classList.add('null-value');
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+
+  $('#sqlTable').classList.remove('hidden');
+  $('#sqlEmpty').classList.add('hidden');
+}
+
+async function getSqlLabModule(){
+  if(!sqlLabModulePromise)sqlLabModulePromise=import('./duckdb-lab.mjs');
+  return sqlLabModulePromise;
+}
+
+async function executeSql(){
+  const c=copy[state.lang];
+  const button=$('#runSql');
+  const error=$('#sqlError');
+  const feedback=$('#sqlResult');
+
+  button.disabled=true;
+  error.textContent='';
+  feedback.textContent='';
+  $('#sqlMeta').textContent='';
+  $('#duckdbStatus').textContent=c.duckLoading;
+
+  try{
+    const lab=await getSqlLabModule();
+    const info=await lab.initializeSqlLab('./datasets/hotel_daily.csv');
+    state.duckdbReady=true;
+    state.duckdbInfo=info;
+    updateDuckdbStatus();
+
+    const sql=$('#sqlEditor').value;
+    const result=await lab.runSql(sql,{maxRows:100});
+    renderSqlTable(result);
+
+    const formattedRows=new Intl.NumberFormat(state.lang==='tr'?'tr-TR':'en-US').format(result.totalRows);
+    $('#sqlMeta').textContent=`${formattedRows} ${c.rows} · ${result.elapsedMs} ms${result.truncated?' · 100 '+c.shown:''}`;
+
+    const structure=checkSqlStructure(sql);
+    if(structure.ok){
+      feedback.textContent=c.challengeOk;
+      feedback.style.color='var(--green)';
+    }else{
+      feedback.textContent=`${c.challengeMissing} ${structure.missing.join(', ')}`;
+      feedback.style.color='var(--blue)';
+    }
+  }catch(err){
+    console.error(err);
+    clearSqlTable();
+    $('#sqlEmpty').classList.remove('hidden');
+    $('#sqlEmpty').textContent=c.empty;
+    $('#duckdbStatus').textContent=state.duckdbReady?copy[state.lang].duckIdle:'DuckDB · error';
+    error.textContent=`${c.queryFailed} ${err instanceof Error?err.message:String(err)}`;
+  }finally{
+    button.disabled=false;
+  }
+}
+
 $('#languageToggle').addEventListener('click',()=>{state.lang=state.lang==='tr'?'en':'tr';applyLanguage()});
 $('#startDiagnostic').addEventListener('click',startExam);
 $('#startExamTop').addEventListener('click',startExam);
 $('#nextQuestion').addEventListener('click',()=>{
   if(state.index<state.exam.length-1){state.index++;renderQuestion()}else showResults();
 });
-$('#checkSql').addEventListener('click',()=>{
-  const r=checkSqlStructure($('#sqlEditor').value),el=$('#sqlResult');
-  if(r.ok){el.textContent=state.lang==='tr'?'Gerekli yapılar mevcut.':'Required structures found.';el.style.color='var(--green)'}
-  else{el.textContent=(state.lang==='tr'?'Eksik: ':'Missing: ')+r.missing.join(', ');el.style.color='var(--red)'}
+$('#runSql').addEventListener('click',executeSql);
+$('#resetSql').addEventListener('click',()=>{
+  $('#sqlEditor').value=DEFAULT_SQL;
+  $('#sqlResult').textContent='';
+  $('#sqlError').textContent='';
+  $('#sqlMeta').textContent='';
+  clearSqlTable();
+  $('#sqlEmpty').classList.remove('hidden');
+  $('#sqlEmpty').textContent=copy[state.lang].empty;
 });
 
 async function init(){
@@ -143,6 +271,7 @@ async function init(){
     state.questions=await q.json();
     state.roadmap=await r.json();
     applyLanguage();
+    clearSqlTable();
   }catch(err){
     console.error(err);
     $('#diagCounter').textContent='Data load error';
