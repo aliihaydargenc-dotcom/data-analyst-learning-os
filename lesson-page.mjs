@@ -1,12 +1,13 @@
 import {
   createLessonProgress,normalizeLessonProgress,completeSection,completionPercent,
-  sectionNeedsResponse,saveEvidenceDraft,recordLabAttempt,recordCaseLabAttempt,labPassed
+  sectionNeedsResponse,saveEvidenceDraft,recordLabAttempt,recordCaseLabAttempt,recordPythonLabAttempt,labPassed
 } from './lesson-runtime.mjs';
 
 const $=selector=>document.querySelector(selector);
 const params=new URLSearchParams(location.search);
 const state={lang:'tr',catalog:null,entry:null,lesson:null,sources:null,progress:null,sectionIndex:0};
 let sqlLabModulePromise=null;
+let pythonLabModulePromise=null;
 
 const labels={
   tr:{
@@ -28,7 +29,8 @@ const labels={
     labPass:'Semantic test geçti: görünür ve edge-case fixture sonuçları referansla eşleşti.',
     labFail:'Semantic test geçmedi.',labRequired:'Bu bağımsız üretim bölümü için önce Semantic SQL Lab’ı geçirmen gerekiyor.',
     labError:'Lab çalıştırılamadı.',labPassed:'Semantik kanıt · geçti',labRows:'satır',
-    caseIdle:'Çalıştırılmadı',caseRun:'Senaryoları değerlendir',casePass:'Semantic Case Lab geçti.',caseFail:'Semantic Case Lab geçmedi.',caseRequired:'Bu bağımsız üretim bölümü için önce Semantic Case Lab’ı geçirmen gerekiyor.',caseMissing:'Tüm senaryolarda bir seçenek işaretle.'
+    caseIdle:'Çalıştırılmadı',caseRun:'Senaryoları değerlendir',casePass:'Semantic Case Lab geçti.',caseFail:'Semantic Case Lab geçmedi.',caseRequired:'Bu bağımsız üretim bölümü için önce Semantic Case Lab’ı geçirmen gerekiyor.',caseMissing:'Tüm senaryolarda bir seçenek işaretle.',
+    pythonIdle:'Çalıştırılmadı',pythonLoading:'Python runtime hazırlanıyor…',pythonRun:'Python testlerini çalıştır',pythonReset:'Sıfırla',pythonPass:'Semantic Python Lab geçti.',pythonFail:'Semantic Python Lab geçmedi.',pythonRequired:'Bu bağımsız üretim bölümü için önce Semantic Python Lab’ı geçirmen gerekiyor.',pythonError:'Python lab çalıştırılamadı.',pythonPassed:'Python kanıtı · geçti'
   },
   en:{
     loading:'Loading',progress:'Progress',estimate:'Estimated study',minutes:'min',
@@ -49,7 +51,8 @@ const labels={
     labPass:'Semantic test passed: visible and edge-case fixture results match the reference.',
     labFail:'Semantic test did not pass.',labRequired:'Pass the Semantic SQL Lab before completing this independent-production section.',
     labError:'The lab could not be executed.',labPassed:'Semantic evidence · passed',labRows:'rows',
-    caseIdle:'Not run',caseRun:'Evaluate scenarios',casePass:'Semantic Case Lab passed.',caseFail:'Semantic Case Lab did not pass.',caseRequired:'Pass the Semantic Case Lab before completing this independent-production section.',caseMissing:'Choose one option for every scenario.'
+    caseIdle:'Not run',caseRun:'Evaluate scenarios',casePass:'Semantic Case Lab passed.',caseFail:'Semantic Case Lab did not pass.',caseRequired:'Pass the Semantic Case Lab before completing this independent-production section.',caseMissing:'Choose one option for every scenario.',
+    pythonIdle:'Not run',pythonLoading:'Preparing Python runtime…',pythonRun:'Run Python tests',pythonReset:'Reset',pythonPass:'Semantic Python Lab passed.',pythonFail:'Semantic Python Lab did not pass.',pythonRequired:'Pass the Semantic Python Lab before completing this independent-production section.',pythonError:'Python lab could not be executed.',pythonPassed:'Python evidence · passed'
   }
 };
 
@@ -254,6 +257,62 @@ async function runLessonSqlLab(){
   }
 }
 
+function renderLessonPythonLab(){
+  const lab=state.lesson?.python_lab;
+  $('#lessonPythonLab').classList.toggle('hidden',!lab);
+  if(!lab)return;
+  const l=labels[state.lang];
+  $('#lessonPythonLabTitle').textContent=localText(lab,'title');
+  $('#lessonPythonLabTask').textContent=localText(lab,'task');
+  $('#lessonPythonEngineNote').textContent=localText(lab,'engine_note');
+  $('#lessonPythonPackages').textContent=(lab.packages||[]).length?`packages: ${lab.packages.join(', ')}`:'standard library';
+  $('#runLessonPython').textContent=l.pythonRun;
+  $('#resetLessonPython').textContent=l.pythonReset;
+  const editor=$('#lessonPythonEditor');
+  if(editor.dataset.labId!==lab.id){
+    editor.dataset.labId=lab.id;
+    editor.value=lab.starter_code||'';
+    $('#lessonPythonFeedback').textContent='';
+    $('#lessonPythonOutput').textContent='';
+  }
+  $('#lessonPythonLabStatus').textContent=labPassed(state.progress,lab.id)?l.pythonPassed:l.pythonIdle;
+}
+
+async function getLessonPythonLabModule(){
+  if(!pythonLabModulePromise)pythonLabModulePromise=import('./lesson-python-lab.mjs');
+  return pythonLabModulePromise;
+}
+
+async function runLessonPythonLab(){
+  const lab=state.lesson?.python_lab;
+  if(!lab)return;
+  const l=labels[state.lang];
+  const button=$('#runLessonPython');
+  button.disabled=true;
+  $('#lessonPythonLabStatus').textContent=l.pythonLoading;
+  $('#lessonPythonFeedback').textContent='';
+  $('#lessonPythonOutput').textContent='';
+  try{
+    const module=await getLessonPythonLabModule();
+    const info=await module.prepareLessonPythonLab(lab.id);
+    const evaluation=await module.evaluateLessonPython(lab.id,$('#lessonPythonEditor').value);
+    const summary=Object.fromEntries(evaluation.tests.map(test=>[test.variant,test.passed]));
+    state.progress=recordPythonLabAttempt(state.lesson,state.progress,lab.id,{passed:evaluation.passed,summary});
+    persistProgress();
+    const detail=evaluation.tests.map(test=>`${test.variant}: ${test.passed?'PASS':'FAIL'} · ${test.detail}`).join(' · ');
+    $('#lessonPythonFeedback').textContent=`${evaluation.passed?l.pythonPass:l.pythonFail} ${detail}`;
+    $('#lessonPythonFeedback').style.color=evaluation.passed?'var(--green)':'var(--red)';
+    $('#lessonPythonLabStatus').textContent=evaluation.passed?`Pyodide ${info.version} · ${l.pythonPassed}`:`Pyodide ${info.version} · ${l.pythonFail}`;
+    $('#lessonPythonOutput').textContent=evaluation.tests.map(test=>`[${test.variant}] ${test.output||test.detail}`).join('\n');
+  }catch(error){
+    $('#lessonPythonFeedback').textContent=`${l.pythonError} ${error instanceof Error?error.message:String(error)}`;
+    $('#lessonPythonFeedback').style.color='var(--red)';
+    $('#lessonPythonLabStatus').textContent=l.pythonError;
+  }finally{
+    button.disabled=false;
+  }
+}
+
 function renderLessonCaseLab(){
   const lab=state.lesson?.case_lab;
   $('#lessonCaseLab').classList.toggle('hidden',!lab);
@@ -365,7 +424,7 @@ function renderSources(){
 
 function renderAll(){
   if(!state.lesson)return;
-  renderHero();renderOutline();renderSection();renderLessonSqlLab();renderLessonCaseLab();renderSequence();renderEvidence();renderRetention();renderSources();
+  renderHero();renderOutline();renderSection();renderLessonSqlLab();renderLessonPythonLab();renderLessonCaseLab();renderSequence();renderEvidence();renderRetention();renderSources();
 }
 
 function escapeHtml(value){
@@ -374,6 +433,15 @@ function escapeHtml(value){
 
 $('#lessonLanguage').addEventListener('click',()=>setLanguage(state.lang==='tr'?'en':'tr'));
 $('#runLessonCase').addEventListener('click',runLessonCaseLab);
+$('#runLessonPython').addEventListener('click',runLessonPythonLab);
+$('#resetLessonPython').addEventListener('click',()=>{
+  const lab=state.lesson?.python_lab;
+  if(!lab)return;
+  $('#lessonPythonEditor').value=lab.starter_code||'';
+  $('#lessonPythonFeedback').textContent='';
+  $('#lessonPythonOutput').textContent='';
+  renderLessonPythonLab();
+});
 $('#runLessonSql').addEventListener('click',runLessonSqlLab);
 $('#resetLessonSql').addEventListener('click',()=>{
   const lab=state.lesson?.lab;
@@ -397,6 +465,9 @@ $('#completeSection').addEventListener('click',()=>{
     }else if(result.reason==='case_lab_required'){
       $('#sectionFeedback').textContent=l.caseRequired;
       $('#lessonCaseLab').scrollIntoView({behavior:'smooth',block:'start'});
+    }else if(result.reason==='python_lab_required'){
+      $('#sectionFeedback').textContent=l.pythonRequired;
+      $('#lessonPythonLab').scrollIntoView({behavior:'smooth',block:'start'});
     }else{
       $('#sectionFeedback').textContent=l.responseRequired;
       $('#sectionResponse').focus();
