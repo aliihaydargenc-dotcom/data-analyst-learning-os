@@ -10,11 +10,18 @@ const errors=[];
 const fail=message=>errors.push(message);
 const ids=new Set();
 const paths=new Set();
+const orders=new Set();
+const catalogIds=new Set((catalog.production_lessons||[]).map(entry=>entry.id));
+let previousOrder=0;
 
 for(const entry of catalog.production_lessons||[]){
   if(ids.has(entry.id)) fail(`Duplicate lesson id: ${entry.id}`);
   if(paths.has(entry.path)) fail(`Duplicate lesson path: ${entry.path}`);
-  ids.add(entry.id); paths.add(entry.path);
+  if(!Number.isInteger(entry.order)||entry.order<1) fail(`${entry.id}: positive integer order required`);
+  if(orders.has(entry.order)) fail(`Duplicate lesson order: ${entry.order}`);
+  if(entry.order<previousOrder) fail(`${entry.id}: catalog order must be ascending`);
+  if(entry.runtime!==`lesson.html?id=${entry.id}`) fail(`${entry.id}: runtime URL mismatch`);
+  ids.add(entry.id); paths.add(entry.path); orders.add(entry.order); previousOrder=entry.order;
 
   if(!fs.existsSync(entry.path)){fail(`Missing lesson file: ${entry.path}`);continue;}
   const lesson=JSON.parse(fs.readFileSync(entry.path,'utf8'));
@@ -26,6 +33,9 @@ for(const entry of catalog.production_lessons||[]){
   if(module&&lesson.track!==module.track) fail(`${entry.id}: lesson/module track mismatch`);
   if(module&&lesson.level!==module.level) fail(`${entry.id}: lesson/module level mismatch`);
   if(lesson.status!=='production-candidate'&&lesson.status!=='production') fail(`${entry.id}: invalid status`);
+  for(const prerequisite of lesson.prerequisites||[]){
+    if(prerequisite.includes('.001')&&!catalogIds.has(prerequisite)) fail(`${entry.id}: unknown lesson prerequisite ${prerequisite}`);
+  }
 
   if(!lesson.title_tr?.trim()||!lesson.title_en?.trim()) fail(`${entry.id}: bilingual title required`);
   if(!lesson.subtitle_tr?.trim()||!lesson.subtitle_en?.trim()) fail(`${entry.id}: bilingual subtitle required`);
