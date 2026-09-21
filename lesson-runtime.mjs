@@ -135,6 +135,16 @@ export function recordPythonLabAttempt(lesson,progress,pythonLabId,attempt,now=n
   return next;
 }
 
+export function recordHtmlLabAttempt(lesson,progress,htmlLabId,attempt,now=new Date()){
+  if(!lesson?.html_lab||lesson.html_lab.id!==htmlLabId) throw new Error(`Unknown lesson HTML lab: ${htmlLabId}`);
+  const next=normalizeLessonProgress(lesson,progress,now);
+  const previous=next.labEvidence[htmlLabId]||{attempts:0,passed:false,passedAt:null,lastPassed:false,lastSummary:null};
+  const passedNow=attempt?.passed===true;
+  next.labEvidence[htmlLabId]={attempts:Number(previous.attempts||0)+1,passed:previous.passed===true||passedNow,passedAt:previous.passedAt||(passedNow?now.toISOString():null),lastPassed:passedNow,lastSummary:attempt?.summary??null};
+  next.updatedAt=now.toISOString();
+  return next;
+}
+
 export function completionPercent(lesson,progress){
   const total=(lesson?.sections||[]).length;
   if(total===0) return 0;
@@ -168,6 +178,9 @@ export function completeSection(lesson,progress,sectionId,response='',now=new Da
   }
   if(section.requires_python_lab_pass&&!labPassed(progress,section.requires_python_lab_pass)){
     return {ok:false,reason:'python_lab_required',progress};
+  }
+  if(section.requires_html_lab_pass&&!labPassed(progress,section.requires_html_lab_pass)){
+    return {ok:false,reason:'html_lab_required',progress};
   }
 
   const next=normalizeLessonProgress(lesson,progress,now);

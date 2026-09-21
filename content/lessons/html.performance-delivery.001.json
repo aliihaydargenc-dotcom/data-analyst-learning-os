@@ -1,0 +1,194 @@
+{
+  "id": "html.performance-delivery.001",
+  "module_id": "html.performance-delivery",
+  "track": "html",
+  "level": "L5",
+  "status": "production-candidate",
+  "title_tr": "Production teslimatı, yükleme ve kalite denetimi",
+  "title_en": "Production delivery, loading and quality review",
+  "subtitle_tr": "Production teslimatı, yükleme ve kalite denetimi konusunu gerçek browser DOM'u, accessibility contract'ları ve production validation ile öğren.",
+  "subtitle_en": "Learn production delivery, loading and quality review through the real browser DOM, accessibility contracts, and production validation.",
+  "estimated_minutes_range": [
+    95,
+    135
+  ],
+  "why_it_matters_tr": "HTML delivery kalitesi yalnız dosya boyutu değildir; critical parsing path, script loading, image dimensions, lazy-loading adayları, DOM karmaşıklığı ve semantic/accessibility regression birlikte değerlendirilir. Ölçüm gerçek kullanıcı deneyimi ve representative browser akışıyla yapılmalıdır. Her şeyi lazy load etmek, bütün JS'i tek dosyaya sıkıştırmayı optimization saymak veya semantic/accessibility regression'ı performans kazanımı olarak kabul etmek yanlış trade-off'tur. Bu nedenle mastery yalnız doğru tag'i bilmek değil, DOM evidence üretmek ve semantic contract'ı analitik delivery bağlamında savunmaktır.",
+  "why_it_matters_en": "HTML delivery quality spans parsing, script loading, image dimensions, lazy loading, DOM complexity, semantics, and accessibility. Performance decisions should be validated in representative browser flows. Mastery therefore requires DOM evidence and a defensible semantic contract rather than simply naming the right element.",
+  "prerequisites": [
+    "html.validation-security-boundaries.001"
+  ],
+  "learning_objectives": [
+    "Production teslimatı, yükleme ve kalite denetimi için source, DOM ve semantic/accessibility contract'ını açıklar.",
+    "Markup'ın parser sonrası DOM davranışını visible ve edge fixture ile doğrular.",
+    "Identity, source order, labeling veya trust-boundary failure'ını evidence ile debug eder.",
+    "Analitik data contract'ını HTML presentation ve diğer analitik katmanlar arasında transfer eder."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "Önkoşul kanıtları hazır mı: html.validation-security-boundaries.001?",
+      "if_no_tr": "Önkoşul production derslerini tamamla veya eşdeğer mastery evidence üret."
+    }
+  ],
+  "html_lab": {
+    "id": "html-performance-delivery-v1",
+    "title_tr": "Semantic HTML DOM Lab · Production teslimatı, yükleme ve kalite denetimi",
+    "title_en": "Semantic HTML DOM Lab · Production delivery, loading and quality review",
+    "task_tr": "Viewport metadata, non-blocking external script loading, width/height tanımlı görseller ve ikinci/sonraki görsellerde `loading=\"lazy\"` içeren küçük production markup üret. Duplicate id, inline handler ve gereksiz dev DOM oluşturma.",
+    "task_en": "Create a small production page with viewport metadata, non-blocking external script loading, images with explicit width and height, and loading=lazy on secondary images. Keep ids unique, avoid inline handlers, and keep the exercise DOM intentionally small.",
+    "starter_html": "<!doctype html><html lang=\"tr\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Rapor</title><script type=\"module\" src=\"app.js\"></script></head><body><main><h1>Rapor</h1>\n<img src=\"hero.png\" alt=\"Gelir özeti\" width=\"640\" height=\"320\">\n<img src=\"detail.png\" alt=\"Detay trendi\" width=\"640\" height=\"320\" loading=\"lazy\">\n</main></body></html>",
+    "engine_note_tr": "Markup gerçek browser DOMParser ile parse edilir. Değerlendirme DOM element/attribute ilişkilerini deterministic visible ve edge kontrolleriyle sınar; CSS görsel render kalitesi veya tam WCAG conformance iddiası değildir.",
+    "engine_note_en": "Markup is parsed by the real browser DOMParser. Deterministic visible and edge checks evaluate DOM element and attribute relationships; this is not a claim of full visual quality or WCAG conformance.",
+    "requires_for_section": "performance-delivery-production"
+  },
+  "sections": [
+    {
+      "id": "mental-model",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: source → parser → DOM → kullanıcı ajanı",
+      "title_en": "1. Mental model: source → parser → DOM → user agent",
+      "body_tr": "HTML delivery kalitesi yalnız dosya boyutu değildir; critical parsing path, script loading, image dimensions, lazy-loading adayları, DOM karmaşıklığı ve semantic/accessibility regression birlikte değerlendirilir. Ölçüm gerçek kullanıcı deneyimi ve representative browser akışıyla yapılmalıdır. Derste markup görünüşten önce parser ve DOM contract'ı olarak ele alınır; semantic, accessibility ve behavior varsayımları gerçek browser ağacında doğrulanır.",
+      "body_en": "HTML delivery quality spans parsing, script loading, image dimensions, lazy loading, DOM complexity, semantics, and accessibility. Performance decisions should be validated in representative browser flows. Treat markup first as a parser and DOM contract, then validate semantics, accessibility, and behavior assumptions in the real browser tree.",
+      "checks": [
+        "Source order ve DOM relationship'i yaz.",
+        "Native semantics varsa önce onu kullan.",
+        "Görsel benzerliği semantic equivalence sayma."
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "2. Worked example: browser ağacında kanıt üret",
+      "title_en": "2. Worked example: produce evidence in the browser tree",
+      "body_tr": "External behavior script'i `type=module`/`defer` ile parse-blocking olmadan yüklemek, image width/height ile layout alanı ayırmak ve below-the-fold görsellerde lazy loading kullanmak delivery contract'ını iyileştirebilir. Örnek syntax ezberi değildir; hangi DOM relationship'in business/content contract'ını koruduğunu göstermek için kullanılır.",
+      "body_en": "Use the example to expose the DOM relationship that preserves the content or interaction contract rather than memorizing markup syntax.",
+      "code": "<!doctype html><html lang=\"tr\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Rapor</title><script type=\"module\" src=\"app.js\"></script></head><body><main><h1>Rapor</h1>\n<img src=\"hero.png\" alt=\"Gelir özeti\" width=\"640\" height=\"320\">\n<img src=\"detail.png\" alt=\"Detay trendi\" width=\"640\" height=\"320\" loading=\"lazy\">\n</main></body></html>",
+      "explanation_tr": "Production'da content, URL, data volume, browser support ve yardımcı teknoloji davranışı gerçek fixture ile yeniden doğrulanmalıdır.",
+      "explanation_en": "Revalidate content, URLs, data volume, browser support, and assistive-technology behavior with representative production fixtures."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "3. Guided practice: parse edilmeden önce DOM'u tahmin et",
+      "title_en": "3. Guided practice: predict the DOM before parsing",
+      "body_tr": "HTML delivery kalitesi yalnız dosya boyutu değildir; critical parsing path, script loading, image dimensions, lazy-loading adayları, DOM karmaşıklığı ve semantic/accessibility regression birlikte değerlendirilir. Ölçüm gerçek kullanıcı deneyimi ve representative browser akışıyla yapılmalıdır. Markup'ı çalıştırmadan önce browser'ın hangi element/attribute ilişkilerini kuracağını, keyboard/source order etkisini ve olası edge-case'i tahmin et; sonra DOM evidence ile karşılaştır.",
+      "body_en": "Predict the browser DOM relationships, keyboard or source-order effect, and likely edge case before parsing, then compare against DOM evidence.",
+      "prompts": [
+        "Production teslimatı, yükleme ve kalite denetimi için semantic contract'ı iki cümlede yaz.",
+        "Visible fixture'ın DOM'da hangi element/attribute ilişkilerini üretmesi gerektiğini tahmin et.",
+        "Edge test başarısız olursa hangi native semantic veya identity invariant'ını kontrol edersin?"
+      ]
+    },
+    {
+      "id": "performance-delivery-production",
+      "layer": "independent_practice",
+      "title_tr": "4. Bağımsız üretim: Semantic HTML DOM Lab",
+      "title_en": "4. Independent production: Semantic HTML DOM Lab",
+      "body_tr": "Gerçek browser DOMParser üzerinde markup görevini tamamla. Visible ve edge testlerinin ikisi de geçmeden bu bölüm tamamlanmaz. Sonrasında hangi native semantic contract'ı kullandığını ve hangi edge-case'in validation kanıtı olduğunu kısa teknik notla açıkla.",
+      "body_en": "Complete the markup task against the real browser DOMParser. Both visible and edge tests must pass before completion, then document the native semantic contract and important validation edge case.",
+      "requires_html_lab_pass": "html-performance-delivery-v1",
+      "evidence_required": [
+        "html_lab_visible_pass",
+        "html_lab_edge_pass",
+        "semantic_contract",
+        "edge_case_reasoning"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "5. Debugging: DOM semptomunu root cause'dan ayır",
+      "title_en": "5. Debugging: separate DOM symptoms from root cause",
+      "body_tr": "Her şeyi lazy load etmek, bütün JS'i tek dosyaya sıkıştırmayı optimization saymak veya semantic/accessibility regression'ı performans kazanımı olarak kabul etmek yanlış trade-off'tur. Debug sırasında CSS ile semantik hatayı örtme. Parsed DOM, element count, attribute relationship, source order ve browser console/accessibility evidence'i ayrı ayrı incele; tek değişkenli düzeltmeyi edge testle doğrula.",
+      "body_en": "Her şeyi lazy load etmek, bütün JS'i tek dosyaya sıkıştırmayı optimization saymak veya semantic/accessibility regression'ı performans kazanımı olarak kabul etmek yanlış trade-off'tur. Inspect parsed DOM, element counts, attribute relationships, source order, and browser or accessibility evidence separately, then validate one focused change with the edge test.",
+      "diagnostic_sequence": [
+        "Markup'ı minimal fixture'a indir.",
+        "Parsed DOM'da beklenen elementi/attribute'u seç.",
+        "Duplicate id, heading/source order ve native semantics'i kontrol et.",
+        "Tek değişkenli markup düzeltmesi yap.",
+        "Visible testi tekrar çalıştır.",
+        "Edge test ve keyboard/browser regression'ını doğrula."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "6. Transfer: veri contract'ını diğer katmanlara taşı",
+      "title_en": "6. Transfer: carry the data contract across layers",
+      "body_tr": "External behavior script'i `type=module`/`defer` ile parse-blocking olmadan yüklemek, image width/height ile layout alanı ayırmak ve below-the-fold görsellerde lazy loading kullanmak delivery contract'ını iyileştirebilir. Transfer çalışmasında HTML tag'lerini SQL/Python/Qlik'e kopyalamak yerine identity, grain, label, ordering ve validation contract'ını taşı. Web katmanı analitik sonucun kullanıcıya nasıl anlamlı ve erişilebilir teslim edildiğini tamamlar.",
+      "body_en": "Transfer identity, grain, labels, ordering, and validation contracts rather than HTML tags into SQL, Python, Qlik, or Excel.",
+      "transfer_tasks": [
+        {
+          "tool": "SQL",
+          "task_tr": "Displayed table/KPI'nin source population ve grain contract'ını SQL ile ifade et."
+        },
+        {
+          "tool": "Python",
+          "task_tr": "HTML'e verilen payload için schema/type validation ve deterministic serialization testini tanımla."
+        },
+        {
+          "tool": "Qlik / Excel",
+          "task_tr": "Aynı metric label, grouping ve filter context'inin HTML presentation katmanında nasıl korunacağını açıkla."
+        }
+      ]
+    },
+    {
+      "id": "review",
+      "layer": "mental_model",
+      "title_tr": "7. Review: native semantics, accessibility ve operability",
+      "title_en": "7. Review: native semantics, accessibility, and operability",
+      "body_tr": "Her şeyi lazy load etmek, bütün JS'i tek dosyaya sıkıştırmayı optimization saymak veya semantic/accessibility regression'ı performans kazanımı olarak kabul etmek yanlış trade-off'tur. Review yalnız validator'da error olmamasına bakmaz; native semantic uygunluğu, source/focus order, content alternative, security boundary, loading/failure state ve maintainability birlikte değerlendirilir.",
+      "body_en": "Review goes beyond validator errors to native semantics, source and focus order, content alternatives, security boundaries, loading or failure states, and maintainability."
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: tag ezberi değil DOM invariant'ı",
+      "title_en": "8. Retrieval: retrieve the DOM invariant, not tag trivia",
+      "body_tr": "D+1'de production teslimatı, yükleme ve kalite denetimi konusunun ana DOM invariant'ını dokümana bakmadan açıkla. D+7'de yeni bir markup'ın parsed DOM davranışını çalıştırmadan tahmin et. D+30'da gerçek bir analitik sayfayı semantic, accessibility, validation ve delivery kanıtıyla review et.",
+      "body_en": "On D+1 explain the core DOM invariant from memory. On D+7 predict a new markup tree before parsing. On D+30 review a real analytical page with semantic, accessibility, validation, and delivery evidence.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explain-html-dom-invariant"
+        },
+        {
+          "day": 7,
+          "evidence": "predict-new-markup-dom"
+        },
+        {
+          "day": 30,
+          "evidence": "produce-html-production-review"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "Production teslimatı, yükleme ve kalite denetimi için native semantic ve DOM invariant'larını açıklayıp yalnız görsel styling'den ayır.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Yeni markup'ın parsed DOM, source order, accessible name veya validation davranışını execution öncesi tahmin et.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Semantic HTML DOM Lab visible ve edge kontrollerini geçen markup üret ve browser evidence kaydet.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Aynı data/identity/label contract'ını SQL, Python, Qlik veya Excel output katmanıyla reconcile et.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "whatwg-html",
+    "mdn-html-a11y",
+    "web-performance-images",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}

@@ -1,6 +1,6 @@
 import {
   createLessonProgress,normalizeLessonProgress,completeSection,completionPercent,
-  sectionNeedsResponse,saveEvidenceDraft,recordLabAttempt,recordCaseLabAttempt,recordPythonLabAttempt,labPassed
+  sectionNeedsResponse,saveEvidenceDraft,recordLabAttempt,recordCaseLabAttempt,recordPythonLabAttempt,recordHtmlLabAttempt,labPassed
 } from './lesson-runtime.mjs';
 
 const $=selector=>document.querySelector(selector);
@@ -8,6 +8,7 @@ const params=new URLSearchParams(location.search);
 const state={lang:'tr',catalog:null,entry:null,lesson:null,sources:null,progress:null,sectionIndex:0};
 let sqlLabModulePromise=null;
 let pythonLabModulePromise=null;
+let htmlLabModulePromise=null;
 
 const labels={
   tr:{
@@ -30,7 +31,7 @@ const labels={
     labFail:'Semantic test geçmedi.',labRequired:'Bu bağımsız üretim bölümü için önce Semantic SQL Lab’ı geçirmen gerekiyor.',
     labError:'Lab çalıştırılamadı.',labPassed:'Semantik kanıt · geçti',labRows:'satır',
     caseIdle:'Çalıştırılmadı',caseRun:'Senaryoları değerlendir',casePass:'Semantic Case Lab geçti.',caseFail:'Semantic Case Lab geçmedi.',caseRequired:'Bu bağımsız üretim bölümü için önce Semantic Case Lab’ı geçirmen gerekiyor.',caseMissing:'Tüm senaryolarda bir seçenek işaretle.',
-    pythonIdle:'Çalıştırılmadı',pythonLoading:'Python runtime hazırlanıyor…',pythonRun:'Python testlerini çalıştır',pythonReset:'Sıfırla',pythonPass:'Semantic Python Lab geçti.',pythonFail:'Semantic Python Lab geçmedi.',pythonRequired:'Bu bağımsız üretim bölümü için önce Semantic Python Lab’ı geçirmen gerekiyor.',pythonError:'Python lab çalıştırılamadı.',pythonPassed:'Python kanıtı · geçti'
+    pythonIdle:'Çalıştırılmadı',pythonLoading:'Python runtime hazırlanıyor…',pythonRun:'Python testlerini çalıştır',pythonReset:'Sıfırla',pythonPass:'Semantic Python Lab geçti.',pythonFail:'Semantic Python Lab geçmedi.',pythonRequired:'Bu bağımsız üretim bölümü için önce Semantic Python Lab’ı geçirmen gerekiyor.',pythonError:'Python lab çalıştırılamadı.',pythonPassed:'Python kanıtı · geçti',htmlIdle:'Çalıştırılmadı',htmlRun:'DOM testlerini çalıştır',htmlReset:'Sıfırla',htmlPass:'Semantic HTML DOM Lab geçti.',htmlFail:'Semantic HTML DOM Lab geçmedi.',htmlRequired:'Bu bağımsız üretim bölümü için önce Semantic HTML DOM Lab’ı geçirmen gerekiyor.',htmlError:'HTML DOM lab çalıştırılamadı.',htmlPassed:'HTML DOM kanıtı · geçti'
   },
   en:{
     loading:'Loading',progress:'Progress',estimate:'Estimated study',minutes:'min',
@@ -52,7 +53,7 @@ const labels={
     labFail:'Semantic test did not pass.',labRequired:'Pass the Semantic SQL Lab before completing this independent-production section.',
     labError:'The lab could not be executed.',labPassed:'Semantic evidence · passed',labRows:'rows',
     caseIdle:'Not run',caseRun:'Evaluate scenarios',casePass:'Semantic Case Lab passed.',caseFail:'Semantic Case Lab did not pass.',caseRequired:'Pass the Semantic Case Lab before completing this independent-production section.',caseMissing:'Choose one option for every scenario.',
-    pythonIdle:'Not run',pythonLoading:'Preparing Python runtime…',pythonRun:'Run Python tests',pythonReset:'Reset',pythonPass:'Semantic Python Lab passed.',pythonFail:'Semantic Python Lab did not pass.',pythonRequired:'Pass the Semantic Python Lab before completing this independent-production section.',pythonError:'Python lab could not be executed.',pythonPassed:'Python evidence · passed'
+    pythonIdle:'Not run',pythonLoading:'Preparing Python runtime…',pythonRun:'Run Python tests',pythonReset:'Reset',pythonPass:'Semantic Python Lab passed.',pythonFail:'Semantic Python Lab did not pass.',pythonRequired:'Pass the Semantic Python Lab before completing this independent-production section.',pythonError:'Python lab could not be executed.',pythonPassed:'Python evidence · passed',htmlIdle:'Not run',htmlRun:'Run DOM tests',htmlReset:'Reset',htmlPass:'Semantic HTML DOM Lab passed.',htmlFail:'Semantic HTML DOM Lab did not pass.',htmlRequired:'Pass the Semantic HTML DOM Lab before completing this independent-production section.',htmlError:'HTML DOM lab could not be executed.',htmlPassed:'HTML DOM evidence · passed'
   }
 };
 
@@ -313,6 +314,36 @@ async function runLessonPythonLab(){
   }
 }
 
+function renderLessonHtmlLab(){
+  const lab=state.lesson?.html_lab;
+  $('#lessonHtmlLab').classList.toggle('hidden',!lab);
+  if(!lab)return;
+  const l=labels[state.lang];
+  $('#lessonHtmlLabTitle').textContent=localText(lab,'title');
+  $('#lessonHtmlLabTask').textContent=localText(lab,'task');
+  $('#lessonHtmlEngineNote').textContent=localText(lab,'engine_note');
+  $('#runLessonHtml').textContent=l.htmlRun;
+  $('#resetLessonHtml').textContent=l.htmlReset;
+  const editor=$('#lessonHtmlEditor');
+  if(editor.dataset.labId!==lab.id){editor.dataset.labId=lab.id;editor.value=lab.starter_html||'';$('#lessonHtmlFeedback').textContent='';$('#lessonHtmlOutput').textContent='';}
+  $('#lessonHtmlLabStatus').textContent=labPassed(state.progress,lab.id)?l.htmlPassed:l.htmlIdle;
+}
+
+async function getLessonHtmlLabModule(){if(!htmlLabModulePromise)htmlLabModulePromise=import('./lesson-html-lab.mjs');return htmlLabModulePromise;}
+
+async function runLessonHtmlLab(){
+  const lab=state.lesson?.html_lab;if(!lab)return;const l=labels[state.lang],button=$('#runLessonHtml');button.disabled=true;$('#lessonHtmlFeedback').textContent='';$('#lessonHtmlOutput').textContent='';
+  try{
+    const module=await getLessonHtmlLabModule();
+    const evaluation=module.evaluateLessonHtml(lab.id,$('#lessonHtmlEditor').value);
+    const summary=Object.fromEntries(evaluation.tests.map(test=>[test.variant,test.passed]));
+    state.progress=recordHtmlLabAttempt(state.lesson,state.progress,lab.id,{passed:evaluation.passed,summary});persistProgress();
+    const detail=evaluation.tests.map(test=>`${test.variant}: ${test.passed?'PASS':'FAIL'} · ${test.detail}`).join(' · ');
+    $('#lessonHtmlFeedback').textContent=`${evaluation.passed?l.htmlPass:l.htmlFail} ${detail}`;$('#lessonHtmlFeedback').style.color=evaluation.passed?'var(--green)':'var(--red)';$('#lessonHtmlLabStatus').textContent=evaluation.passed?l.htmlPassed:l.htmlFail;
+    $('#lessonHtmlOutput').textContent=evaluation.tests.flatMap(test=>test.checks.map(check=>`[${test.variant}] ${check.name}: ${check.passed?'PASS':'FAIL'} · ${check.detail}`)).join('\n');
+  }catch(error){$('#lessonHtmlFeedback').textContent=`${l.htmlError} ${error instanceof Error?error.message:String(error)}`;$('#lessonHtmlFeedback').style.color='var(--red)';$('#lessonHtmlLabStatus').textContent=l.htmlError;}finally{button.disabled=false;}
+}
+
 function renderLessonCaseLab(){
   const lab=state.lesson?.case_lab;
   $('#lessonCaseLab').classList.toggle('hidden',!lab);
@@ -424,7 +455,7 @@ function renderSources(){
 
 function renderAll(){
   if(!state.lesson)return;
-  renderHero();renderOutline();renderSection();renderLessonSqlLab();renderLessonPythonLab();renderLessonCaseLab();renderSequence();renderEvidence();renderRetention();renderSources();
+  renderHero();renderOutline();renderSection();renderLessonSqlLab();renderLessonPythonLab();renderLessonHtmlLab();renderLessonCaseLab();renderSequence();renderEvidence();renderRetention();renderSources();
 }
 
 function escapeHtml(value){
@@ -433,6 +464,8 @@ function escapeHtml(value){
 
 $('#lessonLanguage').addEventListener('click',()=>setLanguage(state.lang==='tr'?'en':'tr'));
 $('#runLessonCase').addEventListener('click',runLessonCaseLab);
+$('#runLessonHtml').addEventListener('click',runLessonHtmlLab);
+$('#resetLessonHtml').addEventListener('click',()=>{const lab=state.lesson?.html_lab;if(!lab)return;$('#lessonHtmlEditor').value=lab.starter_html||'';$('#lessonHtmlFeedback').textContent='';$('#lessonHtmlOutput').textContent='';renderLessonHtmlLab();});
 $('#runLessonPython').addEventListener('click',runLessonPythonLab);
 $('#resetLessonPython').addEventListener('click',()=>{
   const lab=state.lesson?.python_lab;
@@ -468,6 +501,9 @@ $('#completeSection').addEventListener('click',()=>{
     }else if(result.reason==='python_lab_required'){
       $('#sectionFeedback').textContent=l.pythonRequired;
       $('#lessonPythonLab').scrollIntoView({behavior:'smooth',block:'start'});
+    }else if(result.reason==='html_lab_required'){
+      $('#sectionFeedback').textContent=l.htmlRequired;
+      $('#lessonHtmlLab').scrollIntoView({behavior:'smooth',block:'start'});
     }else{
       $('#sectionFeedback').textContent=l.responseRequired;
       $('#sectionResponse').focus();

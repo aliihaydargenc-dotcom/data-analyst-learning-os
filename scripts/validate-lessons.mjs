@@ -14,6 +14,7 @@ const orders=new Set();
 const catalogIds=new Set((catalog.production_lessons||[]).map(entry=>entry.id));
 const labIds=new Set();
 const pythonLabIds=new Set();
+const htmlLabIds=new Set();
 let previousOrder=0;
 
 for(const entry of catalog.production_lessons||[]){
@@ -124,6 +125,22 @@ for(const entry of catalog.production_lessons||[]){
   for(const section of pythonLabRequiredSections){
     if(!lesson.python_lab||section.requires_python_lab_pass!==lesson.python_lab.id) fail(`${entry.id}/${section.id}: invalid requires_python_lab_pass`);
   }
+
+  const htmlLabRequiredSections=(lesson.sections||[]).filter(section=>section.requires_html_lab_pass);
+  if(lesson.html_lab){
+    if(!lesson.html_lab.id?.trim()) fail(`${entry.id}: html_lab id required`);
+    else if(htmlLabIds.has(lesson.html_lab.id)) fail(`${entry.id}: duplicate html_lab id ${lesson.html_lab.id}`);
+    else htmlLabIds.add(lesson.html_lab.id);
+    if(!lesson.html_lab.title_tr?.trim()||!lesson.html_lab.title_en?.trim()) fail(`${entry.id}: bilingual html_lab title required`);
+    if(!lesson.html_lab.task_tr?.trim()||lesson.html_lab.task_tr.trim().length<100) fail(`${entry.id}: html_lab task_tr too shallow`);
+    if(!lesson.html_lab.task_en?.trim()||lesson.html_lab.task_en.trim().length<80) fail(`${entry.id}: html_lab task_en too shallow`);
+    if(!lesson.html_lab.starter_html?.trim()) fail(`${entry.id}: html_lab starter_html required`);
+    if(!lesson.html_lab.engine_note_tr?.trim()||!lesson.html_lab.engine_note_en?.trim()) fail(`${entry.id}: bilingual html engine note required`);
+    const requiredSection=(lesson.sections||[]).find(section=>section.id===lesson.html_lab.requires_for_section);
+    if(!requiredSection) fail(`${entry.id}: html_lab requires_for_section not found`);
+    else if(requiredSection.requires_html_lab_pass!==lesson.html_lab.id) fail(`${entry.id}: section html-lab gate mismatch`);
+  }
+  for(const section of htmlLabRequiredSections){if(!lesson.html_lab||section.requires_html_lab_pass!==lesson.html_lab.id) fail(`${entry.id}/${section.id}: invalid requires_html_lab_pass`);}
 
   const evidence=new Set((lesson.mastery_evidence||[]).map(item=>item.dimension));
   for(const dimension of REQUIRED_EVIDENCE) if(!evidence.has(dimension)) fail(`${entry.id}: missing evidence ${dimension}`);
