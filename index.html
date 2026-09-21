@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="SQL, Qlik, Python, Excel ve Technical English için kişisel öğrenme sistemi.">
+  <title>Data Analyst Learning OS</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="#top">
+        <span class="logo">DA</span>
+        <span><strong>Learning OS</strong><small>Advanced Analyst Track</small></span>
+      </a>
+      <nav>
+        <a href="#tracks">Yollar</a>
+        <a href="#diagnostic">Seviye Tespiti</a>
+        <a href="#sql-lab">SQL Lab</a>
+        <a href="#roadmap">24 Hafta</a>
+      </nav>
+      <div class="side-note"><span>Curriculum</span><strong>SQL · Qlik · Python · Excel · EN</strong></div>
+    </aside>
+
+    <main id="top">
+      <header class="topbar">
+        <div><span class="eyebrow">PERSONAL LEARNING SYSTEM</span><h1>Data Analyst Learning OS</h1></div>
+        <button id="languageToggle" class="ghost">EN</button>
+      </header>
+
+      <section class="hero panel">
+        <div>
+          <span class="eyebrow">DIAGNOSE → PRACTICE → PROVE</span>
+          <h2 id="heroTitle">Kurs izlemek değil, seviye ölçmek ve uygulamak.</h2>
+          <p id="heroText">Beş alan tek sistemde ilerler. Bildiğin konular atlanır, açıklar konu bazında görünür ve gerçek analist görevleriyle kapanır.</p>
+          <div class="actions">
+            <button id="startExamTop" class="primary">Seviye Tespitini Başlat</button>
+            <a href="#roadmap" class="secondary">24 haftalık plan</a>
+          </div>
+        </div>
+        <div class="metrics">
+          <article><strong>50</strong><span>Soru bankası</span></article>
+          <article><strong>25</strong><span>Tanı sorusu</span></article>
+          <article><strong>24</strong><span>Hafta</span></article>
+          <article><strong>1.460</strong><span>Sentetik kayıt</span></article>
+        </div>
+      </section>
+
+      <section id="tracks" class="block">
+        <div class="section-title"><span class="eyebrow">TRACKS</span><h2 id="tracksTitle">Beş paralel uzmanlık yolu</h2></div>
+        <div id="trackGrid" class="track-grid"></div>
+      </section>
+
+      <section id="diagnostic" class="panel exam-panel">
+        <div class="section-title row">
+          <div><span class="eyebrow">PLACEMENT</span><h2 id="diagTitle">Seviye Tespit Sınavı</h2></div>
+          <span id="diagCounter" class="pill">Hazır</span>
+        </div>
+
+        <div id="diagnosticStart">
+          <p id="diagIntro">Her alandan 5 soru seçilir. Sonuçlar SQL, Qlik, Python, Excel ve Technical English için ayrı ayrı L1–L5 seviyesine çevrilir.</p>
+          <button id="startDiagnostic" class="primary">25 Soruluk Tanıyı Başlat</button>
+        </div>
+
+        <div id="questionStage" class="hidden">
+          <div class="question-meta"><span id="questionDomain"></span><span id="questionLevel"></span><span id="questionTopic"></span></div>
+          <h3 id="questionText"></h3>
+          <div id="choiceList" class="choices"></div>
+          <div class="question-actions"><button id="nextQuestion" class="primary" disabled>Sonraki</button></div>
+        </div>
+
+        <div id="resultStage" class="hidden"></div>
+      </section>
+
+      <section id="sql-lab" class="panel lab-panel">
+        <div class="section-title row">
+          <div><span class="eyebrow">PRACTICE LAB</span><h2>SQL Challenge · LAG / Window Function</h2></div>
+          <span class="pill">Structure checker</span>
+        </div>
+        <div class="lab-grid">
+          <div>
+            <p id="sqlTask">Görev: Her otel için günlük REVENUE_EUR değerini ve bir önceki günün gelirini döndür. BUSINESS_DATE sırasını kullan.</p>
+            <div class="schema"><strong>hotel_daily</strong><code>BUSINESS_DATE · HOTEL · ROOMS_AVAILABLE · ROOMS_SOLD · COMP_ROOMS · OCCUPANCY · ADR_EUR · REVENUE_EUR · DOMINANT_SEGMENT</code></div>
+          </div>
+          <div>
+            <textarea id="sqlEditor" spellcheck="false">SELECT
+    HOTEL,
+    BUSINESS_DATE,
+    REVENUE_EUR,
+    LAG(REVENUE_EUR) OVER (
+        PARTITION BY HOTEL
+        ORDER BY BUSINESS_DATE
+    ) AS PREV_DAY_REVENUE
+FROM hotel_daily;</textarea>
+            <div class="lab-actions"><button id="checkSql" class="primary">Yapıyı Kontrol Et</button><span id="sqlResult"></span></div>
+          </div>
+        </div>
+        <p class="fine">MVP şu an sorgu yapısını doğrular. Sonraki teknik dilim DuckDB-Wasm ile sorguyu tarayıcıda gerçekten çalıştıracak.</p>
+      </section>
+
+      <section id="roadmap" class="block">
+        <div class="section-title"><span class="eyebrow">ROADMAP</span><h2 id="roadmapTitle">24 haftalık plan</h2></div>
+        <div id="roadmapGrid" class="roadmap-grid"></div>
+      </section>
+
+      <footer>Data Analyst Learning OS · curriculum-first MVP</footer>
+    </main>
+  </div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
