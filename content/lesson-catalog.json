@@ -1,5 +1,5 @@
 {
-  "version": "0.7.0",
+  "version": "0.8.0",
   "production_lessons": [
     {
       "id": "sql.relational-thinking.001",
@@ -60,6 +60,16 @@
       "path": "content/lessons/sql.window-semantics.001.json",
       "status": "production-candidate",
       "runtime": "lesson.html?id=sql.window-semantics.001"
+    },
+    {
+      "id": "sql.analytical-patterns.001",
+      "module_id": "sql.analytical-patterns",
+      "track": "sql",
+      "level": "L4",
+      "order": 7,
+      "path": "content/lessons/sql.analytical-patterns.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=sql.analytical-patterns.001"
     }
   ]
 }
