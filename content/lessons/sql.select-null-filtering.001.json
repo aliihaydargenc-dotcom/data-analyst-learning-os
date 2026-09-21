@@ -84,17 +84,17 @@
     {
       "id": "independent-practice",
       "layer": "independent_practice",
-      "title_tr": "5. Bağımsız üretim: hotel_daily için kesin bir hedef popülasyon kur",
-      "title_en": "5. Independent production: define an exact population for hotel_daily",
-      "body_tr": "hotel_daily tablosundan yalnızca Hotel A için 2026-07-01 dahil, 2026-08-01 hariç olacak şekilde Temmuz kayıtlarını getir. Çıktıda HOTEL, BUSINESS_DATE, OCCUPANCY, ADR_EUR ve REVENUE_EUR olsun. OCCUPANCY değeri 0.80 veya üzeri kayıtları seç ve sonucu BUSINESS_DATE artan sırada getir. Sorgudan önce bir cümleyle hedef grain'i ve tarih aralığının neden yarı-açık `[başlangıç, bitiş)` olarak yazıldığını açıkla. Sonra sorguyu üret. Son olarak aynı tarihte birden fazla satır olsaydı sıralamanın deterministik olması için ek hangi anahtarı kullanacağını belirt.",
-      "body_en": "From hotel_daily, return July 2026 rows for Hotel A using a half-open interval: include 2026-07-01 and exclude 2026-08-01. Select HOTEL, BUSINESS_DATE, OCCUPANCY, ADR_EUR, and REVENUE_EUR; keep OCCUPANCY >= 0.80 and order by BUSINESS_DATE ascending. Before writing SQL, state the target grain and explain the half-open date interval. Then write the query and identify a tie-break key that would make ordering deterministic if multiple rows shared a date.",
+      "title_tr": "5. Bağımsız üretim: doğru popülasyonu semantik olarak kanıtla",
+      "title_en": "5. Independent production: prove the target population semantically",
+      "body_tr": "Önce aşağıdaki Semantic SQL Lab'da reservation_filter_cases tablosu için doğru popülasyonu üret. Burada amaç belirli keywordleri yazmış olmak değil; sorgunun görünür fixture ve farklı bir edge-case fixture üzerinde referans sonuçla aynı tabloyu üretmesidir. Lab geçmeden bu bölüm tamamlanamaz. Lab sonrasında ikinci bir üretim görevi olarak hotel_daily için 2026-07-01 dahil, 2026-08-01 hariç yarı-açık tarih aralığını kullanan ve OCCUPANCY >= 0.80 filtresi içeren sorgunun mantığını yanıt alanında açıkla; aynı tarihte birden fazla satır olsaydı deterministik sıra için hangi ek anahtarı kullanacağını da belirt.",
+      "body_en": "First pass the Semantic SQL Lab below by producing the correct population from reservation_filter_cases. The goal is not to type specific keywords; your query must match the reference result on both the visible fixture and a different edge-case fixture. This section cannot be completed before the lab passes. Then, in the response draft, explain how you would query hotel_daily with a half-open 2026-07-01 inclusive / 2026-08-01 exclusive interval plus OCCUPANCY >= 0.80, including a tie-break key for deterministic ordering if dates repeat.",
       "evidence_required": [
-        "target_grain_statement",
-        "explicit_select_list",
-        "half_open_date_filter",
-        "occupancy_predicate",
+        "semantic_lab_pass_visible_and_edge_fixture",
+        "target_population_reasoning",
+        "half_open_date_filter_reasoning",
         "explicit_order_by_and_tie_reasoning"
-      ]
+      ],
+      "requires_lab_pass": "sql-null-filtering-v1"
     },
     {
       "id": "debugging",
@@ -190,5 +190,19 @@
     "ms-order-by",
     "retrieval-practice",
     "spacing-meta"
-  ]
+  ],
+  "lab": {
+    "id": "sql-null-filtering-v1",
+    "engine": "DuckDB-Wasm",
+    "target_semantics": "T-SQL-compatible SELECT subset",
+    "requires_for_section": "independent-practice",
+    "title_tr": "Semantic SQL Lab · NULL ve boolean filtreleme",
+    "title_en": "Semantic SQL Lab · NULL and boolean filtering",
+    "task_tr": "reservation_filter_cases tablosundan yalnızca Hotel A için STATUS değeri Active veya Pending olan ve CANCEL_REASON değeri NULL olan kayıtları getir. Çıktı kolonları sırasıyla BOOKING_ID, HOTEL, STATUS, CANCEL_REASON olsun. Sonucu STATUS ve ardından BOOKING_ID artan sırada getir.",
+    "task_en": "From reservation_filter_cases, return only Hotel A rows whose STATUS is Active or Pending and whose CANCEL_REASON is NULL. Return BOOKING_ID, HOTEL, STATUS, CANCEL_REASON in that order, sorted by STATUS and then BOOKING_ID ascending.",
+    "schema": "reservation_filter_cases(BOOKING_ID VARCHAR, HOTEL VARCHAR, STATUS VARCHAR, CANCEL_REASON VARCHAR NULL, BOOKING_DATE DATE)",
+    "starter_sql": "SELECT BOOKING_ID, HOTEL, STATUS, CANCEL_REASON\nFROM reservation_filter_cases\nWHERE HOTEL = 'A'\nORDER BY BOOKING_ID;",
+    "engine_note_tr": "Bu alıştırma tarayıcıda DuckDB-Wasm ile çalışır. Ölçülen görev yalnızca SELECT, WHERE, IS NULL, AND/OR ve ORDER BY semantiğidir; bunlar bu egzersizde T-SQL hedefiyle uyumlu alt küme olarak kullanılır. T-SQL'e özgü syntax farkları ayrı derslerde ayrıca etiketlenecektir.",
+    "engine_note_en": "This exercise runs in DuckDB-Wasm in the browser. The measured subset is SELECT, WHERE, IS NULL, AND/OR, and ORDER BY semantics, which are compatible with the T-SQL learning target for this task. T-SQL-specific syntax differences are handled separately."
+  }
 }
