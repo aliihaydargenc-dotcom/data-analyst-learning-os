@@ -1,5 +1,5 @@
 {
-  "version": "0.2.0",
+  "version": "0.3.0",
   "production_lessons": [
     {
       "id": "sql.relational-thinking.001",
@@ -8,7 +8,18 @@
       "level": "L1",
       "path": "content/lessons/sql.relational-thinking.001.json",
       "status": "production-candidate",
-      "runtime": "lesson.html?id=sql.relational-thinking.001"
+      "runtime": "lesson.html?id=sql.relational-thinking.001",
+      "order": 1
+    },
+    {
+      "id": "sql.select-null-filtering.001",
+      "module_id": "sql.select-null-filtering",
+      "track": "sql",
+      "level": "L1",
+      "order": 2,
+      "path": "content/lessons/sql.select-null-filtering.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=sql.select-null-filtering.001"
     }
   ]
 }

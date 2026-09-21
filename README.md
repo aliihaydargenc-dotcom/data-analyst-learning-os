@@ -2,7 +2,7 @@
 
 Sıfır önkoşulla başlayabilen, fakat hızlı kavrayan öğrenciyi gereksiz tekrarlarla yavaşlatmayan; SQL, Qlik Sense, Python, Excel, HTML/Web Foundations ve Technical English'i tek mastery sistemi altında birleştiren veri analisti akademisi.
 
-## Academy kernel v0.5
+## Academy kernel v0.6
 
 Bu repo artık yalnızca özellik listesiyle ilerlemez. İçerik ve seviye yapısı executable kalite kapılarıyla doğrulanır.
 
@@ -17,7 +17,7 @@ Mevcut çekirdek:
 - DuckDB-Wasm ile gerçek browser SQL Lab
 - 1.460 satırlık sentetik hotel dataset
 - gerçek Chromium smoke test
-- production lesson runtime: section progress, practice-response gate, evidence drafts ve retention planı
+- production lesson runtime: section progress, practice-response gate, evidence drafts, lesson sequence ve retention planı
 - curriculum quality validator
 
 ## Eğitim kalite ilkesi
@@ -79,8 +79,10 @@ HTML track'i front-end geliştirici eğitimi değildir. Veri analistinin üretti
 
 ## Production ders runtime
 
-İlk production-candidate ders `sql.relational-thinking.001` üzerinden uçtan uca çalışır. Ders; mental model, worked example, guided practice, independent production, debugging, transfer ve retention katmanlarını ayrı bölümler halinde gösterir.
+İlk iki production-candidate ders `sql.relational-thinking.001` ve `sql.select-null-filtering.001` üzerinden uçtan uca çalışır. Ders; mental model, worked example, guided practice, independent production, debugging, transfer ve retention katmanlarını ayrı bölümler halinde gösterir.
 
 Practice bölümlerinde gerekçeli yanıt taslağı olmadan bölüm tamamlanamaz. Bu gate yalnızca çalışma disiplinidir; yanıtın doğru olduğunu veya mastery kazanıldığını iddia etmez. Mastery evidence taslakları ayrı tutulur ve completion yüzdesine dahil edilmez.
+
+Dersler production catalog içindeki açık sırayla önceki/sonraki navigasyona bağlanır. Sıra, mastery yerine geçmez; yalnızca öğrenme yolunu düzenler.
 
 Ders ilerlemesi şimdilik tarayıcı `localStorage` alanında saklanır. Hesaplar arası senkronizasyon eklenmeden önce bunun local-only olduğu açıkça korunur.

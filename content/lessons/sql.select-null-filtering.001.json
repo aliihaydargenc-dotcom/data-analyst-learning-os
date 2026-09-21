@@ -1,0 +1,194 @@
+{
+  "id": "sql.select-null-filtering.001",
+  "module_id": "sql.select-null-filtering",
+  "track": "sql",
+  "level": "L1",
+  "status": "production-candidate",
+  "title_tr": "SELECT gerçekten ne yapıyor? NULL, filtreleme ve sıralama semantiği",
+  "title_en": "What does SELECT really do? NULL, filtering, and ordering semantics",
+  "subtitle_tr": "Bu ders SELECT-FROM-WHERE yazım kalıbını ezberletmek yerine sorgunun mantıksal olarak hangi sırada düşündüğünü, NULL yüzünden neden bazı satırların sessizce elendiğini ve sıralamanın neden ayrıca talep edilmesi gerektiğini kurar.",
+  "subtitle_en": "This lesson goes beyond memorizing SELECT-FROM-WHERE. It builds the logical query model, explains why NULL can silently remove rows from filters, and shows why ordering must be requested explicitly.",
+  "estimated_minutes_range": [
+    55,
+    90
+  ],
+  "why_it_matters_tr": "Analitik sorgularda en tehlikeli hataların bir kısmı syntax hatası üretmez. `= NULL` kullanan filtre hiç beklenmeyen sonuç döndürebilir; AND/OR önceliği yanlış gruplandığında popülasyon değişebilir; SELECT alias'ını WHERE içinde kullanmaya çalışmak mantıksal işlem sırası nedeniyle sorun yaratır; ORDER BY verilmediğinde görünen satır sırası garanti değildir. Bu ders doğru sorgu yazmaktan önce doğru sorgu sonucu tahmin etmeyi öğretir.",
+  "why_it_matters_en": "Some of the most damaging analytical SQL mistakes do not produce syntax errors. A filter that compares with NULL can behave unexpectedly, incorrect AND/OR grouping changes the population, SELECT aliases are not available to earlier logical phases such as WHERE, and row order is not guaranteed without ORDER BY. The lesson therefore trains result prediction before query production.",
+  "prerequisites": [
+    "sql.relational-thinking.001"
+  ],
+  "learning_objectives": [
+    "FROM, WHERE, SELECT ve ORDER BY adımlarının mantıksal işlem sırasını sorgu sonucu üzerinden açıklamak.",
+    "NULL ile boş string ve sıfır arasındaki farkı; TRUE, FALSE ve UNKNOWN üç değerli mantık üzerinden yorumlamak.",
+    "AND, OR, NOT ve parantezleri kullanarak hedef popülasyonu açık ve test edilebilir bir search condition ile tanımlamak.",
+    "Sonuç sırası gerektiğinde ORDER BY ile deterministik bir sıralama tanımlamak ve sıralama anahtarındaki tie riskini fark etmek.",
+    "Tarih aralığı ve veri tipi filtrelerinde sınırların hangi kayıtları dahil edip dışarıda bıraktığını önceden tahmin etmek."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "Bir tablonun grain'ini ve bir satırın neyi temsil ettiğini söyleyebiliyor musun?",
+      "if_no_tr": "Önce `sql.relational-thinking.001` dersini tamamla veya aynı kavramı bağımsız olarak kanıtla; bu ders filtrelerin hangi satırları eleyeceğini grain üzerinden tartışır."
+    }
+  ],
+  "sections": [
+    {
+      "id": "logical-processing",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: sorguyu yazdığın sıra ile düşündüğün sıra aynı değil",
+      "title_en": "1. Mental model: written order is not logical processing order",
+      "body_tr": "T-SQL sorgusunu `SELECT ... FROM ... WHERE ... ORDER BY ...` diye yazarız; fakat sonucu anlamak için daha kullanışlı zihinsel model önce kaynak satırların FROM ile kurulması, sonra WHERE ile satırların elenmesi, sonra SELECT ile çıktı kolonlarının üretilmesi ve en sonunda ORDER BY ile sunum sırasının belirlenmesidir. Microsoft'un dokümante ettiği mantıksal sıra daha geniştir; burada L1 için ihtiyacımız olan çekirdek akış FROM → WHERE → SELECT → ORDER BY'dır. Bu sıra fiziksel execution plan'ın motor içinde birebir aynı sırayla çalışacağı iddiası değildir; sorgunun semantiğini açıklamak için kullanılan mantıksal modeldir.",
+      "body_en": "Although T-SQL is written as SELECT ... FROM ... WHERE ... ORDER BY ..., a better model for reasoning about results is FROM first, then WHERE, then SELECT, and finally ORDER BY. Microsoft documents a broader logical processing sequence; at this level the useful core is FROM → WHERE → SELECT → ORDER BY. This is a semantic model, not a claim that the physical execution plan must run operators in that exact order.",
+      "checks": [
+        "WHERE, SELECT listesindeki yeni alias'ı mantıksal olarak SELECT'ten önce değerlendirir.",
+        "ORDER BY, SELECT'ten sonra geldiği için select-list alias'ını kullanabilir.",
+        "Mantıksal işlem sırası ile optimizer'ın fiziksel operator sırası aynı kavram değildir."
+      ]
+    },
+    {
+      "id": "null-unknown",
+      "layer": "mental_model",
+      "title_tr": "2. NULL bir değer değil, bilinmeyenlik durumudur",
+      "title_en": "2. NULL is not an ordinary value; it represents unknown",
+      "body_tr": "NULL, boş string `''` veya sayısal `0` ile aynı şey değildir. Karşılaştırma yaptığında SQL iki değerli TRUE/FALSE mantığıyla yetinmez; NULL içeren birçok karşılaştırma UNKNOWN üretir. WHERE yalnızca sonucu TRUE olan satırları geçirir. FALSE kadar UNKNOWN da filtre dışında kalır. Bu nedenle `WHERE CANCEL_REASON = NULL` doğru null testi değildir; `IS NULL` veya `IS NOT NULL` kullanılır. Bu fark özellikle eksik müşteri alanları, iptal nedeni, checkout tarihi veya opsiyonel segment gibi kolonlarda sessiz veri kaybı yaratabilir.",
+      "body_en": "NULL is different from the empty string '' and from numeric zero. SQL search conditions use three-valued logic: comparisons involving NULL commonly produce UNKNOWN rather than TRUE or FALSE. WHERE keeps rows whose predicate is TRUE; UNKNOWN rows are filtered out just like FALSE rows. Therefore `WHERE CANCEL_REASON = NULL` is not the correct null test; use `IS NULL` or `IS NOT NULL`.",
+      "checks": [
+        "`NULL = NULL` ifadesini TRUE kabul etme.",
+        "Boş string ile NULL'ı aynı veri kalitesi problemi olarak etiketleme.",
+        "WHERE filtresinde UNKNOWN sonucunun satırı geçirmediğini unutma."
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "3. Worked example: doğru görünen üç filtrenin üç farklı sonucu",
+      "title_en": "3. Worked example: three similar-looking filters, three different populations",
+      "body_tr": "Bir Reservations tablosunda BOOKING_ID, HOTEL, STATUS ve CANCEL_REASON alanları olduğunu düşün. Aktif rezervasyonları ve iptal nedeni henüz bilinmeyen kayıtları incelemek istiyoruz. `CANCEL_REASON = NULL` kullanırsak NULL karşılaştırması UNKNOWN ürettiği için beklediğimiz satırları alamayız. `CANCEL_REASON IS NULL` semantik olarak doğru testtir. İkinci risk AND/OR gruplamasıdır: `STATUS = 'Active' OR STATUS = 'Pending' AND HOTEL = 'A'` ifadesi parantezsiz okunduğunda yalnızca Pending kayıtlarında HOTEL='A' koşulunu zorunlu kılar. Ama iş kuralı iki status için de Hotel A ise parantez gerekir.",
+      "body_en": "Assume a Reservations table with BOOKING_ID, HOTEL, STATUS, and CANCEL_REASON. To inspect active or pending reservations whose cancellation reason is unknown, `CANCEL_REASON = NULL` is wrong because the comparison produces UNKNOWN. `CANCEL_REASON IS NULL` is the semantic test. A second risk is AND/OR grouping: without parentheses, a condition such as Active OR Pending AND Hotel A does not mean that Hotel A applies to both statuses.",
+      "code": "-- Yanlış NULL karşılaştırması\nSELECT BOOKING_ID, HOTEL, STATUS, CANCEL_REASON\nFROM Reservations\nWHERE CANCEL_REASON = NULL;\n\n-- Doğru NULL testi ve açık boolean gruplama\nSELECT BOOKING_ID, HOTEL, STATUS, CANCEL_REASON\nFROM Reservations\nWHERE CANCEL_REASON IS NULL\n  AND (STATUS = 'Active' OR STATUS = 'Pending')\n  AND HOTEL = 'A'\nORDER BY STATUS, BOOKING_ID;",
+      "explanation_tr": "Sorgunun doğruluğu yalnızca syntax ile ölçülmez. Hedef popülasyonu önce doğal dille tanımlar, sonra her predicate'in hangi satırları TRUE, FALSE veya UNKNOWN yapacağını kontrol ederiz. ORDER BY ayrıca istenmiştir; çünkü sonuç kümesinin görünüm sırası aksi halde iş kuralının bir parçası değildir.",
+      "explanation_en": "Correctness is not just syntax. Define the target population in plain language, then reason about whether each predicate yields TRUE, FALSE, or UNKNOWN. ORDER BY is stated explicitly because presentation order is otherwise not part of the query contract."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "4. Rehberli uygulama: satırlar WHERE kapısından neden geçiyor?",
+      "title_en": "4. Guided practice: why does each row pass or fail the WHERE gate?",
+      "body_tr": "Dört kayıt düşün: A) STATUS='Active', CANCEL_REASON=NULL; B) STATUS='Cancelled', CANCEL_REASON='Guest request'; C) STATUS='Pending', CANCEL_REASON=''; D) STATUS='Pending', CANCEL_REASON=NULL. Önce sorgu yazma. `CANCEL_REASON IS NULL AND (STATUS='Active' OR STATUS='Pending')` koşulunda her satır için TRUE/FALSE sonucunu yaz. Sonra aynı değerlendirmeyi yanlış ifade `CANCEL_REASON = NULL` için yap ve neden sonuçların UNKNOWN olduğunu açıklamaya çalış. Amaç operatör ezberi değil, satır bazında predicate değerlendirebilmektir.",
+      "body_en": "Consider four rows with Active, Cancelled, and Pending statuses plus NULL, populated, and empty-string cancellation reasons. Before writing SQL, evaluate each row against `CANCEL_REASON IS NULL AND (STATUS='Active' OR STATUS='Pending')`. Then repeat with the incorrect `CANCEL_REASON = NULL` predicate and explain why UNKNOWN changes the outcome. The goal is row-level predicate reasoning, not operator memorization.",
+      "prompts": [
+        "C kaydındaki boş string neden IS NULL koşulunu geçmez?",
+        "D kaydı doğru expression'da neden geçer ama `= NULL` kullanımında neden geçmez?",
+        "Parantezleri kaldırırsan hangi status satırlarında HOTEL gibi ek bir koşul beklemediğin şekilde uygulanabilir?"
+      ]
+    },
+    {
+      "id": "independent-practice",
+      "layer": "independent_practice",
+      "title_tr": "5. Bağımsız üretim: hotel_daily için kesin bir hedef popülasyon kur",
+      "title_en": "5. Independent production: define an exact population for hotel_daily",
+      "body_tr": "hotel_daily tablosundan yalnızca Hotel A için 2026-07-01 dahil, 2026-08-01 hariç olacak şekilde Temmuz kayıtlarını getir. Çıktıda HOTEL, BUSINESS_DATE, OCCUPANCY, ADR_EUR ve REVENUE_EUR olsun. OCCUPANCY değeri 0.80 veya üzeri kayıtları seç ve sonucu BUSINESS_DATE artan sırada getir. Sorgudan önce bir cümleyle hedef grain'i ve tarih aralığının neden yarı-açık `[başlangıç, bitiş)` olarak yazıldığını açıkla. Sonra sorguyu üret. Son olarak aynı tarihte birden fazla satır olsaydı sıralamanın deterministik olması için ek hangi anahtarı kullanacağını belirt.",
+      "body_en": "From hotel_daily, return July 2026 rows for Hotel A using a half-open interval: include 2026-07-01 and exclude 2026-08-01. Select HOTEL, BUSINESS_DATE, OCCUPANCY, ADR_EUR, and REVENUE_EUR; keep OCCUPANCY >= 0.80 and order by BUSINESS_DATE ascending. Before writing SQL, state the target grain and explain the half-open date interval. Then write the query and identify a tie-break key that would make ordering deterministic if multiple rows shared a date.",
+      "evidence_required": [
+        "target_grain_statement",
+        "explicit_select_list",
+        "half_open_date_filter",
+        "occupancy_predicate",
+        "explicit_order_by_and_tie_reasoning"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "6. Debugging: sorgu çalışıyor olabilir, popülasyon yine yanlış olabilir",
+      "title_en": "6. Debugging: a query can run and still select the wrong population",
+      "body_tr": "Bir analist şu sorguyu yazıyor: `SELECT REVENUE_EUR * 1.2 AS GROSS FROM hotel_daily WHERE GROSS > 10000 OR DOMINANT_SEGMENT = NULL AND OCCUPANCY > 0.8;`. Burada en az üç ayrı problem sınıfı var. Birincisi GROSS alias'ı SELECT aşamasında oluştuğu için aynı query block'un WHERE aşamasında kullanılamaz. İkincisi `= NULL` doğru null testi değildir. Üçüncüsü AND/OR gruplaması iş kuralı açık yazılmadığı için farklı popülasyon seçebilir. Debug sırasında syntax düzeltmekle yetinme: hedef popülasyonu doğal dilde yeniden yaz, her predicate'i ayrı test et, sonra parantezleri bilinçli kur ve sonuç satır sayısını beklenen örneklerle karşılaştır.",
+      "body_en": "An analyst writes `SELECT REVENUE_EUR * 1.2 AS GROSS FROM hotel_daily WHERE GROSS > 10000 OR DOMINANT_SEGMENT = NULL AND OCCUPANCY > 0.8;`. There are at least three problem classes: the GROSS alias is created in SELECT and is unavailable to the earlier WHERE phase of the same query block; `= NULL` is not a valid null test; and ungrouped AND/OR logic can select a different population from the business rule. Debug the population, not only the syntax.",
+      "diagnostic_sequence": [
+        "Hedef popülasyonu doğal dilde tek cümleye çevir.",
+        "Her predicate'i tek başına çalıştırıp satır sayısını ve örnek kayıtları kontrol et.",
+        "NULL testini IS NULL / IS NOT NULL ile düzelt.",
+        "AND/OR gruplamasını parantezle iş kuralına bağla.",
+        "SELECT alias bağımlılığını expression tekrarına, CTE/derived table katmanına veya başka uygun yapıya taşı.",
+        "ORDER BY gerekiyorsa sunum sözleşmesini açıkça ekle."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "7. Transfer: eksik değer ve filtre semantiği araç değiştirince nasıl dönüşüyor?",
+      "title_en": "7. Transfer: how missing-value and filter semantics change across tools",
+      "body_tr": "NULL mantığını diğer araçlara birebir kopyalamak doğru değildir; fakat aynı disiplin korunur: eksik değerin araçtaki gerçek temsilini bil, filtreden hangi kayıtların düşeceğini tahmin et ve gözle doğrula. pandas'ta `isna()`/`notna()` ile eksik değerleri açıkça kontrol edersin; Excel'de gerçekten boş hücre ile formülün ürettiği `\"\"` aynı davranmayabilir; Qlik'te NULL değerlerin association ve selection davranışı ayrıca düşünülmelidir; HTML formunda gönderilmeyen alan, boş string ve varsayılan değer uygulama katmanında farklı sözleşmelere dönüşebilir.",
+      "body_en": "Do not copy SQL NULL rules blindly into other tools. Preserve the reasoning discipline instead: know how the tool represents missingness, predict which records a filter excludes, and verify the result. pandas has explicit missing-value checks, Excel can distinguish truly blank cells from formulas returning an empty string, Qlik has its own NULL and association behavior, and HTML forms can distinguish omitted controls from empty submitted values at the application boundary.",
+      "transfer_tasks": [
+        {
+          "tool": "Python / pandas",
+          "task_tr": "`channel == None` benzeri kontrol yerine pandas'ta missingness'i nasıl açıkça test edeceğini ve boolean mask'te hangi satırların kalacağını açıkla."
+        },
+        {
+          "tool": "Excel",
+          "task_tr": "Gerçek boş hücre ile `=\"\"` döndüren formül hücresinin filtre/COUNT davranışını aynı kabul etmenin neden riskli olduğunu araştırma hipotezi olarak yaz."
+        },
+        {
+          "tool": "Qlik",
+          "task_tr": "NULL segment değerlerinin chart ve selection davranışında görünmez kayıp yaratıp yaratmadığını doğrulamak için nasıl kontrol tasarlayacağını açıkla."
+        },
+        {
+          "tool": "HTML",
+          "task_tr": "Bir form alanının hiç gönderilmemesi ile `value=\"\"` olarak gönderilmesinin backend veri kalitesi açısından neden ayrı sözleşmeler olabileceğini açıkla."
+        }
+      ]
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: kuralları tekrar okumadan sonuç tahmin et",
+      "title_en": "8. Retrieval: predict outcomes without rereading the rules",
+      "body_tr": "Bu dersin retention amacı `IS NULL kullan` cümlesini ezberlemek değildir. D+1'de NULL, boş string ve UNKNOWN ilişkisini kendi örneğinle açıklarsın. D+7'de AND/OR ve NULL içeren yeni bir predicate için dört örnek satırın hangilerinin geçeceğini sorguyu çalıştırmadan tahmin edersin, sonra doğrularsın. D+30'da farklı bir dataset'te yanlış popülasyon seçen ama syntax olarak çalışan bir sorguyu debug ederek mantıksal işlem sırası, missingness ve ordering kavramlarını birlikte kullanırsın.",
+      "body_en": "Retention is not about memorizing the phrase 'use IS NULL'. On D+1 explain NULL, empty string, and UNKNOWN with your own example. On D+7 predict which sample rows survive a new predicate containing NULL and AND/OR before executing it. On D+30 debug a syntactically valid query that selects the wrong population in a different dataset, combining logical processing, missingness, and ordering.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explanation-null-vs-empty-vs-unknown"
+        },
+        {
+          "day": 7,
+          "evidence": "predicate-output-prediction"
+        },
+        {
+          "day": 30,
+          "evidence": "transfer-debugging-wrong-population"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "NULL, boş string, UNKNOWN ve WHERE'in yalnızca TRUE satırları geçirmesi arasındaki ilişkiyi kendi örneğinle açıkla.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "SELECT alias, NULL ve AND/OR içeren verilen bir sorgunun hangi satırları seçmeye çalıştığını ve hangi semantik hataları içerdiğini açıkla.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Yeni bir dataset için explicit select list, doğru NULL testi, sınırları net tarih filtresi ve deterministik ORDER BY içeren sorguyu sıfırdan üret.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Eksik değer ve filtre mantığını pandas, Excel, Qlik veya HTML veri giriş bağlamına taşı; araçlar arasındaki semantik farkı ayrıca belirt.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "ms-select",
+    "ms-null-unknown",
+    "ms-search-condition",
+    "ms-order-by",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}

@@ -118,5 +118,25 @@
     "type": "official",
     "title": "MDN — HTML: A good basis for accessibility",
     "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Accessibility/HTML"
+  },
+  "ms-select": {
+    "type": "official",
+    "title": "Microsoft Learn — SELECT (Transact-SQL)",
+    "url": "https://learn.microsoft.com/sql/t-sql/queries/select-transact-sql/"
+  },
+  "ms-null-unknown": {
+    "type": "official",
+    "title": "Microsoft Learn — NULL and UNKNOWN (Transact-SQL)",
+    "url": "https://learn.microsoft.com/sql/t-sql/language-elements/null-and-unknown-transact-sql"
+  },
+  "ms-search-condition": {
+    "type": "official",
+    "title": "Microsoft Learn — Search condition (Transact-SQL)",
+    "url": "https://learn.microsoft.com/sql/t-sql/queries/search-condition-transact-sql"
+  },
+  "ms-order-by": {
+    "type": "official",
+    "title": "Microsoft Learn — ORDER BY clause (Transact-SQL)",
+    "url": "https://learn.microsoft.com/sql/t-sql/queries/select-order-by-clause-transact-sql"
   }
 }
