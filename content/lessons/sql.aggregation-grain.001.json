@@ -1,0 +1,208 @@
+{
+  "id": "sql.aggregation-grain.001",
+  "module_id": "sql.aggregation-grain",
+  "track": "sql",
+  "level": "L2",
+  "status": "production-candidate",
+  "title_tr": "GROUP BY neyi değiştiriyor? Aggregation, sonuç tanesi ve HAVING",
+  "title_en": "What does GROUP BY change? Aggregation, result grain, and HAVING",
+  "subtitle_tr": "Bu ders SUM yazmayı öğretmekle yetinmez. Aggregation sonrası bir satırın artık neyi temsil ettiğini, WHERE ile HAVING'in farklı aşamalarda neden farklı işler yaptığını ve COUNT(*) ile COUNT(column) arasındaki NULL farkını kanıt üzerinden kurar.",
+  "subtitle_en": "This lesson goes beyond writing SUM. It teaches what one row represents after aggregation, why WHERE and HAVING operate at different stages, and how NULL changes COUNT(*) versus COUNT(column).",
+  "estimated_minutes_range": [
+    65,
+    100
+  ],
+  "why_it_matters_tr": "Aggregation hataları çoğu zaman ikna edici görünen ama yanlış KPI üretir. Yanlış GROUP BY seviyesi aylık yerine günlük sonuç bırakabilir; WHERE ile grup filtresi karıştırılırsa analiz popülasyonu değişir; COUNT(column) NULL değerleri saymadığı için COUNT(*) ile aynı sanıldığında oranlar bozulabilir; GROUP BY sonucu sıralamaz. Güçlü analist aggregate fonksiyonun adını değil, kaynak grain'den hedef grain'e dönüşümü ve her filtrenin hangi aşamada uygulandığını açıklayabilmelidir.",
+  "why_it_matters_en": "Aggregation mistakes often produce plausible but incorrect KPIs. Grouping at the wrong level preserves the wrong grain, confusing WHERE with group filtering changes the analyzed population, COUNT(column) ignores NULL values while COUNT(*) counts rows, and GROUP BY does not guarantee output order. A strong analyst must explain the transformation from source grain to target grain and the stage at which each filter acts.",
+  "prerequisites": [
+    "sql.select-null-filtering.001"
+  ],
+  "learning_objectives": [
+    "GROUP BY sonrasında bir sonuç satırının grain'ini sorgu çalışmadan önce tanımlamak.",
+    "WHERE'in grouping öncesi kaynak satırları, HAVING'in grouping sonrası grupları filtrelediğini sonuç üzerinden açıklamak.",
+    "COUNT(*), COUNT(column), SUM ve AVG fonksiyonlarının NULL davranışını doğru yorumlamak.",
+    "SELECT listesindeki non-aggregate alanların GROUP BY grain'iyle neden uyumlu olması gerektiğini açıklamak.",
+    "Aggregate sonucu için gerekli ORDER BY sözleşmesini açıkça tanımlamak ve GROUP BY'ın sıralama garantisi vermediğini bilmek."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "SELECT, WHERE, NULL/UNKNOWN ve açık ORDER BY semantiğini sonuç üzerinden açıklayabiliyor musun?",
+      "if_no_tr": "Önce `sql.select-null-filtering.001` dersini tamamla veya aynı davranışları bağımsız sorgularla kanıtla; aggregation dersi WHERE'in group öncesi etkisini bu temelin üzerine kurar."
+    }
+  ],
+  "lab": {
+    "id": "sql-aggregation-grain-v1",
+    "engine": "DuckDB-Wasm",
+    "target_semantics": "T-SQL-compatible GROUP BY aggregate subset",
+    "requires_for_section": "independent-practice",
+    "title_tr": "Semantic SQL Lab · GROUP BY, NULL ve HAVING",
+    "title_en": "Semantic SQL Lab · GROUP BY, NULL, and HAVING",
+    "task_tr": "stay_charge_cases tablosunda yalnızca Temmuz 2026 kayıtlarını kullan. HOTEL ve SEGMENT grain'inde gruplandır. Çıktı kolonları sırasıyla HOTEL, SEGMENT, ROWS_IN_GROUP=COUNT(*), PRICED_ROWS=COUNT(REVENUE_EUR), TOTAL_REVENUE=SUM(REVENUE_EUR) olsun. Yalnızca TOTAL_REVENUE değeri 2000 veya üzeri grupları döndür ve sonucu HOTEL, SEGMENT artan sırada getir.",
+    "task_en": "Use only July 2026 rows from stay_charge_cases. Group at HOTEL and SEGMENT grain. Return HOTEL, SEGMENT, ROWS_IN_GROUP=COUNT(*), PRICED_ROWS=COUNT(REVENUE_EUR), and TOTAL_REVENUE=SUM(REVENUE_EUR in that order. Keep only groups whose TOTAL_REVENUE is at least 2000 and order by HOTEL, SEGMENT ascending.",
+    "schema": "stay_charge_cases(STAY_ID VARCHAR, HOTEL VARCHAR, BUSINESS_DATE DATE, SEGMENT VARCHAR, REVENUE_EUR INTEGER NULL, ROOM_NIGHTS INTEGER)",
+    "starter_sql": "SELECT HOTEL, SEGMENT,\n       COUNT(*) AS ROWS_IN_GROUP,\n       COUNT(REVENUE_EUR) AS PRICED_ROWS,\n       SUM(REVENUE_EUR) AS TOTAL_REVENUE\nFROM stay_charge_cases\nWHERE BUSINESS_DATE >= CAST('2026-07-01' AS DATE)\n  AND BUSINESS_DATE < CAST('2026-08-01' AS DATE)\nGROUP BY HOTEL, SEGMENT\nORDER BY HOTEL, SEGMENT;",
+    "engine_note_tr": "Bu alıştırma tarayıcıda DuckDB-Wasm ile çalışır. Ölçülen SELECT, WHERE, GROUP BY, COUNT, SUM, HAVING ve ORDER BY davranışları bu görevde T-SQL hedefiyle uyumlu alt kümedir. SQL Server'a özgü tip, overflow veya optimizer ayrıntıları ayrı production derslerde ayrıca ele alınacaktır.",
+    "engine_note_en": "This exercise runs in DuckDB-Wasm in the browser. The measured SELECT, WHERE, GROUP BY, COUNT, SUM, HAVING, and ORDER BY behavior is used here as a subset compatible with the T-SQL learning target. SQL Server-specific type, overflow, and optimizer details are handled separately."
+  },
+  "sections": [
+    {
+      "id": "group-grain",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: GROUP BY satırları özetlemez, grain'i yeniden tanımlar",
+      "title_en": "1. Mental model: GROUP BY redefines the row grain",
+      "body_tr": "Kaynak tabloda bir satır örneğin tek bir stay-charge kaydı olabilir. `GROUP BY HOTEL, SEGMENT` yazdığında artık sonuçtaki bir satır tek stay-charge değildir; bir HOTEL × SEGMENT grubunu temsil eder. Aggregate fonksiyonlar bu yeni grain için ölçü üretir. Bu nedenle sorguyu yazmadan önce 'kaynakta bir satır ne?', 'sonuçta bir satır ne olacak?' sorularını ayrı cevaplamak gerekir. GROUP BY listesindeki her ek boyut, sonuç grain'ini daha detaylı hale getirir; gereksiz bir tarih alanı eklemek aylık beklenen raporu günlük seviyede bırakabilir.",
+      "body_en": "A source row might represent one stay-charge record. After `GROUP BY HOTEL, SEGMENT`, a result row no longer represents one charge; it represents one HOTEL × SEGMENT group. Aggregate functions produce measures at that new grain. Before writing SQL, separately state the source-row meaning and the intended result-row meaning. Every extra grouping dimension makes the result grain more detailed and can silently keep a report at the wrong level.",
+      "checks": [
+        "GROUP BY kolon listesini yalnızca syntax olarak değil sonuç grain'i olarak oku.",
+        "Aggregate olmayan SELECT alanlarının yeni grain'de tek bir anlamı olmalı.",
+        "GROUP BY'a gereksiz kolon eklemek doğru toplamları yanlış detay seviyesinde sunabilir."
+      ]
+    },
+    {
+      "id": "where-having",
+      "layer": "mental_model",
+      "title_tr": "2. WHERE satırı, HAVING grubu filtreler",
+      "title_en": "2. WHERE filters rows; HAVING filters groups",
+      "body_tr": "Aggregation sorgusunda iki farklı filtre kapısı vardır. WHERE kaynak satırlar group oluşmadan önce uygulanır; örneğin yalnızca Temmuz kayıtlarını analize almak istiyorsan tarih filtresi WHERE'dedir. HAVING ise grouping ve aggregate hesaplarından sonra oluşan grupları filtreler; örneğin toplam geliri 2000 veya üzeri segmentleri seçmek `HAVING SUM(REVENUE_EUR) >= 2000` ile ifade edilir. Bir koşul teknik olarak farklı yerlere yazılabiliyor olsa bile, analitik anlam açısından hangi popülasyonu önce oluşturduğunu açıkça düşünmek gerekir.",
+      "body_en": "Aggregation queries have two different filtering stages. WHERE removes source rows before groups are formed; a July-only population belongs there. HAVING filters groups after grouping and aggregate calculations; for example, groups whose summed revenue is at least 2000 belong in HAVING. Even when a condition can be expressed in more than one place, you should reason explicitly about whether it defines the source population or filters the resulting groups.",
+      "checks": [
+        "Tarih ve status gibi kaynak satır popülasyonu koşullarını önce WHERE açısından düşün.",
+        "Aggregate sonucu kullanan eşikleri HAVING aşamasında değerlendir.",
+        "WHERE değişirse aggregate'a giren satırlar değişir; HAVING değişirse oluşmuş gruplardan hangilerinin gösterileceği değişir."
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "3. Worked example: COUNT(*) ile COUNT(REVENUE_EUR) neden farklı olabilir?",
+      "title_en": "3. Worked example: why can COUNT(*) differ from COUNT(REVENUE_EUR)?",
+      "body_tr": "Bir HOTEL × SEGMENT grubunda üç satır olduğunu, REVENUE_EUR değerlerinin 1200, NULL ve 900 olduğunu düşün. `COUNT(*)` üç satırı da sayar. `COUNT(REVENUE_EUR)` yalnızca non-NULL expression değerlerini saydığı için 2 döndürür. `SUM(REVENUE_EUR)` ise NULL dışındaki değerleri toplayarak 2100 üretir. Bu fark 'kaç kayıt var?' ile 'kaç kayıtta revenue değeri var?' sorularını birbirinden ayırır. Özellikle veri kalitesi oranlarında yanlış COUNT seçimi eksik veriyi görünmez hale getirebilir.",
+      "body_en": "Suppose one HOTEL × SEGMENT group has three rows with REVENUE_EUR values 1200, NULL, and 900. `COUNT(*)` counts all three rows. `COUNT(REVENUE_EUR)` counts only non-NULL expression values and returns 2. `SUM(REVENUE_EUR)` ignores NULL and produces 2100. This distinction separates 'how many rows exist?' from 'how many rows have a revenue value?', which is critical for data-quality ratios.",
+      "code": "SELECT\n    HOTEL,\n    SEGMENT,\n    COUNT(*) AS ROWS_IN_GROUP,\n    COUNT(REVENUE_EUR) AS PRICED_ROWS,\n    SUM(REVENUE_EUR) AS TOTAL_REVENUE\nFROM stay_charge_cases\nWHERE BUSINESS_DATE >= CAST('2026-07-01' AS date)\n  AND BUSINESS_DATE < CAST('2026-08-01' AS date)\nGROUP BY HOTEL, SEGMENT\nHAVING SUM(REVENUE_EUR) >= 2000\nORDER BY HOTEL, SEGMENT;",
+      "explanation_tr": "Önce WHERE Temmuz popülasyonunu kurar. GROUP BY HOTEL × SEGMENT sonuç grain'ini tanımlar. COUNT(*) fiziksel satır sayısını, COUNT(REVENUE_EUR) non-NULL revenue sayısını verir. HAVING yalnızca toplam geliri eşikten geçen grupları bırakır. ORDER BY sunum sırasını ayrıca tanımlar.",
+      "explanation_en": "WHERE first defines the July population. GROUP BY HOTEL × SEGMENT defines the result grain. COUNT(*) measures rows, COUNT(REVENUE_EUR) measures non-NULL revenue values, HAVING keeps only groups above the revenue threshold, and ORDER BY explicitly defines presentation order."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "4. Rehberli uygulama: grain değişimini sorgu çalıştırmadan tahmin et",
+      "title_en": "4. Guided practice: predict the grain change before execution",
+      "body_tr": "Aynı stay_charge_cases tablosunda üç sorgu düşün: A) `GROUP BY HOTEL`; B) `GROUP BY HOTEL, SEGMENT`; C) `GROUP BY HOTEL, SEGMENT, BUSINESS_DATE`. Her sorgu için sonuçtaki bir satırın neyi temsil ettiğini tek cümleyle yaz. Sonra aynı üç sorguda `COUNT(*)` değerlerinin neden farklı gruplara dağıldığını açıkla. Son olarak WHERE ile Temmuz dışı satırları kaldırmanın grup sayısını ve aggregate değerlerini nasıl etkileyebileceğini, HAVING'in ise mevcut gruplardan hangilerini görünür tuttuğunu ayır.",
+      "body_en": "Consider three queries over stay_charge_cases: grouping by HOTEL; by HOTEL and SEGMENT; and by HOTEL, SEGMENT, and BUSINESS_DATE. For each, state exactly what one result row represents. Then explain why COUNT(*) is distributed across groups differently. Finally distinguish the effect of removing non-July source rows in WHERE from filtering already formed groups in HAVING.",
+      "prompts": [
+        "C sorgusunda BUSINESS_DATE eklenmesi HOTEL × SEGMENT toplamlarını neden daha detaylı grain'e böler?",
+        "WHERE tarih filtresini kaldırırsan Temmuz dışı satırlar hangi aşamada aggregate'a katılır?",
+        "COUNT(*) ile COUNT(REVENUE_EUR) farkı büyükse veri kalitesi açısından hangi hipotezi test edersin?"
+      ]
+    },
+    {
+      "id": "independent-practice",
+      "layer": "independent_practice",
+      "title_tr": "5. Bağımsız üretim: aggregate sonucu iki fixture üzerinde kanıtla",
+      "title_en": "5. Independent production: prove the aggregate result across two fixtures",
+      "body_tr": "Aşağıdaki Semantic SQL Lab'da HOTEL × SEGMENT grain'inde Temmuz aggregate'ını üret. Görev, belirli keywordleri yazmış olmak değildir; aday sorgunun kolon sözleşmesi, satır sayısı, aggregate değerleri ve sırası hem görünür fixture hem de farklı edge-case fixture üzerinde referans sonuçla eşleşmelidir. Lab geçmeden bu bölüm tamamlanamaz. Lab sonrasında yanıt alanında kaynak grain, hedef grain, WHERE ile HAVING'in görevleri ve COUNT(*) ile COUNT(REVENUE_EUR) farkını kendi cümlelerinle açıkla.",
+      "body_en": "Use the Semantic SQL Lab below to produce the July aggregate at HOTEL × SEGMENT grain. The task is not to include specific keywords; the output contract, row count, aggregate values, and row order must match the reference on both the visible fixture and a different edge-case fixture. The section cannot be completed until the lab passes. Then explain source grain, target grain, WHERE versus HAVING, and COUNT(*) versus COUNT(REVENUE_EUR) in your own words.",
+      "requires_lab_pass": "sql-aggregation-grain-v1",
+      "evidence_required": [
+        "semantic_lab_pass_visible_and_edge_fixture",
+        "source_and_target_grain_statement",
+        "where_vs_having_reasoning",
+        "count_star_vs_count_expression_reasoning"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "6. Debugging: doğru toplam, yanlış grain hâlâ hatadır",
+      "title_en": "6. Debugging: a correct total at the wrong grain is still wrong",
+      "body_tr": "Bir analist segment bazlı aylık gelir raporu isterken `GROUP BY HOTEL, SEGMENT, BUSINESS_DATE` yazıyor ve sonra 'toplamlar doğru görünüyor' diyor. Syntax geçerli, hatta tüm günlük satırlar tekrar toplandığında grand total doğru olabilir; fakat sonuç grain'i istenenden daha detaylıdır. Başka bir analist `WHERE SUM(REVENUE_EUR) > 2000` yazarak grup filtresini grouping öncesi aşamaya taşımaya çalışıyor. Debug sırasında yalnızca hata mesajını düzeltme: önce hedef grain'i yaz, SELECT/GROUP BY uyumunu kontrol et, kaynak satır filtresi ile group filtresini ayır, COUNT türlerini ve NULL etkisini doğrula, son olarak sonuç sırasını açık ORDER BY ile sabitle.",
+      "body_en": "An analyst is asked for monthly segment revenue but groups by HOTEL, SEGMENT, and BUSINESS_DATE, then argues that the totals look correct. The query is valid and the grand total may reconcile after another aggregation, yet the result grain is more detailed than requested. Another analyst attempts `WHERE SUM(REVENUE_EUR) > 2000`, confusing row filtering with group filtering. Debug by restating target grain, checking SELECT/GROUP BY alignment, separating source-row and group filters, validating NULL-sensitive counts, and defining result order explicitly.",
+      "diagnostic_sequence": [
+        "İstenen çıktı için hedef grain'i doğal dilde yaz.",
+        "GROUP BY kolonlarının hedef grain'den daha detaylı olup olmadığını kontrol et.",
+        "WHERE koşullarının kaynak popülasyonu, HAVING koşullarının grupları filtrelediğini doğrula.",
+        "COUNT(*) ve COUNT(expression) seçimini NULL profiliyle birlikte kontrol et.",
+        "Aggregate toplamlarını bağımsız reconciliation sorgusuyla karşılaştır.",
+        "GROUP BY'ın sıralama sağlamadığını varsay ve gerekli ORDER BY sözleşmesini ekle."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "7. Transfer: aynı grain dönüşümü dört araçta",
+      "title_en": "7. Transfer: the same grain transformation across four tools",
+      "body_tr": "Aggregation araçtan araca farklı syntax kullanır ama temel soru aynıdır: hangi satırlar aynı gruba ait ve sonuçta bir satır neyi temsil ediyor? pandas groupby'da grouping key'ler sonuç index/grain'ini belirler; Excel Pivot/Data Model'de satır boyutları ve measure'lar aggregate seviyesini belirler; Qlik'te chart dimension seti ölçünün hangi kombinasyonlarda hesaplandığını etkiler; HTML raporunda aggregate tabloyu sunarken her `<tr>` artık kaynak transaction değil özet grubu temsil eder. Transfer görevi syntax çevirmek değil, grain ve missingness sözleşmesini korumaktır.",
+      "body_en": "Aggregation syntax changes across tools, but the core question remains: which source rows belong to the same group, and what does one result row represent? pandas groupby keys define output grain, Excel Pivot/Data Model dimensions and measures define aggregate level, Qlik chart dimensions shape measure context, and each HTML summary-table row represents an aggregate group rather than a source transaction. Transfer means preserving grain and missingness semantics, not translating syntax literally.",
+      "transfer_tasks": [
+        {
+          "tool": "Python / pandas",
+          "task_tr": "Aynı HOTEL × SEGMENT çıktısını groupby/agg ile kurmadan önce `size` ile `count` farkının SQL COUNT(*) / COUNT(column) ilişkisini nasıl yansıttığını açıkla."
+        },
+        {
+          "tool": "Excel",
+          "task_tr": "PivotTable'da HOTEL ve SEGMENT'i satır alanına koyduğunda hangi grain'in oluştuğunu ve blank Revenue kayıtlarının Count/Sum ölçülerini nasıl etkileyebileceğini kontrol planı olarak yaz."
+        },
+        {
+          "tool": "Qlik",
+          "task_tr": "Chart dimension'ları HOTEL ve SEGMENT iken Sum(REVENUE_EUR) ölçüsünün grain'ini açıklayıp ek BUSINESS_DATE dimension'ının sonucu nasıl değiştireceğini tahmin et."
+        },
+        {
+          "tool": "HTML",
+          "task_tr": "Aggregate rapor tablosundaki bir `<tr>` öğesinin source row değil HOTEL × SEGMENT summary row olduğunu semantik açıklama/caption ile nasıl netleştireceğini belirt."
+        }
+      ]
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: aggregate fonksiyonunu değil grain kararını geri çağır",
+      "title_en": "8. Retrieval: retrieve the grain decision, not the function name",
+      "body_tr": "D+1'de GROUP BY sonrası result grain'i ve WHERE/HAVING farkını örneksiz notlara bakmadan açıklarsın. D+7'de NULL içeren yeni bir dataset için COUNT(*), COUNT(column), SUM ve HAVING sonuçlarını sorguyu çalıştırmadan tahmin eder, sonra doğrularsın. D+30'da farklı bir sektörde doğru grand total üretip yanlış detay grain'i bırakan bir sorguyu teşhis eder ve hedef grain'e yeniden tasarlarsın. Amaç SUM yazmayı hatırlamak değil, aggregate'ın anlamını korumaktır.",
+      "body_en": "On D+1, explain result grain after GROUP BY and the WHERE/HAVING distinction without notes. On D+7, predict COUNT(*), COUNT(column), SUM, and HAVING outcomes for a new dataset containing NULLs before executing the query. On D+30, diagnose a query in another domain that produces a correct grand total at the wrong detail grain and redesign it for the intended result grain.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explanation-result-grain-where-having"
+        },
+        {
+          "day": 7,
+          "evidence": "aggregate-null-output-prediction"
+        },
+        {
+          "day": 30,
+          "evidence": "transfer-debugging-wrong-aggregation-grain"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "GROUP BY result grain, WHERE/HAVING aşamaları ve COUNT(*) ile COUNT(expression) NULL davranışını tek örnek üzerinde açıkla.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Verilen aggregate sorgusunun kaynak grain'ini, sonuç grain'ini ve hangi grupların HAVING tarafından eleneceğini çalıştırmadan tahmin et.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Yeni dataset için doğru WHERE popülasyonu, GROUP BY grain'i, NULL duyarlı aggregate'lar, HAVING eşiği ve explicit ORDER BY içeren sorguyu üret.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Aynı aggregate grain ve missingness problemini pandas, Excel, Qlik veya başka bir domain'e taşı ve araçlar arası semantik farkları açıkla.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "ms-group-by",
+    "ms-having",
+    "ms-count",
+    "ms-aggregate-functions",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}
