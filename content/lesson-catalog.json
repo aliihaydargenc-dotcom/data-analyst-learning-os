@@ -1,0 +1,13 @@
+{
+  "version": "0.1.0",
+  "production_lessons": [
+    {
+      "id": "sql.relational-thinking.001",
+      "module_id": "sql.relational-thinking",
+      "track": "sql",
+      "level": "L1",
+      "path": "content/lessons/sql.relational-thinking.001.json",
+      "status": "production-candidate"
+    }
+  ]
+}
