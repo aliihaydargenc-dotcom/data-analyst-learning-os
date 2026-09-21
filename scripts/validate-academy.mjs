@@ -2,7 +2,7 @@ import fs from 'node:fs';
 const curriculum=JSON.parse(fs.readFileSync('content/curriculum.json','utf8'));
 const sources=JSON.parse(fs.readFileSync('content/sources.json','utf8'));
 const lessons=JSON.parse(fs.readFileSync('content/golden-lessons.json','utf8'));
-const TRACKS=['sql','qlik','python','excel','english'],LEVELS=['L1','L2','L3','L4','L5','Expert'],LAYERS=['mental_model','worked_example','guided_practice','independent_practice','debugging','transfer','retention'];
+const TRACKS=['sql','qlik','python','excel','html','english'],LEVELS=['L1','L2','L3','L4','L5','Expert'],LAYERS=['mental_model','worked_example','guided_practice','independent_practice','debugging','transfer','retention'];
 const errors=[],fail=m=>errors.push(m),mods=curriculum.tracks.flatMap(t=>t.modules),byId=new Map();
 for(const t of TRACKS){const track=curriculum.tracks.find(x=>x.id===t);if(!track){fail('Missing track '+t);continue;}for(const l of LEVELS)if(!track.modules.some(m=>m.level===l))fail(`${t} missing ${l}`);}
 for(const m of mods){if(byId.has(m.id))fail('Duplicate '+m.id);byId.set(m.id,m);if(!Array.isArray(m.learning_outcomes)||m.learning_outcomes.length<2)fail(m.id+' outcomes');if(!Array.isArray(m.evidence)||m.evidence.length<2)fail(m.id+' evidence');for(const l of LAYERS)if(!m.practice_layers?.includes(l))fail(`${m.id} missing ${l}`);for(const s of m.source_ids||[])if(!sources[s])fail(`${m.id} unknown source ${s}`);}
