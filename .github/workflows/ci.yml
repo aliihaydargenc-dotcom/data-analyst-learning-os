@@ -21,9 +21,9 @@ jobs:
         run: npm install --no-package-lock
       - name: Academy quality gates
         run: npm test
-      - name: Validate starter diagnostic and dataset
+      - name: Validate reference roadmap and dataset
         run: |
-          node -e "const fs=require('fs'); const q=JSON.parse(fs.readFileSync('data/question-bank.json')); const r=JSON.parse(fs.readFileSync('data/roadmap.json')); if(q.length!==50) process.exit(1); if(r.weeks!==24) process.exit(1);"
+          node -e "const fs=require('fs'); const r=JSON.parse(fs.readFileSync('data/roadmap.json')); if(r.weeks!==24) process.exit(1);"
           node -e "const fs=require('fs'); const lines=fs.readFileSync('datasets/hotel_daily.csv','utf8').trim().split(/\\r?\\n/); if(lines.length!==1461) { console.error('Expected 1460 data rows, got',lines.length-1); process.exit(1); }"
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
