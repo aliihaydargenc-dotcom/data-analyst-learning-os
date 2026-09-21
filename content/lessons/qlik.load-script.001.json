@@ -1,0 +1,271 @@
+{
+  "id": "qlik.load-script.001",
+  "module_id": "qlik.load-script",
+  "track": "qlik",
+  "level": "L2",
+  "status": "production-candidate",
+  "title_tr": "Load Script, Resident/Preceding ve mapping",
+  "title_en": "Load Script, Resident/Preceding and mapping",
+  "subtitle_tr": "SQL SELECT ile Qlik LOAD katmanını ayır; preceding/resident ve mapping kararlarını transformation locality ve reload davranışıyla gerekçelendir.",
+  "subtitle_en": "Separate SQL SELECT from Qlik LOAD and choose preceding, resident, and mapping patterns based on transformation locality and reload behavior.",
+  "estimated_minutes_range": [
+    80,
+    115
+  ],
+  "why_it_matters_tr": "SQL SELECT veri kaynağı tarafından değerlendirilir; Qlik LOAD ise Qlik script engine katmanında field transformation, interpretation ve model shaping yapar. Preceding LOAD alttaki LOAD/SELECT sonucunu doğrudan işler ve çoğu basit dönüşümde kompakt bir zincir sağlar. Resident LOAD önce yüklenmiş tabloyu tekrar okur ve Order By gibi bazı ihtiyaçlarda zorunlu olabilir. Resident tabloyu drop etmemek gereksiz memory tüketir; aynı field setine sahip tabloların otomatik concatenate olabileceğini unutmak model yapısını sessizce değiştirebilir. Script sırası veri modelinin bir parçasıdır. Bu yüzden ilerleme yalnız metni okumakla değil, senaryo kararlarını doğru verip gerekçeyi üretmek ve aynı sözleşmeyi farklı araca transfer etmekle kanıtlanır.",
+  "why_it_matters_en": "SQL SELECT is evaluated by the data provider, while Qlik LOAD performs Qlik-side transformation and model shaping. Preceding LOAD forms a transformation chain, whereas Resident LOAD rereads an already loaded table and is required for some operations such as ordering. Leaving resident staging tables in memory or forgetting automatic concatenation can silently alter model shape. Script order and cleanup are part of the data contract. Progress therefore requires correct scenario decisions, explicit reasoning, and transfer of the same analytical contract to another tool.",
+  "prerequisites": [
+    "qlik.dimension-measure-grain.001"
+  ],
+  "learning_objectives": [
+    "Load Script, Resident/Preceding ve mapping mekanizmasını hedef business question ve Qlik context'i üzerinden açıklamak.",
+    "Load Script, Resident/Preceding ve mapping senaryosunda beklenen sonucu çalıştırmadan önce tahmin etmek.",
+    "Load Script, Resident/Preceding ve mapping probleminde semptom ile root-cause'u evidence kullanarak ayırmak.",
+    "Aynı analitik sözleşmeyi SQL, Python veya Excel bağlamına transfer etmek."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "Önkoşul kanıtları hazır mı: qlik.dimension-measure-grain.001?",
+      "if_no_tr": "Önkoşul production derslerini tamamla veya aynı mastery evidence'i ayrı olarak üret."
+    }
+  ],
+  "case_lab": {
+    "id": "qlik-load-script-case-v1",
+    "title_tr": "Semantic Case Lab · Load Script, Resident/Preceding ve mapping",
+    "title_en": "Semantic Case Lab · Load Script, Resident/Preceding and mapping",
+    "task_tr": "Her senaryoda en doğru kararı seç. Değerlendirme exact answer key ile yapılır; tüm vakalar doğru olmadan independent-production gate açılmaz.",
+    "task_en": "Choose the best decision for each scenario. All cases must match the answer key before the independent-production gate opens.",
+    "requires_for_section": "load-script-production",
+    "cases": [
+      {
+        "id": "case-1",
+        "prompt_tr": "Where is a SQL SELECT evaluated?",
+        "prompt_en": "Where is a SQL SELECT evaluated?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "By the database/provider",
+            "label_en": "By the database/provider"
+          },
+          {
+            "id": "b",
+            "label_tr": "By chart engine after reload",
+            "label_en": "By chart engine after reload"
+          },
+          {
+            "id": "c",
+            "label_tr": "By Section Access",
+            "label_en": "By Section Access"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek, load script, resident/preceding ve mapping konusundaki iş kuralını ve Qlik bağlamını birlikte korur; yalnız görsel semptoma göre karar vermez.",
+        "rationale_en": "The correct option preserves the business rule and Qlik context for load script, resident/preceding and mapping instead of choosing from a visual symptom alone."
+      },
+      {
+        "id": "case-2",
+        "prompt_tr": "You need Order By before a second transformation. Which pattern is appropriate?",
+        "prompt_en": "You need Order By before a second transformation. Which pattern is appropriate?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Resident LOAD",
+            "label_en": "Resident LOAD"
+          },
+          {
+            "id": "b",
+            "label_tr": "Set Analysis",
+            "label_en": "Set Analysis"
+          },
+          {
+            "id": "c",
+            "label_tr": "Alternate state",
+            "label_en": "Alternate state"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek, load script, resident/preceding ve mapping konusundaki iş kuralını ve Qlik bağlamını birlikte korur; yalnız görsel semptoma göre karar vermez.",
+        "rationale_en": "The correct option preserves the business rule and Qlik context for load script, resident/preceding and mapping instead of choosing from a visual symptom alone."
+      },
+      {
+        "id": "case-3",
+        "prompt_tr": "For a simple one-field lookup enrichment, which pattern often avoids a full join?",
+        "prompt_en": "For a simple one-field lookup enrichment, which pattern often avoids a full join?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Mapping LOAD + ApplyMap",
+            "label_en": "Mapping LOAD + ApplyMap"
+          },
+          {
+            "id": "b",
+            "label_tr": "Synthetic key",
+            "label_en": "Synthetic key"
+          },
+          {
+            "id": "c",
+            "label_tr": "Aggr",
+            "label_en": "Aggr"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek, load script, resident/preceding ve mapping konusundaki iş kuralını ve Qlik bağlamını birlikte korur; yalnız görsel semptoma göre karar vermez.",
+        "rationale_en": "The correct option preserves the business rule and Qlik context for load script, resident/preceding and mapping instead of choosing from a visual symptom alone."
+      }
+    ]
+  },
+  "sections": [
+    {
+      "id": "mental-model",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: davranışı doğru katmanda açıkla",
+      "title_en": "1. Mental model: explain behavior at the correct layer",
+      "body_tr": "SQL SELECT veri kaynağı tarafından değerlendirilir; Qlik LOAD ise Qlik script engine katmanında field transformation, interpretation ve model shaping yapar. Preceding LOAD alttaki LOAD/SELECT sonucunu doğrudan işler ve çoğu basit dönüşümde kompakt bir zincir sağlar. Resident LOAD önce yüklenmiş tabloyu tekrar okur ve Order By gibi bazı ihtiyaçlarda zorunlu olabilir. Bu derste karar sırası business question → model/state context → Qlik mechanism → observable evidence şeklindedir; syntax ancak bu sözleşmeyi uygulayan araçtır.",
+      "body_en": "SQL SELECT is evaluated by the data provider, while Qlik LOAD performs Qlik-side transformation and model shaping. Preceding LOAD forms a transformation chain, whereas Resident LOAD rereads an already loaded table and is required for some operations such as ordering. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "checks": [
+        "Business question ve hedef grain/state'i önce yaz.",
+        "Qlik davranışını SQL veya tablo-filtre sezgisiyle varsayma.",
+        "Selection/model/script katmanlarını birbirinden ayır."
+      ]
+    },
+    {
+      "id": "contract-boundaries",
+      "layer": "mental_model",
+      "title_tr": "2. Sözleşme sınırları: selection, model, script ve presentation",
+      "title_en": "2. Contract boundaries: selection, model, script, and presentation",
+      "body_tr": "Resident tabloyu drop etmemek gereksiz memory tüketir; aynı field setine sahip tabloların otomatik concatenate olabileceğini unutmak model yapısını sessizce değiştirebilir. Script sırası veri modelinin bir parçasıdır. Bir sonucu debug ederken önce hangi katmanın sorumluluğunda olduğunu belirle: load script veri modelini kurar, associative engine state ve aggregation context'ini değerlendirir, chart ise bu sonucu dimension/measure ve presentation ayarlarıyla gösterir.",
+      "body_en": "Leaving resident staging tables in memory or forgetting automatic concatenation can silently alter model shape. Script order and cleanup are part of the data contract. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "checks": [
+        "Katmanı isimlendirmeden çözüm önermeme.",
+        "Model değişikliği ile chart-only düzeltmeyi karıştırmama.",
+        "Security veya performance etkisini ayrıca not etme."
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "3. Worked example: aynı business sorusunu Qlik contract'ına çevir",
+      "title_en": "3. Worked example: translate the business question into a Qlik contract",
+      "body_tr": "Database'den ham tarih alanını SELECT ile çekip Qlik tarih interpretation'ını preceding LOAD'da uygulayabilirsin. Tek kolon lookup için JOIN yerine Mapping LOAD + ApplyMap kullanmak model genişlemesini azaltabilir. Örneğin amacı tek bir syntax kalıbını ezberletmek değil; hedef population, grain/state ve beklenen sonucu önceden yazarak expression veya script'in neden doğru olduğunu açıklamaktır.",
+      "body_en": "A database SELECT can provide raw fields while a preceding LOAD applies Qlik-specific interpretation. Small lookup enrichment is often better expressed with Mapping LOAD and ApplyMap than with a full join. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "code": "Final:\nLOAD HOTEL_ID,\n     Date(Date#(BUSINESS_DATE,'YYYY-MM-DD')) as BUSINESS_DATE;\nSQL SELECT HOTEL_ID, BUSINESS_DATE FROM fact_table;",
+      "explanation_tr": "Kod parçası bağlam örneğidir; production kullanımında field isimleri, data types, selection state ve model cardinality gerçek app kanıtıyla doğrulanmalıdır.",
+      "explanation_en": "The code is contextual evidence. Production use still requires validation against actual fields, data types, selections, and model cardinality."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "4. Guided practice: sonucu çalıştırmadan önce tahmin et",
+      "title_en": "4. Guided practice: predict the result before running it",
+      "body_tr": "SQL SELECT veri kaynağı tarafından değerlendirilir; Qlik LOAD ise Qlik script engine katmanında field transformation, interpretation ve model shaping yapar. Preceding LOAD alttaki LOAD/SELECT sonucunu doğrudan işler ve çoğu basit dönüşümde kompakt bir zincir sağlar. Resident LOAD önce yüklenmiş tabloyu tekrar okur ve Order By gibi bazı ihtiyaçlarda zorunlu olabilir. Şimdi aynı kavramı yeni bir senaryoya taşı: önce hangi kayıt/değer evreninin mümkün olduğunu, görünür chart grain'ini veya script output'unu tahmin et; sonra Qlik'te gözlenen sonuçla karşılaştır. Tahmin uyuşmazsa syntax değiştirmeden önce mental modelini düzelt.",
+      "body_en": "Apply load script, resident/preceding and mapping to a new scenario by predicting state, grain, or script output before running it. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "prompts": [
+        "Load Script, Resident/Preceding ve mapping için hedef business question'ı tek cümlede tanımla ve hangi Qlik katmanının sonucu belirlediğini yaz.",
+        "Bir selection veya model değişikliği sonrası hangi değerin/row context'in değişmesini beklersin; neden?",
+        "Beklenen sonuç ile app sonucu farklıysa ilk üç doğrulama adımın nedir?"
+      ]
+    },
+    {
+      "id": "load-script-production",
+      "layer": "independent_practice",
+      "title_tr": "5. Bağımsız üretim: Semantic Case Lab + gerekçeli çözüm",
+      "title_en": "5. Independent production: Semantic Case Lab plus reasoned solution",
+      "body_tr": "Semantic Case Lab, load script, resident/preceding ve mapping için üç ayrı karar senaryosunu değerlendirir. Tüm vakaları doğru çözmeden bu bölüm tamamlanmaz. Lab geçtikten sonra business rule, selection/model context, beklenen Qlik davranışı ve doğrulama kanıtını kısa bir decision record olarak yaz.",
+      "body_en": "The Semantic Case Lab evaluates three decisions for load script, resident/preceding and mapping. All cases must pass before this section can be completed. After passing, write a short decision record covering business rule, Qlik context, expected behavior, and validation evidence.",
+      "requires_case_lab_pass": "qlik-load-script-case-v1",
+      "evidence_required": [
+        "semantic_case_lab_pass",
+        "business_rule_and_context",
+        "expected_behavior",
+        "validation_evidence"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "6. Debugging: semptomu değil katmanı teşhis et",
+      "title_en": "6. Debugging: diagnose the layer, not the symptom",
+      "body_tr": "Resident tabloyu drop etmemek gereksiz memory tüketir; aynı field setine sahip tabloların otomatik concatenate olabileceğini unutmak model yapısını sessizce değiştirebilir. Script sırası veri modelinin bir parçasıdır. Debugging sırasında aynı anda script, data model ve chart expression değiştirme. Önce selection state ve model viewer/reload log gibi kanıtlarla problemi sınıflandır; sonra tek değişkenli düzeltme yap ve KPI/result reconciliation ile regression kontrolü uygula.",
+      "body_en": "Leaving resident staging tables in memory or forgetting automatic concatenation can silently alter model shape. Script order and cleanup are part of the data contract. Change one major factor at a time and verify the result against an explicit business expectation. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "diagnostic_sequence": [
+        "Business metric ve hedef grain/state sözleşmesini tekrar yaz.",
+        "Selection state veya script reload context'ini yeniden üret.",
+        "Data model associations/cardinality ve field rollerini kontrol et.",
+        "Expression/script expansion veya transformation sonucunu görünür hale getir.",
+        "Tek değişkenli fix uygula ve aynı fixture/selections ile tekrar test et.",
+        "KPI total, row/context ve downstream app davranışında regression olmadığını doğrula."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "7. Transfer: aynı analitik sözleşmeyi SQL, Python ve Excel'e taşı",
+      "title_en": "7. Transfer: carry the analytical contract into SQL, Python, and Excel",
+      "body_tr": "Database'den ham tarih alanını SELECT ile çekip Qlik tarih interpretation'ını preceding LOAD'da uygulayabilirsin. Tek kolon lookup için JOIN yerine Mapping LOAD + ApplyMap kullanmak model genişlemesini azaltabilir. Transfer çalışmasında Qlik syntax'ını diğer araçlara kopyalamak yerine population, grain, state/context ve validation sözleşmesini taşı. SQL WHERE/GROUP BY, pandas filter/groupby veya Excel Data Model context'i aynı business sorusunu farklı mekanizmalarla çözer.",
+      "body_en": "Transfer population, grain, state or context, and validation rules rather than copying Qlik-specific syntax into another tool. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "transfer_tasks": [
+        {
+          "tool": "SQL",
+          "task_tr": "Load Script, Resident/Preceding ve mapping için aynı business sorusunu SQL population/grain tanımıyla yeniden ifade et; Qlik selection state ile farkını yaz."
+        },
+        {
+          "tool": "Python / pandas",
+          "task_tr": "Aynı sonucu filter/merge/groupby adımlarıyla üretirken grain ve null/duplicate contract'ını explicit hale getir."
+        },
+        {
+          "tool": "Excel / Data Model",
+          "task_tr": "Aynı metriğin filter context ve relationship davranışını Qlik associative context'iyle karşılaştır."
+        }
+      ]
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: syntax değil karar modelini geri çağır",
+      "title_en": "8. Retrieval: retrieve the decision model, not syntax trivia",
+      "body_tr": "D+1'de load script, resident/preceding ve mapping konusunu resmi dokümana bakmadan business rule, Qlik context ve tipik failure mode ile açıkla. D+7'de üç yeni senaryoda sonucu çalıştırmadan tahmin et. D+30'da gerçek bir app problemi seçip evidence → hypothesis → controlled fix → regression validation zincirini kısa teknik not olarak yaz.",
+      "body_en": "On D+1 explain load script, resident/preceding and mapping from memory using business rule, Qlik context, and a typical failure mode. On D+7 predict new scenarios. On D+30 document evidence, hypothesis, controlled fix, and regression validation for a real app problem.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explain-qlik-contract-from-memory"
+        },
+        {
+          "day": 7,
+          "evidence": "predict-three-new-cases"
+        },
+        {
+          "day": 30,
+          "evidence": "produce-evidence-based-qlik-review"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "Load Script, Resident/Preceding ve mapping için temel mekanizmayı ve sınırlarını selection/model/script context'iyle açıkla.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Yeni Qlik senaryosunda beklenen state/grain/model davranışını çalıştırmadan tahmin et ve gözlenen sonuçla karşılaştır.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Semantic Case Lab'ın tüm senaryolarını geç ve gerçek bir app örneği için gerekçeli decision record üret.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Aynı business contract'ı SQL, Python veya Excel'de yeniden kurup Qlik'e özgü mekanizma ile ortak analitik prensibi ayır.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "qlik-may2023-resident",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}

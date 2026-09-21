@@ -1,0 +1,269 @@
+{
+  "id": "qlik.associative-state.001",
+  "module_id": "qlik.associative-state",
+  "track": "qlik",
+  "level": "L1",
+  "status": "production-candidate",
+  "title_tr": "Associative model ve selection state",
+  "title_en": "Associative model and selection state",
+  "subtitle_tr": "Selection state'i filtre listesi gibi değil, Qlik'in possible/alternative/excluded alan evrenini yeniden hesaplayan associative context olarak oku.",
+  "subtitle_en": "Treat selection state as an associative context that recalculates possible and excluded values rather than as a simple filter list.",
+  "estimated_minutes_range": [
+    70,
+    105
+  ],
+  "why_it_matters_tr": "Qlik associative modelinde seçim yalnız seçilen satırları saklamaz; ilişkili alan değerlerinin possible, alternative ve excluded durumlarını yeniden hesaplar. Bir chart measure varsayılan olarak mevcut selection state içindeki mümkün kayıtlar üzerinde aggregate edilir. Bu yüzden 'filtre hangi tabloda?' sorusundan önce alan ilişkileri ve current selection context'i düşünmek gerekir. Gri değeri 'veride yok' sanmak, selection state ile data existence'ı karıştırır. Gri çoğu zaman mevcut seçimlerle ilişkisiz/excluded değerdir; veri modelinde fiziksel olarak bulunmaya devam edebilir. Bu yüzden ilerleme yalnız metni okumakla değil, senaryo kararlarını doğru verip gerekçeyi üretmek ve aynı sözleşmeyi farklı araca transfer etmekle kanıtlanır.",
+  "why_it_matters_en": "In the associative model, a selection changes the possible and excluded value universe across related fields. Chart aggregations normally operate inside the current selection state, so reasoning starts with associations and state rather than with a single filtered table. Treating a gray value as absent from the data confuses state with existence. It may simply be excluded by current selections while remaining present in the model. Progress therefore requires correct scenario decisions, explicit reasoning, and transfer of the same analytical contract to another tool.",
+  "prerequisites": [],
+  "learning_objectives": [
+    "Associative model ve selection state mekanizmasını hedef business question ve Qlik context'i üzerinden açıklamak.",
+    "Associative model ve selection state senaryosunda beklenen sonucu çalıştırmadan önce tahmin etmek.",
+    "Associative model ve selection state probleminde semptom ile root-cause'u evidence kullanarak ayırmak.",
+    "Aynı analitik sözleşmeyi SQL, Python veya Excel bağlamına transfer etmek."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "Qlik app içinde field, dimension, measure ve selection kavramlarını temel seviyede ayırt edebiliyor musun?",
+      "if_no_tr": "Bu ders sıfır-prerequisite başlar; worked example bölümündeki state/grain sözlüğünü referans al."
+    }
+  ],
+  "case_lab": {
+    "id": "qlik-associative-state-case-v1",
+    "title_tr": "Semantic Case Lab · Associative model ve selection state",
+    "title_en": "Semantic Case Lab · Associative model and selection state",
+    "task_tr": "Her senaryoda en doğru kararı seç. Değerlendirme exact answer key ile yapılır; tüm vakalar doğru olmadan independent-production gate açılmaz.",
+    "task_en": "Choose the best decision for each scenario. All cases must match the answer key before the independent-production gate opens.",
+    "requires_for_section": "associative-state-production",
+    "cases": [
+      {
+        "id": "case-1",
+        "prompt_tr": "A user selects HOTEL=A. What does `Sum(REVENUE)` normally aggregate?",
+        "prompt_en": "A user selects HOTEL=A. What does `Sum(REVENUE)` normally aggregate?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Mevcut selection state içindeki mümkün kayıtlar",
+            "label_en": "Mevcut selection state içindeki mümkün kayıtlar"
+          },
+          {
+            "id": "b",
+            "label_tr": "Tüm app kayıtları",
+            "label_en": "Tüm app kayıtları"
+          },
+          {
+            "id": "c",
+            "label_tr": "Yalnız HOTEL alanının distinct değerleri",
+            "label_en": "Yalnız HOTEL alanının distinct değerleri"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek, associative model ve selection state konusundaki iş kuralını ve Qlik bağlamını birlikte korur; yalnız görsel semptoma göre karar vermez.",
+        "rationale_en": "The correct option preserves the business rule and Qlik context for associative model and selection state instead of choosing from a visual symptom alone."
+      },
+      {
+        "id": "case-2",
+        "prompt_tr": "A segment is gray after a hotel selection. What is the safest interpretation?",
+        "prompt_en": "A segment is gray after a hotel selection. What is the safest interpretation?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Segment source'dan silindi",
+            "label_en": "Segment source'dan silindi"
+          },
+          {
+            "id": "b",
+            "label_tr": "Segment mevcut seçimlerle excluded durumda olabilir",
+            "label_en": "Segment mevcut seçimlerle excluded durumda olabilir"
+          },
+          {
+            "id": "c",
+            "label_tr": "Segment kesin null değerdir",
+            "label_en": "Segment kesin null değerdir"
+          }
+        ],
+        "answer": "b",
+        "rationale_tr": "Doğru seçenek, associative model ve selection state konusundaki iş kuralını ve Qlik bağlamını birlikte korur; yalnız görsel semptoma göre karar vermez.",
+        "rationale_en": "The correct option preserves the business rule and Qlik context for associative model and selection state instead of choosing from a visual symptom alone."
+      },
+      {
+        "id": "case-3",
+        "prompt_tr": "You need a total independent of current selections. Which concept is relevant?",
+        "prompt_en": "You need a total independent of current selections. Which concept is relevant?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Set identifier such as `{1}`",
+            "label_en": "Set identifier such as `{1}`"
+          },
+          {
+            "id": "b",
+            "label_tr": "Resident LOAD",
+            "label_en": "Resident LOAD"
+          },
+          {
+            "id": "c",
+            "label_tr": "Section Access",
+            "label_en": "Section Access"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek, associative model ve selection state konusundaki iş kuralını ve Qlik bağlamını birlikte korur; yalnız görsel semptoma göre karar vermez.",
+        "rationale_en": "The correct option preserves the business rule and Qlik context for associative model and selection state instead of choosing from a visual symptom alone."
+      }
+    ]
+  },
+  "sections": [
+    {
+      "id": "mental-model",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: davranışı doğru katmanda açıkla",
+      "title_en": "1. Mental model: explain behavior at the correct layer",
+      "body_tr": "Qlik associative modelinde seçim yalnız seçilen satırları saklamaz; ilişkili alan değerlerinin possible, alternative ve excluded durumlarını yeniden hesaplar. Bir chart measure varsayılan olarak mevcut selection state içindeki mümkün kayıtlar üzerinde aggregate edilir. Bu yüzden 'filtre hangi tabloda?' sorusundan önce alan ilişkileri ve current selection context'i düşünmek gerekir. Bu derste karar sırası business question → model/state context → Qlik mechanism → observable evidence şeklindedir; syntax ancak bu sözleşmeyi uygulayan araçtır.",
+      "body_en": "In the associative model, a selection changes the possible and excluded value universe across related fields. Chart aggregations normally operate inside the current selection state, so reasoning starts with associations and state rather than with a single filtered table. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "checks": [
+        "Business question ve hedef grain/state'i önce yaz.",
+        "Qlik davranışını SQL veya tablo-filtre sezgisiyle varsayma.",
+        "Selection/model/script katmanlarını birbirinden ayır."
+      ]
+    },
+    {
+      "id": "contract-boundaries",
+      "layer": "mental_model",
+      "title_tr": "2. Sözleşme sınırları: selection, model, script ve presentation",
+      "title_en": "2. Contract boundaries: selection, model, script, and presentation",
+      "body_tr": "Gri değeri 'veride yok' sanmak, selection state ile data existence'ı karıştırır. Gri çoğu zaman mevcut seçimlerle ilişkisiz/excluded değerdir; veri modelinde fiziksel olarak bulunmaya devam edebilir. Bir sonucu debug ederken önce hangi katmanın sorumluluğunda olduğunu belirle: load script veri modelini kurar, associative engine state ve aggregation context'ini değerlendirir, chart ise bu sonucu dimension/measure ve presentation ayarlarıyla gösterir.",
+      "body_en": "Treating a gray value as absent from the data confuses state with existence. It may simply be excluded by current selections while remaining present in the model. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "checks": [
+        "Katmanı isimlendirmeden çözüm önermeme.",
+        "Model değişikliği ile chart-only düzeltmeyi karıştırmama.",
+        "Security veya performance etkisini ayrıca not etme."
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "3. Worked example: aynı business sorusunu Qlik contract'ına çevir",
+      "title_en": "3. Worked example: translate the business question into a Qlik contract",
+      "body_tr": "HOTEL=A seçildiğinde A ile ilişkili segmentler possible kalır, yalnız B'de görülen segmentler excluded olabilir. `Sum(REVENUE)` mevcut state'i izler; tüm kayıt evrenini kıyaslamak istersen set identifier veya ayrı state tasarımı gerekir. Örneğin amacı tek bir syntax kalıbını ezberletmek değil; hedef population, grain/state ve beklenen sonucu önceden yazarak expression veya script'in neden doğru olduğunu açıklamaktır.",
+      "body_en": "Selecting HOTEL=A changes which segments remain possible. A normal Sum(REVENUE) follows the current state, while comparison against a broader population requires an explicit set or state design. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "code": "Sum(REVENUE)\nSum({1} REVENUE)",
+      "explanation_tr": "Kod parçası bağlam örneğidir; production kullanımında field isimleri, data types, selection state ve model cardinality gerçek app kanıtıyla doğrulanmalıdır.",
+      "explanation_en": "The code is contextual evidence. Production use still requires validation against actual fields, data types, selections, and model cardinality."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "4. Guided practice: sonucu çalıştırmadan önce tahmin et",
+      "title_en": "4. Guided practice: predict the result before running it",
+      "body_tr": "Qlik associative modelinde seçim yalnız seçilen satırları saklamaz; ilişkili alan değerlerinin possible, alternative ve excluded durumlarını yeniden hesaplar. Bir chart measure varsayılan olarak mevcut selection state içindeki mümkün kayıtlar üzerinde aggregate edilir. Bu yüzden 'filtre hangi tabloda?' sorusundan önce alan ilişkileri ve current selection context'i düşünmek gerekir. Şimdi aynı kavramı yeni bir senaryoya taşı: önce hangi kayıt/değer evreninin mümkün olduğunu, görünür chart grain'ini veya script output'unu tahmin et; sonra Qlik'te gözlenen sonuçla karşılaştır. Tahmin uyuşmazsa syntax değiştirmeden önce mental modelini düzelt.",
+      "body_en": "Apply associative model and selection state to a new scenario by predicting state, grain, or script output before running it. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "prompts": [
+        "Associative model ve selection state için hedef business question'ı tek cümlede tanımla ve hangi Qlik katmanının sonucu belirlediğini yaz.",
+        "Bir selection veya model değişikliği sonrası hangi değerin/row context'in değişmesini beklersin; neden?",
+        "Beklenen sonuç ile app sonucu farklıysa ilk üç doğrulama adımın nedir?"
+      ]
+    },
+    {
+      "id": "associative-state-production",
+      "layer": "independent_practice",
+      "title_tr": "5. Bağımsız üretim: Semantic Case Lab + gerekçeli çözüm",
+      "title_en": "5. Independent production: Semantic Case Lab plus reasoned solution",
+      "body_tr": "Semantic Case Lab, associative model ve selection state için üç ayrı karar senaryosunu değerlendirir. Tüm vakaları doğru çözmeden bu bölüm tamamlanmaz. Lab geçtikten sonra business rule, selection/model context, beklenen Qlik davranışı ve doğrulama kanıtını kısa bir decision record olarak yaz.",
+      "body_en": "The Semantic Case Lab evaluates three decisions for associative model and selection state. All cases must pass before this section can be completed. After passing, write a short decision record covering business rule, Qlik context, expected behavior, and validation evidence.",
+      "requires_case_lab_pass": "qlik-associative-state-case-v1",
+      "evidence_required": [
+        "semantic_case_lab_pass",
+        "business_rule_and_context",
+        "expected_behavior",
+        "validation_evidence"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "6. Debugging: semptomu değil katmanı teşhis et",
+      "title_en": "6. Debugging: diagnose the layer, not the symptom",
+      "body_tr": "Gri değeri 'veride yok' sanmak, selection state ile data existence'ı karıştırır. Gri çoğu zaman mevcut seçimlerle ilişkisiz/excluded değerdir; veri modelinde fiziksel olarak bulunmaya devam edebilir. Debugging sırasında aynı anda script, data model ve chart expression değiştirme. Önce selection state ve model viewer/reload log gibi kanıtlarla problemi sınıflandır; sonra tek değişkenli düzeltme yap ve KPI/result reconciliation ile regression kontrolü uygula.",
+      "body_en": "Treating a gray value as absent from the data confuses state with existence. It may simply be excluded by current selections while remaining present in the model. Change one major factor at a time and verify the result against an explicit business expectation. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "diagnostic_sequence": [
+        "Business metric ve hedef grain/state sözleşmesini tekrar yaz.",
+        "Selection state veya script reload context'ini yeniden üret.",
+        "Data model associations/cardinality ve field rollerini kontrol et.",
+        "Expression/script expansion veya transformation sonucunu görünür hale getir.",
+        "Tek değişkenli fix uygula ve aynı fixture/selections ile tekrar test et.",
+        "KPI total, row/context ve downstream app davranışında regression olmadığını doğrula."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "7. Transfer: aynı analitik sözleşmeyi SQL, Python ve Excel'e taşı",
+      "title_en": "7. Transfer: carry the analytical contract into SQL, Python, and Excel",
+      "body_tr": "HOTEL=A seçildiğinde A ile ilişkili segmentler possible kalır, yalnız B'de görülen segmentler excluded olabilir. `Sum(REVENUE)` mevcut state'i izler; tüm kayıt evrenini kıyaslamak istersen set identifier veya ayrı state tasarımı gerekir. Transfer çalışmasında Qlik syntax'ını diğer araçlara kopyalamak yerine population, grain, state/context ve validation sözleşmesini taşı. SQL WHERE/GROUP BY, pandas filter/groupby veya Excel Data Model context'i aynı business sorusunu farklı mekanizmalarla çözer.",
+      "body_en": "Transfer population, grain, state or context, and validation rules rather than copying Qlik-specific syntax into another tool. The goal is to keep business meaning explicit, test the relevant Qlik context, and avoid treating a visual symptom as proof of one root cause.",
+      "transfer_tasks": [
+        {
+          "tool": "SQL",
+          "task_tr": "Associative model ve selection state için aynı business sorusunu SQL population/grain tanımıyla yeniden ifade et; Qlik selection state ile farkını yaz."
+        },
+        {
+          "tool": "Python / pandas",
+          "task_tr": "Aynı sonucu filter/merge/groupby adımlarıyla üretirken grain ve null/duplicate contract'ını explicit hale getir."
+        },
+        {
+          "tool": "Excel / Data Model",
+          "task_tr": "Aynı metriğin filter context ve relationship davranışını Qlik associative context'iyle karşılaştır."
+        }
+      ]
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: syntax değil karar modelini geri çağır",
+      "title_en": "8. Retrieval: retrieve the decision model, not syntax trivia",
+      "body_tr": "D+1'de associative model ve selection state konusunu resmi dokümana bakmadan business rule, Qlik context ve tipik failure mode ile açıkla. D+7'de üç yeni senaryoda sonucu çalıştırmadan tahmin et. D+30'da gerçek bir app problemi seçip evidence → hypothesis → controlled fix → regression validation zincirini kısa teknik not olarak yaz.",
+      "body_en": "On D+1 explain associative model and selection state from memory using business rule, Qlik context, and a typical failure mode. On D+7 predict new scenarios. On D+30 document evidence, hypothesis, controlled fix, and regression validation for a real app problem.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explain-qlik-contract-from-memory"
+        },
+        {
+          "day": 7,
+          "evidence": "predict-three-new-cases"
+        },
+        {
+          "day": 30,
+          "evidence": "produce-evidence-based-qlik-review"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "Associative model ve selection state için temel mekanizmayı ve sınırlarını selection/model/script context'iyle açıkla.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Yeni Qlik senaryosunda beklenen state/grain/model davranışını çalıştırmadan tahmin et ve gözlenen sonuçla karşılaştır.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Semantic Case Lab'ın tüm senaryolarını geç ve gerçek bir app örneği için gerekçeli decision record üret.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Aynı business contract'ı SQL, Python veya Excel'de yeniden kurup Qlik'e özgü mekanizma ile ortak analitik prensibi ayır.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "qlik-may2023-set-analysis",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}

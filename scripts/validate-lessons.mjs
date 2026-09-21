@@ -81,6 +81,29 @@ for(const entry of catalog.production_lessons||[]){
   for(const section of labRequiredSections){
     if(!lesson.lab||section.requires_lab_pass!==lesson.lab.id) fail(`${entry.id}/${section.id}: invalid requires_lab_pass`);
   }
+  const caseLabRequiredSections=(lesson.sections||[]).filter(section=>section.requires_case_lab_pass);
+  if(lesson.case_lab){
+    if(!lesson.case_lab.id?.trim()) fail(`${entry.id}: case_lab id required`);
+    if(!lesson.case_lab.title_tr?.trim()||!lesson.case_lab.title_en?.trim()) fail(`${entry.id}: bilingual case_lab title required`);
+    if(!lesson.case_lab.task_tr?.trim()||lesson.case_lab.task_tr.trim().length<80) fail(`${entry.id}: case_lab task_tr too shallow`);
+    if(!Array.isArray(lesson.case_lab.cases)||lesson.case_lab.cases.length<3) fail(`${entry.id}: case_lab needs >=3 cases`);
+    const requiredSection=(lesson.sections||[]).find(section=>section.id===lesson.case_lab.requires_for_section);
+    if(!requiredSection) fail(`${entry.id}: case_lab requires_for_section not found`);
+    else if(requiredSection.requires_case_lab_pass!==lesson.case_lab.id) fail(`${entry.id}: section case-lab gate mismatch`);
+    const caseIds=new Set();
+    for(const item of lesson.case_lab.cases||[]){
+      if(!item.id?.trim()||caseIds.has(item.id)) fail(`${entry.id}: invalid/duplicate case id ${item.id}`);
+      caseIds.add(item.id);
+      if(!item.prompt_tr?.trim()||!item.prompt_en?.trim()) fail(`${entry.id}/${item.id}: bilingual case prompt required`);
+      if(!Array.isArray(item.options)||item.options.length<2) fail(`${entry.id}/${item.id}: >=2 options required`);
+      const optionIds=new Set((item.options||[]).map(option=>option.id));
+      if(!optionIds.has(item.answer)) fail(`${entry.id}/${item.id}: answer must match an option`);
+      for(const option of item.options||[]) if(!option.label_tr?.trim()||!option.label_en?.trim()) fail(`${entry.id}/${item.id}: bilingual option required`);
+    }
+  }
+  for(const section of caseLabRequiredSections){
+    if(!lesson.case_lab||section.requires_case_lab_pass!==lesson.case_lab.id) fail(`${entry.id}/${section.id}: invalid requires_case_lab_pass`);
+  }
 
   const evidence=new Set((lesson.mastery_evidence||[]).map(item=>item.dimension));
   for(const dimension of REQUIRED_EVIDENCE) if(!evidence.has(dimension)) fail(`${entry.id}: missing evidence ${dimension}`);

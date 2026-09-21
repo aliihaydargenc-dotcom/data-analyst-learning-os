@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "production_lessons": [
     {
       "id": "sql.relational-thinking.001",
@@ -120,6 +120,126 @@
       "path": "content/lessons/sql.architecture-review.001.json",
       "status": "production-candidate",
       "runtime": "lesson.html?id=sql.architecture-review.001"
+    },
+    {
+      "id": "qlik.associative-state.001",
+      "module_id": "qlik.associative-state",
+      "track": "qlik",
+      "level": "L1",
+      "order": 13,
+      "path": "content/lessons/qlik.associative-state.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=qlik.associative-state.001"
+    },
+    {
+      "id": "qlik.dimension-measure-grain.001",
+      "module_id": "qlik.dimension-measure-grain",
+      "track": "qlik",
+      "level": "L1",
+      "order": 14,
+      "path": "content/lessons/qlik.dimension-measure-grain.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=qlik.dimension-measure-grain.001"
+    },
+    {
+      "id": "qlik.load-script.001",
+      "module_id": "qlik.load-script",
+      "track": "qlik",
+      "level": "L2",
+      "order": 15,
+      "path": "content/lessons/qlik.load-script.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=qlik.load-script.001"
+    },
+    {
+      "id": "qlik.associations-calendar.001",
+      "module_id": "qlik.associations-calendar",
+      "track": "qlik",
+      "level": "L2",
+      "order": 16,
+      "path": "content/lessons/qlik.associations-calendar.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=qlik.associations-calendar.001"
+    },
+    {
+      "id": "qlik.set-analysis.001",
+      "module_id": "qlik.set-analysis",
+      "track": "qlik",
+      "level": "L3",
+      "order": 17,
+      "path": "content/lessons/qlik.set-analysis.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=qlik.set-analysis.001"
+    },
+    {
+      "id": "qlik.variables-aggr-altstate.001",
+      "module_id": "qlik.variables-aggr-altstate",
+      "track": "qlik",
+      "level": "L3",
+      "order": 18,
+      "path": "content/lessons/qlik.variables-aggr-altstate.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=qlik.variables-aggr-altstate.001"
+    },
+    {
+      "id": "qlik.synthetic-circular-model.001",
+      "module_id": "qlik.synthetic-circular-model",
+      "track": "qlik",
+      "level": "L4",
+      "order": 19,
+      "path": "content/lessons/qlik.synthetic-circular-model.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=qlik.synthetic-circular-model.001"
+    },
+    {
+      "id": "qlik.qvd-canonical-link.001",
+      "module_id": "qlik.qvd-canonical-link",
+      "track": "qlik",
+      "level": "L4",
+      "order": 20,
+      "path": "content/lessons/qlik.qvd-canonical-link.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=qlik.qvd-canonical-link.001"
+    },
+    {
+      "id": "qlik.incremental-security.001",
+      "module_id": "qlik.incremental-security",
+      "track": "qlik",
+      "level": "L5",
+      "order": 21,
+      "path": "content/lessons/qlik.incremental-security.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=qlik.incremental-security.001"
+    },
+    {
+      "id": "qlik.performance-governance.001",
+      "module_id": "qlik.performance-governance",
+      "track": "qlik",
+      "level": "L5",
+      "order": 22,
+      "path": "content/lessons/qlik.performance-governance.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=qlik.performance-governance.001"
+    },
+    {
+      "id": "qlik.enterprise-architecture.001",
+      "module_id": "qlik.enterprise-architecture",
+      "track": "qlik",
+      "level": "Expert",
+      "order": 23,
+      "path": "content/lessons/qlik.enterprise-architecture.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=qlik.enterprise-architecture.001"
+    },
+    {
+      "id": "qlik.engine-review.001",
+      "module_id": "qlik.engine-review",
+      "track": "qlik",
+      "level": "Expert",
+      "order": 24,
+      "path": "content/lessons/qlik.engine-review.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=qlik.engine-review.001"
     }
   ]
 }

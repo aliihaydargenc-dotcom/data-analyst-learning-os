@@ -103,6 +103,22 @@ export function recordLabAttempt(lesson,progress,labId,attempt,now=new Date()){
   return next;
 }
 
+export function recordCaseLabAttempt(lesson,progress,caseLabId,attempt,now=new Date()){
+  if(!lesson?.case_lab||lesson.case_lab.id!==caseLabId) throw new Error(`Unknown lesson case lab: ${caseLabId}`);
+  const next=normalizeLessonProgress(lesson,progress,now);
+  const previous=next.labEvidence[caseLabId]||{attempts:0,passed:false,passedAt:null,lastPassed:false,lastSummary:null};
+  const passedNow=attempt?.passed===true;
+  next.labEvidence[caseLabId]={
+    attempts:Number(previous.attempts||0)+1,
+    passed:previous.passed===true||passedNow,
+    passedAt:previous.passedAt||(passedNow?now.toISOString():null),
+    lastPassed:passedNow,
+    lastSummary:attempt?.summary??null
+  };
+  next.updatedAt=now.toISOString();
+  return next;
+}
+
 export function completionPercent(lesson,progress){
   const total=(lesson?.sections||[]).length;
   if(total===0) return 0;
@@ -130,6 +146,9 @@ export function completeSection(lesson,progress,sectionId,response='',now=new Da
   if(!canCompleteSection(section,response)) return {ok:false,reason:'response_required',progress};
   if(section.requires_lab_pass&&!labPassed(progress,section.requires_lab_pass)){
     return {ok:false,reason:'lab_required',progress};
+  }
+  if(section.requires_case_lab_pass&&!labPassed(progress,section.requires_case_lab_pass)){
+    return {ok:false,reason:'case_lab_required',progress};
   }
 
   const next=normalizeLessonProgress(lesson,progress,now);
