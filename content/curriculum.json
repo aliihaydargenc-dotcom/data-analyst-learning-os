@@ -1,5 +1,5 @@
 {
-  "version": "0.3.0",
+  "version": "0.4.0",
   "philosophy": {
     "starting_point": "zero-prerequisite-high-comprehension",
     "progression": "mastery-not-time",
@@ -1522,6 +1522,391 @@
           ],
           "source_ids": [
             "excel-pq-pivot"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "html",
+      "name": "HTML & Web Foundations",
+      "purpose_tr": "Semantik HTML'den erişilebilir, doğrulanabilir ve production-ready veri raporu yapısına kadar.",
+      "modules": [
+        {
+          "id": "html.document-semantics",
+          "track": "html",
+          "level": "L1",
+          "title_tr": "Belge yapısı, parser ve semantik",
+          "title_en": "Document structure, parsing and semantics",
+          "prerequisites": [],
+          "learning_outcomes": [
+            "DOCTYPE, html, head ve body rollerini belge ağacı üzerinden açıklar.",
+            "Başlık hiyerarşisi ve semantik element seçiminin anlamı nasıl taşıdığını yorumlar."
+          ],
+          "evidence": [
+            "interpret",
+            "produce"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "whatwg-html",
+            "mdn-html-a11y"
+          ]
+        },
+        {
+          "id": "html.text-links-media",
+          "track": "html",
+          "level": "L1",
+          "title_tr": "Metin, link, liste ve medya semantiği",
+          "title_en": "Text, links, lists and media semantics",
+          "prerequisites": [
+            "html.document-semantics"
+          ],
+          "learning_outcomes": [
+            "Link, button, list ve image gibi elementleri görünüme göre değil anlama göre seçer.",
+            "Alt text ve link text kalitesini bağlama göre değerlendirir."
+          ],
+          "evidence": [
+            "produce",
+            "accessibility-review"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "whatwg-html",
+            "mdn-html-a11y"
+          ]
+        },
+        {
+          "id": "html.data-tables",
+          "track": "html",
+          "level": "L2",
+          "title_tr": "Veri tabloları ve ilişkisel başlık yapısı",
+          "title_en": "Data tables and header relationships",
+          "prerequisites": [
+            "html.text-links-media",
+            "sql.relational-thinking"
+          ],
+          "learning_outcomes": [
+            "th, td, caption ve scope kullanımını veri tablosunun yapısına göre kurar.",
+            "Layout table ile gerçek data table arasındaki farkı accessibility açısından açıklar."
+          ],
+          "evidence": [
+            "produce",
+            "debug",
+            "transfer"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "w3c-wai-tables",
+            "whatwg-html"
+          ]
+        },
+        {
+          "id": "html.forms-native-validation",
+          "track": "html",
+          "level": "L2",
+          "title_tr": "Form kontrolleri, label ve native validation",
+          "title_en": "Form controls, labels and native validation",
+          "prerequisites": [
+            "html.document-semantics"
+          ],
+          "learning_outcomes": [
+            "label, fieldset, legend ve input type seçimlerini form anlamına göre uygular.",
+            "Client-side validation ile güvenlik doğrulamasının aynı şey olmadığını açıklar."
+          ],
+          "evidence": [
+            "produce",
+            "debug"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "w3c-wai-forms",
+            "whatwg-html-forms"
+          ]
+        },
+        {
+          "id": "html.semantic-layout-accessibility",
+          "track": "html",
+          "level": "L3",
+          "title_tr": "Semantik layout, source order ve erişilebilirlik",
+          "title_en": "Semantic layout, source order and accessibility",
+          "prerequisites": [
+            "html.data-tables",
+            "html.forms-native-validation"
+          ],
+          "learning_outcomes": [
+            "header, nav, main, section, article ve footer gibi landmark yapılarını anlam ilişkisine göre kurar.",
+            "Source order, keyboard erişimi ve native semantics ilişkisini değerlendirir."
+          ],
+          "evidence": [
+            "interpret",
+            "produce",
+            "accessibility-review"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "mdn-html-a11y",
+            "whatwg-html"
+          ]
+        },
+        {
+          "id": "html.dom-data-attributes",
+          "track": "html",
+          "level": "L3",
+          "title_tr": "DOM kimliği, class ve data-* sözleşmeleri",
+          "title_en": "DOM identity, classes and data-* contracts",
+          "prerequisites": [
+            "html.semantic-layout-accessibility"
+          ],
+          "learning_outcomes": [
+            "id, class ve data-* attribute rollerini birbirinden ayırır.",
+            "HTML ile CSS/JavaScript arasındaki sözleşmeyi DOM üzerinden okuyup kırılgan selector kullanımını teşhis eder."
+          ],
+          "evidence": [
+            "produce",
+            "debug",
+            "transfer"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "whatwg-html"
+          ]
+        },
+        {
+          "id": "html.data-report-structure",
+          "track": "html",
+          "level": "L4",
+          "title_tr": "Analitik raporların semantik HTML yapısı",
+          "title_en": "Semantic HTML structure for analytical reports",
+          "prerequisites": [
+            "html.dom-data-attributes",
+            "excel.data-model-relations"
+          ],
+          "learning_outcomes": [
+            "KPI, veri tablosu, açıklama ve figure içeren bir analitik raporu semantik bölümlere ayırır.",
+            "Görsel bir dashboard düzenini anlam kaybetmeden lineer belge yapısına dönüştürür."
+          ],
+          "evidence": [
+            "architecture-design",
+            "produce"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "whatwg-html",
+            "w3c-wai-tables"
+          ]
+        },
+        {
+          "id": "html.embedded-visualization",
+          "track": "html",
+          "level": "L4",
+          "title_tr": "Chart, figure ve gömülü içerik sözleşmeleri",
+          "title_en": "Charts, figures and embedded-content contracts",
+          "prerequisites": [
+            "html.data-report-structure"
+          ],
+          "learning_outcomes": [
+            "figure/figcaption ve fallback içeriği kullanarak görselleştirmeyi bağlama oturtur.",
+            "iframe, SVG/canvas veya script tabanlı chart çıktılarının erişilebilirlik ve veri aktarımı sınırlarını açıklar."
+          ],
+          "evidence": [
+            "interpret",
+            "architecture-design",
+            "transfer"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "whatwg-html",
+            "mdn-html-a11y"
+          ]
+        },
+        {
+          "id": "html.validation-security-boundaries",
+          "track": "html",
+          "level": "L5",
+          "title_tr": "Markup validation ve güvenlik sınırları",
+          "title_en": "Markup validation and security boundaries",
+          "prerequisites": [
+            "html.forms-native-validation",
+            "html.embedded-visualization"
+          ],
+          "learning_outcomes": [
+            "Markup, form validation ve server-side validation sorumluluklarını birbirinden ayırır.",
+            "Untrusted content'in HTML'e taşınmasında escaping/sanitization ihtiyacını mimari sınır olarak tanımlar."
+          ],
+          "evidence": [
+            "debug",
+            "security-review"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "whatwg-html-forms",
+            "w3c-wai-forms"
+          ]
+        },
+        {
+          "id": "html.performance-delivery",
+          "track": "html",
+          "level": "L5",
+          "title_tr": "Production teslimatı, yükleme ve kalite denetimi",
+          "title_en": "Production delivery, loading and quality review",
+          "prerequisites": [
+            "html.validation-security-boundaries"
+          ],
+          "learning_outcomes": [
+            "Gereksiz DOM karmaşıklığı ve kaynak yükleme kararlarının kullanıcı deneyimine etkisini değerlendirir.",
+            "Bir statik analitik raporu semantic, accessible ve maintainable kalite checklist'iyle denetler."
+          ],
+          "evidence": [
+            "performance-diagnosis",
+            "review"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "whatwg-html",
+            "mdn-html-a11y"
+          ]
+        },
+        {
+          "id": "html.report-architecture",
+          "track": "html",
+          "level": "Expert",
+          "title_tr": "Production analitik web raporu mimarisi",
+          "title_en": "Production analytical web-report architecture",
+          "prerequisites": [
+            "html.performance-delivery",
+            "python.repro-architecture"
+          ],
+          "learning_outcomes": [
+            "Content, presentation, behavior ve data katmanlarının sınırlarını production rapor mimarisinde savunur.",
+            "Template, static generation ve client-side rendering seçeneklerini analitik use-case'e göre karşılaştırır."
+          ],
+          "evidence": [
+            "architecture-defense",
+            "transfer"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "whatwg-html"
+          ]
+        },
+        {
+          "id": "html.accessibility-peer-review",
+          "track": "html",
+          "level": "Expert",
+          "title_tr": "Erişilebilirlik ve semantik peer review",
+          "title_en": "Accessibility and semantic peer review",
+          "prerequisites": [
+            "html.report-architecture"
+          ],
+          "learning_outcomes": [
+            "Bilinmeyen bir HTML veri ürününü semantics, keyboard flow, table/form structure ve source order açısından review eder.",
+            "Erişilebilirlik düzeltmelerini yalnızca ARIA ekleyerek değil native HTML semantiğini önceleyerek önerir."
+          ],
+          "evidence": [
+            "review",
+            "architecture-defense"
+          ],
+          "practice_layers": [
+            "mental_model",
+            "worked_example",
+            "guided_practice",
+            "independent_practice",
+            "debugging",
+            "transfer",
+            "retention"
+          ],
+          "source_ids": [
+            "mdn-html-a11y",
+            "w3c-wai-tables",
+            "w3c-wai-forms"
           ]
         }
       ]
