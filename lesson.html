@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Data Analyst Learning OS production lesson runtime.">
+  <title>Ders · Data Analyst Learning OS</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="lesson.css">
+</head>
+<body class="lesson-page">
+  <header class="lesson-topbar">
+    <a class="lesson-brand" href="index.html">DA Learning OS</a>
+    <div class="lesson-top-actions">
+      <span id="lessonStatus" class="pill">Yükleniyor</span>
+      <button id="lessonLanguage" class="ghost">EN</button>
+    </div>
+  </header>
+
+  <main class="lesson-main">
+    <div id="lessonError" class="lesson-error hidden" role="alert"></div>
+
+    <section id="lessonHero" class="lesson-hero panel hidden">
+      <div>
+        <span id="lessonMeta" class="eyebrow"></span>
+        <h1 id="lessonTitle"></h1>
+        <p id="lessonSubtitle"></p>
+      </div>
+      <div class="lesson-progress-card">
+        <div class="lesson-progress-head"><span id="progressLabel">İlerleme</span><strong id="progressValue">0%</strong></div>
+        <div class="lesson-progress-track"><span id="progressBar"></span></div>
+        <small id="lessonEstimate"></small>
+      </div>
+    </section>
+
+    <section id="lessonContext" class="lesson-context hidden">
+      <article class="panel lesson-context-card">
+        <span class="eyebrow" id="whyLabel">NEDEN ÖNEMLİ?</span>
+        <p id="whyText"></p>
+      </article>
+      <article class="panel lesson-context-card">
+        <span class="eyebrow" id="objectivesLabel">HEDEFLER</span>
+        <ul id="objectiveList"></ul>
+      </article>
+    </section>
+
+    <section id="lessonWorkspace" class="lesson-workspace hidden">
+      <aside class="lesson-outline panel">
+        <div class="outline-head">
+          <strong id="outlineTitle">Ders akışı</strong>
+          <small id="outlineHint">Tamamlamak mastery anlamına gelmez.</small>
+        </div>
+        <nav id="lessonOutline"></nav>
+      </aside>
+
+      <article class="lesson-reader panel">
+        <div class="lesson-section-meta">
+          <span id="sectionLayer" class="pill"></span>
+          <span id="sectionPosition"></span>
+        </div>
+        <h2 id="sectionTitle"></h2>
+        <p id="sectionBody" class="lesson-body"></p>
+
+        <div id="sectionDetails"></div>
+
+        <div id="responsePanel" class="response-panel hidden">
+          <label for="sectionResponse" id="responseLabel">Yanıt taslağın</label>
+          <textarea id="sectionResponse" rows="7" placeholder="Kararını ve gerekçeni yaz."></textarea>
+          <small id="responseHint">Bu yanıt yalnızca ilerleme kaydıdır; doğruluk değerlendirmesi değildir.</small>
+        </div>
+
+        <div class="lesson-section-actions">
+          <button id="prevSection" class="secondary">Önceki</button>
+          <button id="completeSection" class="primary">Bölümü tamamla</button>
+          <button id="nextSection" class="secondary">Sonraki</button>
+        </div>
+        <p id="sectionFeedback" class="lesson-feedback"></p>
+      </article>
+    </section>
+
+    <section id="masteryEvidence" class="panel mastery-evidence hidden">
+      <div class="section-title">
+        <span class="eyebrow">MASTERY EVIDENCE</span>
+        <h2 id="evidenceTitle">Kanıt taslakları</h2>
+        <p id="evidenceIntro">Bu alanlar tamamlanma yüzdesini artırmaz. Mastery için üretim ve transfer kanıtı ayrı değerlendirilir.</p>
+      </div>
+      <div id="evidenceGrid" class="evidence-grid"></div>
+    </section>
+
+    <section id="retentionPanel" class="panel retention-panel hidden">
+      <div class="section-title">
+        <span class="eyebrow">RETENTION</span>
+        <h2 id="retentionTitle">Gecikmeli geri çağırma planı</h2>
+      </div>
+      <div id="retentionList"></div>
+    </section>
+
+    <section id="lessonSources" class="panel lesson-sources hidden">
+      <div class="section-title">
+        <span class="eyebrow">SOURCES</span>
+        <h2 id="sourcesTitle">Kaynaklar</h2>
+      </div>
+      <div id="sourceList"></div>
+    </section>
+  </main>
+
+  <script type="module" src="lesson-page.mjs"></script>
+</body>
+</html>
