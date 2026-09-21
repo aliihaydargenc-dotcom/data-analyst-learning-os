@@ -3,6 +3,85 @@ import {DUCKDB_VERSION,DUCKDB_BUNDLES} from './duckdb-config.mjs';
 import {compareResultSets} from './sql-result-evaluator.mjs';
 
 const FIXTURES=Object.freeze({
+  'sql-join-cardinality-v1':{
+    table:'booking_fact',
+    visibleSetup:`
+      DROP TABLE IF EXISTS booking_guest;
+      DROP TABLE IF EXISTS hotel_dim;
+      DROP TABLE IF EXISTS booking_fact;
+      CREATE TABLE booking_fact(
+        BOOKING_ID VARCHAR,
+        HOTEL_ID VARCHAR,
+        REVENUE_EUR INTEGER
+      );
+      CREATE TABLE hotel_dim(
+        HOTEL_ID VARCHAR,
+        HOTEL_NAME VARCHAR
+      );
+      CREATE TABLE booking_guest(
+        BOOKING_ID VARCHAR,
+        GUEST_ID VARCHAR
+      );
+      INSERT INTO hotel_dim VALUES
+        ('H2','Boreal'),
+        ('H1','Aurora');
+      INSERT INTO booking_fact VALUES
+        ('B003','H2',900),
+        ('B001','H1',500),
+        ('B002','H1',700);
+      INSERT INTO booking_guest VALUES
+        ('B001','G01'),
+        ('B003','G03'),
+        ('B001','G02');
+    `,
+    edgeSetup:`
+      DROP TABLE IF EXISTS booking_guest;
+      DROP TABLE IF EXISTS hotel_dim;
+      DROP TABLE IF EXISTS booking_fact;
+      CREATE TABLE booking_fact(
+        BOOKING_ID VARCHAR,
+        HOTEL_ID VARCHAR,
+        REVENUE_EUR INTEGER
+      );
+      CREATE TABLE hotel_dim(
+        HOTEL_ID VARCHAR,
+        HOTEL_NAME VARCHAR
+      );
+      CREATE TABLE booking_guest(
+        BOOKING_ID VARCHAR,
+        GUEST_ID VARCHAR
+      );
+      INSERT INTO hotel_dim VALUES
+        ('H8','Delta'),
+        ('H7','Cedar');
+      INSERT INTO booking_fact VALUES
+        ('E4','H8',600),
+        ('E1','H7',1000),
+        ('E3','H8',400),
+        ('E2','H7',1200);
+      INSERT INTO booking_guest VALUES
+        ('E1','X1'),
+        ('E3','X4'),
+        ('E1','X2'),
+        ('E4','X6'),
+        ('E3','X5'),
+        ('E1','X3');
+    `,
+    referenceSql:`
+      SELECT
+        b.BOOKING_ID,
+        h.HOTEL_NAME,
+        COUNT(g.GUEST_ID) AS GUEST_COUNT,
+        MAX(b.REVENUE_EUR) AS BOOKING_REVENUE
+      FROM booking_fact AS b
+      JOIN hotel_dim AS h
+        ON h.HOTEL_ID = b.HOTEL_ID
+      LEFT JOIN booking_guest AS g
+        ON g.BOOKING_ID = b.BOOKING_ID
+      GROUP BY b.BOOKING_ID, h.HOTEL_NAME
+      ORDER BY b.BOOKING_ID
+    `
+  },
   'sql-aggregation-grain-v1':{
     table:'stay_charge_cases',
     visibleSetup:`

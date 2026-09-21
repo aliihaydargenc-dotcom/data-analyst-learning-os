@@ -1,0 +1,206 @@
+{
+  "id": "sql.join-cardinality.001",
+  "module_id": "sql.join-cardinality",
+  "track": "sql",
+  "level": "L2",
+  "status": "production-candidate",
+  "title_tr": "JOIN neden satır çoğaltır? Cardinality, fan-out ve doğru sonuç grain'i",
+  "title_en": "Why do JOINs multiply rows? Cardinality, fan-out, and correct result grain",
+  "subtitle_tr": "Bu ders JOIN türlerini ezberletmek yerine iki veri tanesinin anahtar üzerinden nasıl birleştiğini, 1:1 / 1:N / N:N ilişkilerin satır sayısını neden değiştirdiğini ve revenue gibi ölçülerin fan-out yüzünden nasıl sessizce şişebildiğini kanıt üzerinden öğretir.",
+  "subtitle_en": "This lesson goes beyond memorizing JOIN types. It teaches how two grains combine through keys, why 1:1 / 1:N / N:N relationships change row counts, and how measures such as revenue can be silently inflated by fan-out.",
+  "estimated_minutes_range": [
+    70,
+    110
+  ],
+  "why_it_matters_tr": "JOIN hatalarının tehlikeli yanı çoğu zaman sorgunun çalışması ve sonucun ikna edici görünmesidir. Booking tablosundaki tek revenue satırı iki guest satırıyla eşleştiğinde aynı revenue iki kez görünür; sonradan SUM yapılırsa KPI şişer. LEFT JOIN sonrası sağ tablodaki bir koşulu WHERE'e koymak unmatched kayıtları sessizce eleyebilir. Güçlü analist JOIN yazmadan önce her iki tarafın grain'ini, join key tekilliğini, beklenen cardinality'yi ve join sonrası hedef grain'i söyler; sonra satır sayısı ve measure reconciliation ile varsayımı doğrular.",
+  "why_it_matters_en": "JOIN errors are dangerous because the query often runs and the output can look plausible. If one booking revenue row matches two guest rows, the revenue appears twice and a later SUM inflates the KPI. A predicate on the right table in WHERE after a LEFT JOIN can silently remove unmatched rows. A strong analyst states both input grains, key uniqueness, expected cardinality, and target output grain before writing the JOIN, then verifies row counts and measure reconciliation.",
+  "prerequisites": [
+    "sql.aggregation-grain.001"
+  ],
+  "learning_objectives": [
+    "1:1, 1:N ve N:N ilişkilerin join sonucundaki satır sayısını ve result grain'i nasıl etkilediğini önceden tahmin etmek.",
+    "Join key tekilliğini iki tarafta ayrı ayrı ölçmek ve beklenen cardinality ile karşılaştırmak.",
+    "Fan-out nedeniyle tekrar eden fact ölçülerini teşhis etmek ve aggregate sonucu şişirmeden doğru grain'e geri dönmek.",
+    "INNER JOIN ile LEFT JOIN arasındaki korunacak popülasyon farkını ve ON/WHERE predicate yerleşiminin outer join sonucuna etkisini açıklamak.",
+    "Join sonrası row-count, uniqueness ve measure-reconciliation kontrolleriyle sorgu doğruluğunu kanıtlamak."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "Kaynak grain, sonuç grain, GROUP BY ve aggregate sonrası tekrar eden ölçü riskini açıklayabiliyor musun?",
+      "if_no_tr": "Önce `sql.aggregation-grain.001` dersini tamamla veya aynı kavramları bağımsız sorgularla kanıtla; JOIN fan-out teşhisi aggregate grain bilgisinin üzerine kuruludur."
+    }
+  ],
+  "lab": {
+    "id": "sql-join-cardinality-v1",
+    "engine": "DuckDB-Wasm",
+    "target_semantics": "T-SQL-compatible JOIN + GROUP BY subset",
+    "requires_for_section": "independent-practice",
+    "title_tr": "Semantic SQL Lab · 1:N join ve fan-out kontrolü",
+    "title_en": "Semantic SQL Lab · 1:N join and fan-out control",
+    "task_tr": "booking_fact, hotel_dim ve booking_guest tablolarını kullanarak her booking için tek satır üret. Çıktı kolonları sırasıyla BOOKING_ID, HOTEL_NAME, GUEST_COUNT, BOOKING_REVENUE olsun. GUEST_COUNT booking'e bağlı non-NULL guest sayısıdır; hiç guest'i olmayan booking'ler de sonuçta kalmalıdır. BOOKING_REVENUE kaynak booking revenue değerini fan-out olmadan korumalıdır. Sonucu BOOKING_ID artan sırada getir.",
+    "task_en": "Using booking_fact, hotel_dim, and booking_guest, return exactly one row per booking with BOOKING_ID, HOTEL_NAME, GUEST_COUNT, and BOOKING_REVENUE in that order. GUEST_COUNT is the number of non-NULL guests linked to the booking; bookings with no guests must remain in the result. BOOKING_REVENUE must preserve the source booking revenue without fan-out inflation. Order by BOOKING_ID ascending.",
+    "schema": "booking_fact(BOOKING_ID VARCHAR PK-like, HOTEL_ID VARCHAR, REVENUE_EUR INTEGER); hotel_dim(HOTEL_ID VARCHAR unique, HOTEL_NAME VARCHAR); booking_guest(BOOKING_ID VARCHAR, GUEST_ID VARCHAR)",
+    "starter_sql": "SELECT\n    b.BOOKING_ID,\n    h.HOTEL_NAME,\n    COUNT(g.GUEST_ID) AS GUEST_COUNT,\n    SUM(b.REVENUE_EUR) AS BOOKING_REVENUE\nFROM booking_fact AS b\nJOIN hotel_dim AS h\n  ON h.HOTEL_ID = b.HOTEL_ID\nLEFT JOIN booking_guest AS g\n  ON g.BOOKING_ID = b.BOOKING_ID\nGROUP BY b.BOOKING_ID, h.HOTEL_NAME\nORDER BY b.BOOKING_ID;",
+    "engine_note_tr": "Bu alıştırma tarayıcıda DuckDB-Wasm ile çalışır. Ölçülen JOIN, LEFT JOIN, GROUP BY, COUNT ve tek fact ölçüsünü koruma davranışı bu görevde T-SQL hedefiyle uyumlu alt kümedir. SQL Server'a özgü optimizer join algoritmaları ve execution-plan ayrıntıları daha ileri production derslerinde ayrıca ele alınacaktır.",
+    "engine_note_en": "This exercise runs in DuckDB-Wasm in the browser. The measured JOIN, LEFT JOIN, GROUP BY, COUNT, and fact-measure preservation behavior is used here as a subset compatible with the T-SQL learning target. SQL Server-specific physical join algorithms and execution-plan details are handled in later production lessons."
+  },
+  "sections": [
+    {
+      "id": "join-grain",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: JOIN kolon eklemek değil, eşleşen satır çiftleri üretmektir",
+      "title_en": "1. Mental model: a JOIN produces matching row combinations",
+      "body_tr": "Bir JOIN'i 'sağ tablodan birkaç kolon eklemek' diye düşünmek cardinality hatalarının ana kaynağıdır. Daha doğru model şudur: sol taraftaki her satır, ON koşulunu sağlayan sağ satırlarla eşleşir ve her eşleşme sonuçta bir kombinasyon üretir. Sol satırın sağda iki eşleşmesi varsa sonuçta iki satır oluşur. Sağ taraf join key üzerinde tekilse 1:N ilişkinin N tarafı solda olduğunda satır sayısı korunabilir; sağ taraf da tekrar içeriyorsa fan-out oluşabilir. Bu nedenle JOIN'den önce iki tablonun grain'i ve key tekilliği bilinmelidir.",
+      "body_en": "Thinking of a JOIN as 'adding columns from another table' hides cardinality risk. A better model is that every left row is paired with every right row that satisfies the ON condition, producing one output combination per match. If a left row has two matches on the right, two result rows are created. Row-count preservation therefore depends on input grain and key uniqueness, not on JOIN syntax alone.",
+      "checks": [
+        "Her JOIN'den önce sol grain, sağ grain ve join key tekilliğini ayrı yaz.",
+        "Bir key'in adı aynı diye iki tabloda da tekil olduğunu varsayma.",
+        "JOIN sonrası satır sayısının artması otomatik olarak hata değildir; hedef grain'e göre yorumlanmalıdır."
+      ]
+    },
+    {
+      "id": "cardinality-types",
+      "layer": "mental_model",
+      "title_tr": "2. Cardinality: 1:1, 1:N ve N:N satır davranışını önceden tahmin et",
+      "title_en": "2. Cardinality: predict row behavior for 1:1, 1:N, and N:N",
+      "body_tr": "1:1 ilişkide her iki tarafta join key tekildir ve eşleşen kayıt başına en fazla bir kombinasyon beklenir. 1:N ilişkide bir taraftaki tek kayıt diğer tarafta birden fazla kayıtla eşleşir; sonuç grain'i genellikle N tarafının detayına doğru genişler. N:N ilişkide aynı key iki tarafta da tekrar ediyorsa eşleşmeler çarpımsal kombinasyon üretir. Örneğin solda aynı key için 2, sağda 3 satır varsa o key 6 join satırı üretebilir. Cardinality bu yüzden yalnızca modelleme terimi değil, sonuç doğruluğunu belirleyen hesap kuralıdır.",
+      "body_en": "In a 1:1 relationship, the join key is unique on both sides and each matching entity produces at most one combination. In 1:N, one entity matches multiple detail rows and the result grain usually expands toward the N side. In N:N, repeated keys on both sides produce multiplicative combinations: two left rows and three right rows for the same key can produce six joined rows.",
+      "checks": [
+        "Beklenen cardinality'yi veri üzerinde COUNT ve COUNT(DISTINCT key) ile doğrula.",
+        "N:N ilişki görülünce otomatik DISTINCT kullanma; önce business grain'i ve ilişkiyi çöz.",
+        "Result grain'in JOIN'den sonra değişip değişmediğini açıkça yeniden tanımla."
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "3. Worked example: guest join revenue'yu neden ikiye katlayabilir?",
+      "title_en": "3. Worked example: why can a guest join double booking revenue?",
+      "body_tr": "booking_fact tablosunda B001 booking'i bir kez ve REVENUE_EUR=500 ile bulunuyor. booking_guest tablosunda aynı booking için iki guest satırı varsa doğrudan LEFT JOIN sonrası B001 iki satır olur ve revenue her iki satırda da 500 görünür. Bu guest-grain result set üzerinde `SUM(REVENUE_EUR)` yapmak 1000 üretir; kaynak booking revenue ise 500'dür. Eğer hedef bir satır/booking ise guest sayısını COUNT(g.GUEST_ID) ile hesaplayıp booking revenue'yu aynı booking grubu içinde MAX/MIN gibi grain'i koruyan bir expression ile tek değere indirmek mümkündür; önemli olan bu tercihin kaynakta booking başına tek revenue olduğu varsayımına dayanmasıdır.",
+      "body_en": "Suppose booking_fact contains B001 once with REVENUE_EUR=500 and booking_guest contains two guest rows for B001. A direct LEFT JOIN creates two B001 rows and repeats 500 on both. Summing revenue at that joined guest grain produces 1000 even though source booking revenue is 500. If the target output is one row per booking, guest rows can be counted while the single source revenue value is preserved with a grain-safe expression such as MAX or MIN, provided the one-revenue-per-booking assumption is valid.",
+      "code": "SELECT\n    b.BOOKING_ID,\n    h.HOTEL_NAME,\n    COUNT(g.GUEST_ID) AS GUEST_COUNT,\n    MAX(b.REVENUE_EUR) AS BOOKING_REVENUE\nFROM booking_fact AS b\nJOIN hotel_dim AS h\n  ON h.HOTEL_ID = b.HOTEL_ID\nLEFT JOIN booking_guest AS g\n  ON g.BOOKING_ID = b.BOOKING_ID\nGROUP BY b.BOOKING_ID, h.HOTEL_NAME\nORDER BY b.BOOKING_ID;",
+      "explanation_tr": "hotel_dim tarafında HOTEL_ID tekilse booking_fact → hotel_dim join'i many-to-one olarak booking satır sayısını korur. booking_guest ise booking başına birden fazla satır taşıyabilir ve result grain'i guest detayına genişletir. GROUP BY booking grain'ine geri döner; COUNT(g.GUEST_ID) guest sayısını verir. LEFT JOIN sayesinde hiç guest'i olmayan booking kalır ve COUNT(non-null guest id) 0 olur.",
+      "explanation_en": "If HOTEL_ID is unique in hotel_dim, booking_fact → hotel_dim behaves many-to-one and preserves booking row count. booking_guest can contain multiple rows per booking and expands the intermediate result to guest detail. GROUP BY returns to booking grain, COUNT(g.GUEST_ID) counts matched guests, and LEFT JOIN preserves bookings with no guest rows."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "4. Rehberli uygulama: sorgu çalışmadan join satır sayısını hesapla",
+      "title_en": "4. Guided practice: calculate join row counts before execution",
+      "body_tr": "Bir booking tablosunda B1, B2 ve B3 olmak üzere üç booking bulunduğunu düşün. guest tablosunda B1 için 2, B2 için 0, B3 için 3 guest satırı var. Önce INNER JOIN ve LEFT JOIN sonrası kaç ara satır oluşacağını hesapla. Sonra `COUNT(*)` ile `COUNT(g.GUEST_ID)` değerlerini booking bazında tahmin et. Özellikle guest'i olmayan B2 için LEFT JOIN'in koruduğu placeholder satır nedeniyle COUNT(*) değerinin 1 olabileceğini, COUNT(g.GUEST_ID) değerinin ise 0 olduğunu açıklamaya çalış.",
+      "body_en": "Assume three bookings: B1 has two guest rows, B2 has none, and B3 has three. Before executing SQL, calculate the intermediate row count for INNER JOIN and LEFT JOIN. Then predict booking-level COUNT(*) versus COUNT(g.GUEST_ID). For B2, explain why a preserved LEFT JOIN row can make COUNT(*) equal 1 while COUNT(non-null guest id) remains 0.",
+      "prompts": [
+        "INNER JOIN kullanırsan guest'i olmayan booking neden tamamen kaybolur?",
+        "LEFT JOIN sonrası sağ tablo kolonuna WHERE koşulu yazmak unmatched booking'leri nasıl etkileyebilir?",
+        "Join öncesi 3 booking revenue toplamı ile join sonrası tekrar eden satırlardaki raw SUM neden farklı olabilir?"
+      ]
+    },
+    {
+      "id": "independent-practice",
+      "layer": "independent_practice",
+      "title_tr": "5. Bağımsız üretim: booking grain'ini iki fixture üzerinde koru",
+      "title_en": "5. Independent production: preserve booking grain across two fixtures",
+      "body_tr": "Aşağıdaki Semantic SQL Lab'da üç tabloyu birleştir ve sonuçta tam olarak bir satır/booking grain'ini koru. Görünür fixture içinde 0, 1 ve 2 guest'li booking'ler; edge fixture içinde farklı hotel değerleri ile 0, 2 ve 3 guest'li booking'ler bulunur. Evaluator keyword aramaz; kolon sözleşmesi, guest sayısı, booking revenue değeri ve row order iki fixture üzerinde referans sonuçla eşleşmelidir. Lab geçmeden bölüm tamamlanamaz. Lab sonrasında yanıt alanında her join'in cardinality varsayımını ve revenue reconciliation kontrolünü yaz.",
+      "body_en": "Use the Semantic SQL Lab to join three tables while preserving exactly one output row per booking. The visible fixture includes bookings with 0, 1, and 2 guests; the edge fixture changes hotel values and uses 0, 2, and 3 guests. The evaluator does not inspect keywords; output columns, guest counts, booking revenue values, and row order must match the reference on both fixtures. Then state the cardinality assumption for each join and the revenue reconciliation check.",
+      "requires_lab_pass": "sql-join-cardinality-v1",
+      "evidence_required": [
+        "semantic_lab_pass_visible_and_edge_fixture",
+        "left_and_right_grain_statement",
+        "cardinality_and_key_uniqueness_statement",
+        "revenue_reconciliation_check"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "6. Debugging: DISTINCT fan-out'u çözmez, yalnızca semptomu saklayabilir",
+      "title_en": "6. Debugging: DISTINCT can hide fan-out instead of fixing it",
+      "body_tr": "Revenue join sonrası iki katına çıktığında ilk refleks `SELECT DISTINCT` veya rastgele `GROUP BY` eklemek olmamalıdır. DISTINCT yalnızca tamamen aynı çıktı satırlarını birleştirir; farklı guest id veya başka detay kolonları varsa çoğalma devam eder. Daha kötüsü, duplicate satırları görünmez yapıp veri modelindeki N:N problemini saklayabilir. Debug sırası grain → key uniqueness → eşleşme sayısı → row-count delta → measure reconciliation olmalıdır. LEFT JOIN kullanılıyorsa sağ taraf predicate'lerinin ON ve WHERE konumları da ayrı kontrol edilmelidir; outer join sonucunu değiştirebilirler.",
+      "body_en": "When revenue doubles after a join, the first reaction should not be SELECT DISTINCT or an arbitrary GROUP BY. DISTINCT only removes fully duplicate output rows and can hide rather than solve an N:N relationship. A better debugging sequence is grain → key uniqueness → match counts → row-count delta → measure reconciliation. For LEFT JOIN, also inspect whether right-side predicates belong in ON or WHERE because placement can change whether unmatched left rows survive.",
+      "diagnostic_sequence": [
+        "Her input için bir satırın neyi temsil ettiğini ve join key'i yaz.",
+        "Her iki tarafta key başına satır sayısı dağılımını ölç.",
+        "Beklenen 1:1 / 1:N / N:N cardinality ile gerçek veriyi karşılaştır.",
+        "JOIN öncesi ve sonrası row count ile distinct business key sayısını karşılaştır.",
+        "Fact measure toplamını join öncesi ve hedef grain'e döndükten sonra reconcile et.",
+        "Outer join varsa sağ tablo filtrelerinin ON/WHERE yerleşimini test et; DISTINCT ile semptom saklama."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "7. Transfer: aynı cardinality problemi SQL dışında da aynıdır",
+      "title_en": "7. Transfer: cardinality is the same problem outside SQL",
+      "body_tr": "Cardinality bir SQL keyword konusu değildir. pandas merge sırasında right key tekrar ederse satır sayısı genişler; Excel Data Model'de dimension tarafındaki duplicate key relationship doğruluğunu bozar; Qlik'te aynı alan isimleri beklenmeyen association ve synthetic-key yapıları doğurabilir; bir HTML raporuna join edilmiş denormalize dataset gönderildiğinde aynı business entity birden fazla `<tr>` ile temsil edilebilir. Araç değişse de kontrol sözleşmesi aynıdır: grain'i tanımla, key uniqueness'i ölç, beklenen multiplicity'yi yaz ve toplamları reconcile et.",
+      "body_en": "Cardinality is not a SQL-keyword issue. A pandas merge expands rows when the right key repeats; duplicate dimension keys damage relationship assumptions in Excel Data Model; Qlik field associations can create unintended relationship structures; and a denormalized dataset rendered to HTML can represent one business entity in multiple rows. Across tools, define grain, measure key uniqueness, state expected multiplicity, and reconcile totals.",
+      "transfer_tasks": [
+        {
+          "tool": "Python / pandas",
+          "task_tr": "booking_fact ile hotel_dim merge'i için `validate='many_to_one'` benzeri bir executable cardinality contract'ın hangi veri kalitesi hatasını erken yakalayacağını açıkla."
+        },
+        {
+          "tool": "Excel Data Model",
+          "task_tr": "Fact tarafında HOTEL_ID tekrar ederken dimension tarafında neden tekillik beklendiğini ve duplicate dimension key'in measure sonuçlarını nasıl riske attığını açıkla."
+        },
+        {
+          "tool": "Qlik",
+          "task_tr": "İki tabloda birden fazla ortak alanın association yapısını değiştirmesinin cardinality/fan-out benzeri analitik riske nasıl dönüşebileceğini kontrol planı olarak yaz."
+        },
+        {
+          "tool": "HTML",
+          "task_tr": "Booking grain beklenen bir raporda guest-level join sonrası aynı booking'in birden fazla satır görünmesini UI sorunu değil veri-grain sorunu olarak nasıl teşhis edeceğini belirt."
+        }
+      ]
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: JOIN syntax'ını değil multiplicity hesabını hatırla",
+      "title_en": "8. Retrieval: retrieve multiplicity reasoning, not JOIN syntax",
+      "body_tr": "D+1'de 1:1, 1:N ve N:N ilişkileri yalnızca tanımlamak yerine örnek key frekanslarından join satır sayısını hesapla. D+7'de LEFT JOIN, zero-match kayıt ve COUNT(*)/COUNT(column) içeren yeni bir fixture için sonucu çalıştırmadan tahmin et. D+30'da başka bir domain'de toplam measure'ı şişiren bir join'i grain ve key uniqueness üzerinden teşhis et; DISTINCT kullanmadan doğru target grain'e dön ve toplamları reconcile et.",
+      "body_en": "On D+1, calculate join row counts from key frequencies for 1:1, 1:N, and N:N examples rather than merely defining the terms. On D+7, predict a new LEFT JOIN fixture containing zero-match rows plus COUNT(*)/COUNT(column). On D+30, diagnose an inflated measure in another domain using grain and key uniqueness, restore the target grain without DISTINCT, and reconcile totals.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "cardinality-row-count-prediction"
+        },
+        {
+          "day": 7,
+          "evidence": "left-join-zero-match-output-prediction"
+        },
+        {
+          "day": 30,
+          "evidence": "transfer-debugging-fanout-and-reconciliation"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "1:1, 1:N ve N:N cardinality'yi key frekansları üzerinden açıklayıp join satır sayısını nasıl türettiğini göster.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Verilen iki tablo için join öncesi key multiplicity'sinden result grain, row count ve fan-out riskini sorgu çalıştırmadan tahmin et.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Zero-match booking'leri koruyan, guest count'u doğru veren ve booking revenue'yu fan-out olmadan booking grain'inde tutan sorguyu bağımsız üret.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Aynı cardinality ve reconciliation problemini pandas, Excel Data Model, Qlik veya başka bir business domain'e taşı ve executable kontrol öner.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "ms-from-join",
+    "ms-pk-fk",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}
