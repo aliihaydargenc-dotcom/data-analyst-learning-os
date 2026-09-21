@@ -1,0 +1,268 @@
+{
+  "id": "excel.dynamic-arrays.001",
+  "module_id": "excel.dynamic-arrays",
+  "track": "excel",
+  "level": "L2",
+  "status": "production-candidate",
+  "title_tr": "Dynamic arrays ve modern formüller",
+  "title_en": "Dynamic arrays and modern formulas",
+  "subtitle_tr": "Dynamic arrays ve modern formüller konusunu formül ezberi yerine veri, context, refresh ve validation sözleşmesiyle öğren.",
+  "subtitle_en": "Learn dynamic arrays and modern formulas through data, context, refresh, and validation contracts rather than formula memorization.",
+  "estimated_minutes_range": [
+    80,
+    115
+  ],
+  "why_it_matters_tr": "Dynamic array formülü tek hücrede tanımlanıp birden fazla hücreye spill edebilir. FILTER boolean include dizisiyle satır seçer, UNIQUE distinct değerleri üretir, SORT sonucu sıralar. Spill alanı fiziksel hücrelerle çakışırsa sonuç #SPILL! hatasına düşebilir. Spill range'in içine manuel değer yazmak, linked workbook davranışını göz ardı etmek veya FILTER `if_empty` contract'ını tanımlamamak kırılgan rapor oluşturur. Bu nedenle mastery yalnız doğru seçeneği bilmek değil, workbook davranışını evidence ile doğrulamak ve aynı analitik contract'ı farklı araca transfer edebilmektir.",
+  "why_it_matters_en": "Dynamic array formulas can spill from one formula cell into multiple result cells. FILTER selects by a Boolean include array, UNIQUE returns distinct values, and SORT orders results. Mastery therefore requires evidence-based workbook reasoning and transfer of the same analytical contract to another tool.",
+  "prerequisites": [
+    "excel.logic-lookups.001"
+  ],
+  "learning_objectives": [
+    "Dynamic arrays ve modern formüller davranışını input, grain/context ve refresh sözleşmesiyle açıklar.",
+    "Sessiz yanlış sonuç üretebilecek key/type/reference risklerini evidence ile teşhis eder.",
+    "Semantic Case Lab'da doğru Excel/Power Query/Data Model kararını verir ve gerekçelendirir.",
+    "Aynı analitik contract'ı SQL, Python veya Qlik'e transfer eder."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "Önkoşul kanıtları hazır mı: excel.logic-lookups.001?",
+      "if_no_tr": "Önkoşul production derslerini tamamla veya eşdeğer mastery evidence üret."
+    }
+  ],
+  "case_lab": {
+    "id": "excel-dynamic-arrays-case-v1",
+    "title_tr": "Semantic Excel Case Lab · Dynamic arrays ve modern formüller",
+    "title_en": "Semantic Excel Case Lab · Dynamic arrays and modern formulas",
+    "task_tr": "Her senaryoda business contract ve Excel semantiğine en uygun kararı seç. Tüm vakalar exact answer key ile doğru olmadan independent-production gate açılmaz.",
+    "task_en": "Choose the decision that best matches the business contract and Excel semantics. All cases must match the answer key before the independent-production gate opens.",
+    "requires_for_section": "dynamic-arrays-production",
+    "cases": [
+      {
+        "id": "case-1",
+        "prompt_tr": "FILTER fonksiyonundaki `include` argümanı ne üretmelidir?",
+        "prompt_en": "FILTER fonksiyonundaki `include` argümanı ne üretmelidir?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Aynı yükseklik/genişlikte Boolean seçim dizisi",
+            "label_en": "Aynı yükseklik/genişlikte Boolean seçim dizisi"
+          },
+          {
+            "id": "b",
+            "label_tr": "Tek bir metin",
+            "label_en": "Tek bir metin"
+          },
+          {
+            "id": "c",
+            "label_tr": "Pivot cache",
+            "label_en": "Pivot cache"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek business contract, Excel context'i ve veri kalitesi varsayımını birlikte korur.",
+        "rationale_en": "The correct option preserves the business contract, Excel context, and data-quality assumptions together."
+      },
+      {
+        "id": "case-2",
+        "prompt_tr": "Dynamic array sonucu büyürken önünde dolu hücre varsa tipik sonuç nedir?",
+        "prompt_en": "Dynamic array sonucu büyürken önünde dolu hücre varsa tipik sonuç nedir?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "#SPILL!",
+            "label_en": "#SPILL!"
+          },
+          {
+            "id": "b",
+            "label_tr": "#NAME?",
+            "label_en": "#NAME?"
+          },
+          {
+            "id": "c",
+            "label_tr": "#NUM!",
+            "label_en": "#NUM!"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek business contract, Excel context'i ve veri kalitesi varsayımını birlikte korur.",
+        "rationale_en": "The correct option preserves the business contract, Excel context, and data-quality assumptions together."
+      },
+      {
+        "id": "case-3",
+        "prompt_tr": "UNIQUE ne üretir?",
+        "prompt_en": "UNIQUE ne üretir?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Distinct satır/kolon değerlerini",
+            "label_en": "Distinct satır/kolon değerlerini"
+          },
+          {
+            "id": "b",
+            "label_tr": "Sadece sayısal toplamı",
+            "label_en": "Sadece sayısal toplamı"
+          },
+          {
+            "id": "c",
+            "label_tr": "Lookup'ın ilk eşleşmesini",
+            "label_en": "Lookup'ın ilk eşleşmesini"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek business contract, Excel context'i ve veri kalitesi varsayımını birlikte korur.",
+        "rationale_en": "The correct option preserves the business contract, Excel context, and data-quality assumptions together."
+      }
+    ]
+  },
+  "sections": [
+    {
+      "id": "mental-model",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: workbook davranışını contract olarak oku",
+      "title_en": "1. Mental model: treat workbook behavior as a contract",
+      "body_tr": "Dynamic array formülü tek hücrede tanımlanıp birden fazla hücreye spill edebilir. FILTER boolean include dizisiyle satır seçer, UNIQUE distinct değerleri üretir, SORT sonucu sıralar. Spill alanı fiziksel hücrelerle çakışırsa sonuç #SPILL! hatasına düşebilir. Bu derste hücre/formül adından önce population, grain, type, refresh ve kullanıcı etkileşimi sözleşmesi yazılır; Excel özelliği bu sözleşmeyi uygulayan mekanizmadır.",
+      "body_en": "Dynamic array formulas can spill from one formula cell into multiple result cells. FILTER selects by a Boolean include array, UNIQUE returns distinct values, and SORT orders results. Start from population, grain, type, refresh, and interaction contracts before choosing an Excel feature.",
+      "checks": [
+        "Business question ve hedef grain'i yaz.",
+        "Input/type ve refresh varsayımlarını görünür yap.",
+        "Formula/UI semptomunu root-cause sayma."
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "2. Worked example: küçük örnekle semantiği kanıtla",
+      "title_en": "2. Worked example: prove semantics with a small example",
+      "body_tr": "`=SORT(UNIQUE(FILTER(Sales[Hotel],Sales[Revenue]>0)))` pozitif gelirli kayıtların hotel listesini filtreleyip unique ve sıralı spill sonucu olarak üretir. Amaç syntax kalıbını ezberlemek değil, aynı business sorusunun hangi context ve veri sözleşmesinde doğru cevaplandığını açıklamaktır.",
+      "body_en": "Use a small example to expose the context and data contract that make the result correct instead of memorizing a syntax pattern.",
+      "code": "// Excel / Power Query / DAX context example",
+      "explanation_tr": "Örnek production reçetesi değildir; gerçek workbook'ta field names, data types, key quality, refresh state ve version compatibility yeniden doğrulanmalıdır.",
+      "explanation_en": "The example is not a production prescription. Validate fields, data types, key quality, refresh state, and version compatibility in the real workbook."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "3. Guided practice: sonucu çalıştırmadan önce tahmin et",
+      "title_en": "3. Guided practice: predict before execution",
+      "body_tr": "Dynamic array formülü tek hücrede tanımlanıp birden fazla hücreye spill edebilir. FILTER boolean include dizisiyle satır seçer, UNIQUE distinct değerleri üretir, SORT sonucu sıralar. Spill alanı fiziksel hücrelerle çakışırsa sonuç #SPILL! hatasına düşebilir. Yeni senaryoda formülün, query step'in veya measure'ın beklenen sonucunu çalıştırmadan önce tahmin et. Tahmin ile gözlem farklıysa önce reference/context/type/grain varsayımlarını kontrol et.",
+      "body_en": "Predict formula, query-step, or measure behavior before execution. If observation differs, inspect reference, context, type, and grain assumptions first.",
+      "prompts": [
+        "Dynamic arrays ve modern formüller için hedef input/output contract'ını yaz.",
+        "Bir edge case seç ve beklenen Excel davranışını tahmin et.",
+        "Sonuç farklıysa ilk üç evidence kontrolün nedir?"
+      ]
+    },
+    {
+      "id": "dynamic-arrays-production",
+      "layer": "independent_practice",
+      "title_tr": "4. Bağımsız üretim: Semantic Excel Case Lab",
+      "title_en": "4. Independent production: Semantic Excel Case Lab",
+      "body_tr": "Semantic Case Lab dynamic arrays ve modern formüller için üç karar senaryosunu değerlendirir. Tüm vakalar doğru olmadan bölüm tamamlanmaz. Sonrasında business rule, Excel context'i, beklenen davranış ve doğrulama kanıtını kısa bir decision record olarak yaz.",
+      "body_en": "The Semantic Case Lab evaluates three decisions for dynamic arrays and modern formulas. All cases must pass before completion, followed by a short decision record with contract and validation evidence.",
+      "requires_case_lab_pass": "excel-dynamic-arrays-case-v1",
+      "evidence_required": [
+        "semantic_case_lab_pass",
+        "business_contract",
+        "excel_context",
+        "validation_evidence"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "5. Debugging: sessiz hatayı görünür evidence'e çevir",
+      "title_en": "5. Debugging: turn silent errors into evidence",
+      "body_tr": "Spill range'in içine manuel değer yazmak, linked workbook davranışını göz ardı etmek veya FILTER `if_empty` contract'ını tanımlamamak kırılgan rapor oluşturur. Debugging sırasında formül, query, data model ve source'u aynı anda değiştirme. Minimal fixture, formula evaluation/query step, type/key kontrolü ve refresh state ile problemi katmanlara ayır; sonra tek değişkenli düzeltmeyi regression kontrolüyle doğrula.",
+      "body_en": "Spill range'in içine manuel değer yazmak, linked workbook davranışını göz ardı etmek veya FILTER `if_empty` contract'ını tanımlamamak kırılgan rapor oluşturur. Separate source, query, model, formula, and presentation evidence before changing one major factor and rerunning regression checks.",
+      "diagnostic_sequence": [
+        "Business result ve grain'i yeniden yaz.",
+        "Source/key/type ve refresh state'i kontrol et.",
+        "Formula/query/DAX context'ini görünür hale getir.",
+        "Minimal fixture ile hatayı yeniden üret.",
+        "Tek değişkenli düzeltme uygula.",
+        "Total/detail ve downstream raporda regression olmadığını doğrula."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "6. Transfer: aynı contract'ı SQL, Python ve Qlik'e taşı",
+      "title_en": "6. Transfer: carry the contract into SQL, Python, and Qlik",
+      "body_tr": "`=SORT(UNIQUE(FILTER(Sales[Hotel],Sales[Revenue]>0)))` pozitif gelirli kayıtların hotel listesini filtreleyip unique ve sıralı spill sonucu olarak üretir. Transferde Excel syntax'ını kopyalamak yerine population, grain, filter context, key/type ve validation contract'ını taşı. SQL, pandas ve Qlik aynı analitik soruyu farklı execution modelleriyle çözer.",
+      "body_en": "Transfer population, grain, filter context, key and type rules, and validation evidence rather than copying Excel syntax into SQL, Python, or Qlik.",
+      "transfer_tasks": [
+        {
+          "tool": "SQL",
+          "task_tr": "Dynamic arrays ve modern formüller business rule'unu SQL set/grain ve key contract'ına çevir."
+        },
+        {
+          "tool": "Python / pandas",
+          "task_tr": "Aynı sonucu dataframe dtype/index/cardinality ve test fixture ile yeniden kur."
+        },
+        {
+          "tool": "Qlik Sense",
+          "task_tr": "Aynı metriği associative state/model/script context'iyle karşılaştır."
+        }
+      ]
+    },
+    {
+      "id": "review",
+      "layer": "mental_model",
+      "title_tr": "7. Review: maintainability ve operability gate'leri",
+      "title_en": "7. Review: maintainability and operability gates",
+      "body_tr": "Spill range'in içine manuel değer yazmak, linked workbook davranışını göz ardı etmek veya FILTER `if_empty` contract'ını tanımlamamak kırılgan rapor oluşturur. Review yalnız doğru sayı üretildiğini değil, source lineage, owner, refresh, version compatibility, kullanıcı input'u ve rollback durumunu da inceler. Yorumlar preference değil evidence → risk → action biçiminde yazılmalıdır.",
+      "body_en": "Review should cover lineage, ownership, refresh behavior, compatibility, user input, and rollback as well as numerical correctness. Comments should be evidence, risk, and action rather than preference."
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: formül ezberi değil invariant",
+      "title_en": "8. Retrieval: retrieve the invariant, not formula trivia",
+      "body_tr": "D+1'de dynamic arrays ve modern formüller için ana invariant'ı dokümana bakmadan açıkla. D+7'de üç yeni workbook senaryosunda sonucu çalıştırmadan tahmin et. D+30'da gerçek bir raporu source→transform→model→formula/presentation zinciriyle audit eden kısa teknik not hazırla.",
+      "body_en": "On D+1 explain the core invariant from memory. On D+7 predict three new workbook scenarios. On D+30 audit a real report across source, transformation, model, formula, and presentation layers.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explain-excel-invariant"
+        },
+        {
+          "day": 7,
+          "evidence": "predict-excel-cases"
+        },
+        {
+          "day": 30,
+          "evidence": "produce-workbook-audit-memo"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "Dynamic arrays ve modern formüller için mekanizma, context ve sınırları formül isminden bağımsız açıkla.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Yeni workbook senaryosunda sonucu execution öncesi tahmin et ve reference/type/key/context etkisini gerekçelendir.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Semantic Excel Case Lab'ı geç ve gerçek bir workbook için validation/reconciliation evidence üret.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Aynı business contract'ı SQL, Python veya Qlik'e taşı ve execution-model farkını açıkla.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "excel-filter",
+    "excel-unique",
+    "excel-dynamic-arrays",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}

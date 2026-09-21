@@ -1,0 +1,269 @@
+{
+  "id": "excel.data-model-relations.001",
+  "module_id": "excel.data-model-relations",
+  "track": "excel",
+  "level": "L4",
+  "status": "production-candidate",
+  "title_tr": "Data Model ve ilişkiler",
+  "title_en": "Data Model and relationships",
+  "subtitle_tr": "Data Model ve ilişkiler konusunu formül ezberi yerine veri, context, refresh ve validation sözleşmesiyle öğren.",
+  "subtitle_en": "Learn data model and relationships through data, context, refresh, and validation contracts rather than formula memorization.",
+  "estimated_minutes_range": [
+    95,
+    135
+  ],
+  "why_it_matters_tr": "Excel Data Model birden çok tabloyu ilişkilerle tek analitik modelde birleştirir. Fact grain ve dimension key uniqueness açık olmalıdır. One-to-many relationship doğru dimension key gerektirir; composite key ihtiyacı varsa Excel Data Model ilişkisi için tekil bir key kolonu üretilmesi gerekebilir. İlişki çizgisi oluştu diye grain'in doğru olduğunu varsaymak veya measure hatasını DISTINCTCOUNT ile maskelemek model problemine formül yaması yapmaktır. Bu nedenle mastery yalnız doğru seçeneği bilmek değil, workbook davranışını evidence ile doğrulamak ve aynı analitik contract'ı farklı araca transfer edebilmektir.",
+  "why_it_matters_en": "Excel Data Model combines multiple tables through relationships. Fact grain and dimension key uniqueness must be explicit, and relationships require a usable single-column key contract. Mastery therefore requires evidence-based workbook reasoning and transfer of the same analytical contract to another tool.",
+  "prerequisites": [
+    "excel.power-query-quality.001",
+    "sql.join-cardinality.001"
+  ],
+  "learning_objectives": [
+    "Data Model ve ilişkiler davranışını input, grain/context ve refresh sözleşmesiyle açıklar.",
+    "Sessiz yanlış sonuç üretebilecek key/type/reference risklerini evidence ile teşhis eder.",
+    "Semantic Case Lab'da doğru Excel/Power Query/Data Model kararını verir ve gerekçelendirir.",
+    "Aynı analitik contract'ı SQL, Python veya Qlik'e transfer eder."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "Önkoşul kanıtları hazır mı: excel.power-query-quality.001, sql.join-cardinality.001?",
+      "if_no_tr": "Önkoşul production derslerini tamamla veya eşdeğer mastery evidence üret."
+    }
+  ],
+  "case_lab": {
+    "id": "excel-data-model-relations-case-v1",
+    "title_tr": "Semantic Excel Case Lab · Data Model ve ilişkiler",
+    "title_en": "Semantic Excel Case Lab · Data Model and relationships",
+    "task_tr": "Her senaryoda business contract ve Excel semantiğine en uygun kararı seç. Tüm vakalar exact answer key ile doğru olmadan independent-production gate açılmaz.",
+    "task_en": "Choose the decision that best matches the business contract and Excel semantics. All cases must match the answer key before the independent-production gate opens.",
+    "requires_for_section": "data-model-relations-production",
+    "cases": [
+      {
+        "id": "case-1",
+        "prompt_tr": "One-to-many ilişkide 'one' tarafında hangi özellik gerekir?",
+        "prompt_en": "One-to-many ilişkide 'one' tarafında hangi özellik gerekir?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Key değerlerinin unique olması",
+            "label_en": "Key değerlerinin unique olması"
+          },
+          {
+            "id": "b",
+            "label_tr": "Her satırın duplicate olması",
+            "label_en": "Her satırın duplicate olması"
+          },
+          {
+            "id": "c",
+            "label_tr": "Sadece text kolon bulunması",
+            "label_en": "Sadece text kolon bulunması"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek business contract, Excel context'i ve veri kalitesi varsayımını birlikte korur.",
+        "rationale_en": "The correct option preserves the business contract, Excel context, and data-quality assumptions together."
+      },
+      {
+        "id": "case-2",
+        "prompt_tr": "Composite key ilişki ihtiyacında Excel Data Model için tipik yaklaşım nedir?",
+        "prompt_en": "Composite key ilişki ihtiyacında Excel Data Model için tipik yaklaşım nedir?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Tek kolonlu birleşik key üretmek",
+            "label_en": "Tek kolonlu birleşik key üretmek"
+          },
+          {
+            "id": "b",
+            "label_tr": "İki ilişkiyi loop yapmak",
+            "label_en": "İki ilişkiyi loop yapmak"
+          },
+          {
+            "id": "c",
+            "label_tr": "PivotTable'a helper row eklemek",
+            "label_en": "PivotTable'a helper row eklemek"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek business contract, Excel context'i ve veri kalitesi varsayımını birlikte korur.",
+        "rationale_en": "The correct option preserves the business contract, Excel context, and data-quality assumptions together."
+      },
+      {
+        "id": "case-3",
+        "prompt_tr": "Fact ve dimension grain'i neden yazılmalıdır?",
+        "prompt_en": "Fact ve dimension grain'i neden yazılmalıdır?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Relationship ve measure doğruluğunu kanıtlamak için",
+            "label_en": "Relationship ve measure doğruluğunu kanıtlamak için"
+          },
+          {
+            "id": "b",
+            "label_tr": "Workbook temasını seçmek için",
+            "label_en": "Workbook temasını seçmek için"
+          },
+          {
+            "id": "c",
+            "label_tr": "FILTER spill alanını büyütmek için",
+            "label_en": "FILTER spill alanını büyütmek için"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek business contract, Excel context'i ve veri kalitesi varsayımını birlikte korur.",
+        "rationale_en": "The correct option preserves the business contract, Excel context, and data-quality assumptions together."
+      }
+    ]
+  },
+  "sections": [
+    {
+      "id": "mental-model",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: workbook davranışını contract olarak oku",
+      "title_en": "1. Mental model: treat workbook behavior as a contract",
+      "body_tr": "Excel Data Model birden çok tabloyu ilişkilerle tek analitik modelde birleştirir. Fact grain ve dimension key uniqueness açık olmalıdır. One-to-many relationship doğru dimension key gerektirir; composite key ihtiyacı varsa Excel Data Model ilişkisi için tekil bir key kolonu üretilmesi gerekebilir. Bu derste hücre/formül adından önce population, grain, type, refresh ve kullanıcı etkileşimi sözleşmesi yazılır; Excel özelliği bu sözleşmeyi uygulayan mekanizmadır.",
+      "body_en": "Excel Data Model combines multiple tables through relationships. Fact grain and dimension key uniqueness must be explicit, and relationships require a usable single-column key contract. Start from population, grain, type, refresh, and interaction contracts before choosing an Excel feature.",
+      "checks": [
+        "Business question ve hedef grain'i yaz.",
+        "Input/type ve refresh varsayımlarını görünür yap.",
+        "Formula/UI semptomunu root-cause sayma."
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "2. Worked example: küçük örnekle semantiği kanıtla",
+      "title_en": "2. Worked example: prove semantics with a small example",
+      "body_tr": "Sales fact'ta HOTEL_ID birçok kez bulunabilir, Hotel dimension'da ise HOTEL_ID bir kez bulunmalıdır. Duplicate dimension key ilişkiyi güvenilmez hale getirir; mixed-grain fact tablolar tek tabloya körlemesine append edilmemelidir. Amaç syntax kalıbını ezberlemek değil, aynı business sorusunun hangi context ve veri sözleşmesinde doğru cevaplandığını açıklamaktır.",
+      "body_en": "Use a small example to expose the context and data contract that make the result correct instead of memorizing a syntax pattern.",
+      "code": "// Excel / Power Query / DAX context example",
+      "explanation_tr": "Örnek production reçetesi değildir; gerçek workbook'ta field names, data types, key quality, refresh state ve version compatibility yeniden doğrulanmalıdır.",
+      "explanation_en": "The example is not a production prescription. Validate fields, data types, key quality, refresh state, and version compatibility in the real workbook."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "3. Guided practice: sonucu çalıştırmadan önce tahmin et",
+      "title_en": "3. Guided practice: predict before execution",
+      "body_tr": "Excel Data Model birden çok tabloyu ilişkilerle tek analitik modelde birleştirir. Fact grain ve dimension key uniqueness açık olmalıdır. One-to-many relationship doğru dimension key gerektirir; composite key ihtiyacı varsa Excel Data Model ilişkisi için tekil bir key kolonu üretilmesi gerekebilir. Yeni senaryoda formülün, query step'in veya measure'ın beklenen sonucunu çalıştırmadan önce tahmin et. Tahmin ile gözlem farklıysa önce reference/context/type/grain varsayımlarını kontrol et.",
+      "body_en": "Predict formula, query-step, or measure behavior before execution. If observation differs, inspect reference, context, type, and grain assumptions first.",
+      "prompts": [
+        "Data Model ve ilişkiler için hedef input/output contract'ını yaz.",
+        "Bir edge case seç ve beklenen Excel davranışını tahmin et.",
+        "Sonuç farklıysa ilk üç evidence kontrolün nedir?"
+      ]
+    },
+    {
+      "id": "data-model-relations-production",
+      "layer": "independent_practice",
+      "title_tr": "4. Bağımsız üretim: Semantic Excel Case Lab",
+      "title_en": "4. Independent production: Semantic Excel Case Lab",
+      "body_tr": "Semantic Case Lab data model ve ilişkiler için üç karar senaryosunu değerlendirir. Tüm vakalar doğru olmadan bölüm tamamlanmaz. Sonrasında business rule, Excel context'i, beklenen davranış ve doğrulama kanıtını kısa bir decision record olarak yaz.",
+      "body_en": "The Semantic Case Lab evaluates three decisions for data model and relationships. All cases must pass before completion, followed by a short decision record with contract and validation evidence.",
+      "requires_case_lab_pass": "excel-data-model-relations-case-v1",
+      "evidence_required": [
+        "semantic_case_lab_pass",
+        "business_contract",
+        "excel_context",
+        "validation_evidence"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "5. Debugging: sessiz hatayı görünür evidence'e çevir",
+      "title_en": "5. Debugging: turn silent errors into evidence",
+      "body_tr": "İlişki çizgisi oluştu diye grain'in doğru olduğunu varsaymak veya measure hatasını DISTINCTCOUNT ile maskelemek model problemine formül yaması yapmaktır. Debugging sırasında formül, query, data model ve source'u aynı anda değiştirme. Minimal fixture, formula evaluation/query step, type/key kontrolü ve refresh state ile problemi katmanlara ayır; sonra tek değişkenli düzeltmeyi regression kontrolüyle doğrula.",
+      "body_en": "İlişki çizgisi oluştu diye grain'in doğru olduğunu varsaymak veya measure hatasını DISTINCTCOUNT ile maskelemek model problemine formül yaması yapmaktır. Separate source, query, model, formula, and presentation evidence before changing one major factor and rerunning regression checks.",
+      "diagnostic_sequence": [
+        "Business result ve grain'i yeniden yaz.",
+        "Source/key/type ve refresh state'i kontrol et.",
+        "Formula/query/DAX context'ini görünür hale getir.",
+        "Minimal fixture ile hatayı yeniden üret.",
+        "Tek değişkenli düzeltme uygula.",
+        "Total/detail ve downstream raporda regression olmadığını doğrula."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "6. Transfer: aynı contract'ı SQL, Python ve Qlik'e taşı",
+      "title_en": "6. Transfer: carry the contract into SQL, Python, and Qlik",
+      "body_tr": "Sales fact'ta HOTEL_ID birçok kez bulunabilir, Hotel dimension'da ise HOTEL_ID bir kez bulunmalıdır. Duplicate dimension key ilişkiyi güvenilmez hale getirir; mixed-grain fact tablolar tek tabloya körlemesine append edilmemelidir. Transferde Excel syntax'ını kopyalamak yerine population, grain, filter context, key/type ve validation contract'ını taşı. SQL, pandas ve Qlik aynı analitik soruyu farklı execution modelleriyle çözer.",
+      "body_en": "Transfer population, grain, filter context, key and type rules, and validation evidence rather than copying Excel syntax into SQL, Python, or Qlik.",
+      "transfer_tasks": [
+        {
+          "tool": "SQL",
+          "task_tr": "Data Model ve ilişkiler business rule'unu SQL set/grain ve key contract'ına çevir."
+        },
+        {
+          "tool": "Python / pandas",
+          "task_tr": "Aynı sonucu dataframe dtype/index/cardinality ve test fixture ile yeniden kur."
+        },
+        {
+          "tool": "Qlik Sense",
+          "task_tr": "Aynı metriği associative state/model/script context'iyle karşılaştır."
+        }
+      ]
+    },
+    {
+      "id": "review",
+      "layer": "mental_model",
+      "title_tr": "7. Review: maintainability ve operability gate'leri",
+      "title_en": "7. Review: maintainability and operability gates",
+      "body_tr": "İlişki çizgisi oluştu diye grain'in doğru olduğunu varsaymak veya measure hatasını DISTINCTCOUNT ile maskelemek model problemine formül yaması yapmaktır. Review yalnız doğru sayı üretildiğini değil, source lineage, owner, refresh, version compatibility, kullanıcı input'u ve rollback durumunu da inceler. Yorumlar preference değil evidence → risk → action biçiminde yazılmalıdır.",
+      "body_en": "Review should cover lineage, ownership, refresh behavior, compatibility, user input, and rollback as well as numerical correctness. Comments should be evidence, risk, and action rather than preference."
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: formül ezberi değil invariant",
+      "title_en": "8. Retrieval: retrieve the invariant, not formula trivia",
+      "body_tr": "D+1'de data model ve ilişkiler için ana invariant'ı dokümana bakmadan açıkla. D+7'de üç yeni workbook senaryosunda sonucu çalıştırmadan tahmin et. D+30'da gerçek bir raporu source→transform→model→formula/presentation zinciriyle audit eden kısa teknik not hazırla.",
+      "body_en": "On D+1 explain the core invariant from memory. On D+7 predict three new workbook scenarios. On D+30 audit a real report across source, transformation, model, formula, and presentation layers.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explain-excel-invariant"
+        },
+        {
+          "day": 7,
+          "evidence": "predict-excel-cases"
+        },
+        {
+          "day": 30,
+          "evidence": "produce-workbook-audit-memo"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "Data Model ve ilişkiler için mekanizma, context ve sınırları formül isminden bağımsız açıkla.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Yeni workbook senaryosunda sonucu execution öncesi tahmin et ve reference/type/key/context etkisini gerekçelendir.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Semantic Excel Case Lab'ı geç ve gerçek bir workbook için validation/reconciliation evidence üret.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Aynı business contract'ı SQL, Python veya Qlik'e taşı ve execution-model farkını açıkla.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "excel-data-model",
+    "excel-relationships",
+    "excel-power-pivot",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}

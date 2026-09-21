@@ -1,0 +1,269 @@
+{
+  "id": "excel.reporting-architecture.001",
+  "module_id": "excel.reporting-architecture",
+  "track": "excel",
+  "level": "Expert",
+  "status": "production-candidate",
+  "title_tr": "Enterprise reporting pack mimarisi",
+  "title_en": "Enterprise reporting pack architecture",
+  "subtitle_tr": "Enterprise reporting pack mimarisi konusunu formül ezberi yerine veri, context, refresh ve validation sözleşmesiyle öğren.",
+  "subtitle_en": "Learn enterprise reporting pack architecture through data, context, refresh, and validation contracts rather than formula memorization.",
+  "estimated_minutes_range": [
+    95,
+    135
+  ],
+  "why_it_matters_tr": "Enterprise reporting pack workbook, Power Query, Data Model, source systems ve distribution layer arasında açık sınırlar kurmalıdır. Raw input, transformation, semantic metric ve presentation aynı sheet'te karıştığında lineage, refresh ve ownership zorlaşır. Her ay workbook kopyalayıp değerleri elle yapıştırmak version drift ve lineage kaybı üretir. Tek bir dev workbook da sınırsız ölçeklenebilir mimari değildir. Bu nedenle mastery yalnız doğru seçeneği bilmek değil, workbook davranışını evidence ile doğrulamak ve aynı analitik contract'ı farklı araca transfer edebilmektir.",
+  "why_it_matters_en": "Enterprise reporting architecture should define clear boundaries across sources, Power Query, Data Model, workbook presentation, distribution, ownership, and refresh operations. Mastery therefore requires evidence-based workbook reasoning and transfer of the same analytical contract to another tool.",
+  "prerequisites": [
+    "excel.automation-governance.001"
+  ],
+  "learning_objectives": [
+    "Enterprise reporting pack mimarisi davranışını input, grain/context ve refresh sözleşmesiyle açıklar.",
+    "Sessiz yanlış sonuç üretebilecek key/type/reference risklerini evidence ile teşhis eder.",
+    "Semantic Case Lab'da doğru Excel/Power Query/Data Model kararını verir ve gerekçelendirir.",
+    "Aynı analitik contract'ı SQL, Python veya Qlik'e transfer eder."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "Önkoşul kanıtları hazır mı: excel.automation-governance.001?",
+      "if_no_tr": "Önkoşul production derslerini tamamla veya eşdeğer mastery evidence üret."
+    }
+  ],
+  "case_lab": {
+    "id": "excel-reporting-architecture-case-v1",
+    "title_tr": "Semantic Excel Case Lab · Enterprise reporting pack mimarisi",
+    "title_en": "Semantic Excel Case Lab · Enterprise reporting pack architecture",
+    "task_tr": "Her senaryoda business contract ve Excel semantiğine en uygun kararı seç. Tüm vakalar exact answer key ile doğru olmadan independent-production gate açılmaz.",
+    "task_en": "Choose the decision that best matches the business contract and Excel semantics. All cases must match the answer key before the independent-production gate opens.",
+    "requires_for_section": "reporting-architecture-production",
+    "cases": [
+      {
+        "id": "case-1",
+        "prompt_tr": "Raw source ve presentation neden ayrı katmanlar olmalıdır?",
+        "prompt_en": "Raw source ve presentation neden ayrı katmanlar olmalıdır?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Lineage, validation ve refresh yönetimini açık tutmak için",
+            "label_en": "Lineage, validation ve refresh yönetimini açık tutmak için"
+          },
+          {
+            "id": "b",
+            "label_tr": "XLOOKUP'ı hızlandırmak için",
+            "label_en": "XLOOKUP'ı hızlandırmak için"
+          },
+          {
+            "id": "c",
+            "label_tr": "Cell color korumak için",
+            "label_en": "Cell color korumak için"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek business contract, Excel context'i ve veri kalitesi varsayımını birlikte korur.",
+        "rationale_en": "The correct option preserves the business contract, Excel context, and data-quality assumptions together."
+      },
+      {
+        "id": "case-2",
+        "prompt_tr": "Shared reporting pack'te hangi operational contract gerekir?",
+        "prompt_en": "Shared reporting pack'te hangi operational contract gerekir?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Owner, refresh dependency, failure handling, version/rollback",
+            "label_en": "Owner, refresh dependency, failure handling, version/rollback"
+          },
+          {
+            "id": "b",
+            "label_tr": "Sadece sheet protection",
+            "label_en": "Sadece sheet protection"
+          },
+          {
+            "id": "c",
+            "label_tr": "Sadece font standardı",
+            "label_en": "Sadece font standardı"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek business contract, Excel context'i ve veri kalitesi varsayımını birlikte korur.",
+        "rationale_en": "The correct option preserves the business contract, Excel context, and data-quality assumptions together."
+      },
+      {
+        "id": "case-3",
+        "prompt_tr": "Bir workbook sınırı aşırı büyüdüğünde ne yapılmalı?",
+        "prompt_en": "Bir workbook sınırı aşırı büyüdüğünde ne yapılmalı?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Workload ve ownership'e göre dış data/model katmanına ayırmayı değerlendirmek",
+            "label_en": "Workload ve ownership'e göre dış data/model katmanına ayırmayı değerlendirmek"
+          },
+          {
+            "id": "b",
+            "label_tr": "Tüm kolonları text yapmak",
+            "label_en": "Tüm kolonları text yapmak"
+          },
+          {
+            "id": "c",
+            "label_tr": "Daha fazla merged cell eklemek",
+            "label_en": "Daha fazla merged cell eklemek"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek business contract, Excel context'i ve veri kalitesi varsayımını birlikte korur.",
+        "rationale_en": "The correct option preserves the business contract, Excel context, and data-quality assumptions together."
+      }
+    ]
+  },
+  "sections": [
+    {
+      "id": "mental-model",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: workbook davranışını contract olarak oku",
+      "title_en": "1. Mental model: treat workbook behavior as a contract",
+      "body_tr": "Enterprise reporting pack workbook, Power Query, Data Model, source systems ve distribution layer arasında açık sınırlar kurmalıdır. Raw input, transformation, semantic metric ve presentation aynı sheet'te karıştığında lineage, refresh ve ownership zorlaşır. Bu derste hücre/formül adından önce population, grain, type, refresh ve kullanıcı etkileşimi sözleşmesi yazılır; Excel özelliği bu sözleşmeyi uygulayan mekanizmadır.",
+      "body_en": "Enterprise reporting architecture should define clear boundaries across sources, Power Query, Data Model, workbook presentation, distribution, ownership, and refresh operations. Start from population, grain, type, refresh, and interaction contracts before choosing an Excel feature.",
+      "checks": [
+        "Business question ve hedef grain'i yaz.",
+        "Input/type ve refresh varsayımlarını görünür yap.",
+        "Formula/UI semptomunu root-cause sayma."
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "2. Worked example: küçük örnekle semantiği kanıtla",
+      "title_en": "2. Worked example: prove semantics with a small example",
+      "body_tr": "Bir reporting pack kaynaklardan Power Query ile ingest eder, reusable clean tables/Data Model katmanında ilişkileri ve measures'ı tutar, worksheet/Pivot katmanını presentation için kullanır. Refresh dependency ve failure alerting dışarıdan izlenebilir olmalıdır. Amaç syntax kalıbını ezberlemek değil, aynı business sorusunun hangi context ve veri sözleşmesinde doğru cevaplandığını açıklamaktır.",
+      "body_en": "Use a small example to expose the context and data contract that make the result correct instead of memorizing a syntax pattern.",
+      "code": "// Excel / Power Query / DAX context example",
+      "explanation_tr": "Örnek production reçetesi değildir; gerçek workbook'ta field names, data types, key quality, refresh state ve version compatibility yeniden doğrulanmalıdır.",
+      "explanation_en": "The example is not a production prescription. Validate fields, data types, key quality, refresh state, and version compatibility in the real workbook."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "3. Guided practice: sonucu çalıştırmadan önce tahmin et",
+      "title_en": "3. Guided practice: predict before execution",
+      "body_tr": "Enterprise reporting pack workbook, Power Query, Data Model, source systems ve distribution layer arasında açık sınırlar kurmalıdır. Raw input, transformation, semantic metric ve presentation aynı sheet'te karıştığında lineage, refresh ve ownership zorlaşır. Yeni senaryoda formülün, query step'in veya measure'ın beklenen sonucunu çalıştırmadan önce tahmin et. Tahmin ile gözlem farklıysa önce reference/context/type/grain varsayımlarını kontrol et.",
+      "body_en": "Predict formula, query-step, or measure behavior before execution. If observation differs, inspect reference, context, type, and grain assumptions first.",
+      "prompts": [
+        "Enterprise reporting pack mimarisi için hedef input/output contract'ını yaz.",
+        "Bir edge case seç ve beklenen Excel davranışını tahmin et.",
+        "Sonuç farklıysa ilk üç evidence kontrolün nedir?"
+      ]
+    },
+    {
+      "id": "reporting-architecture-production",
+      "layer": "independent_practice",
+      "title_tr": "4. Bağımsız üretim: Semantic Excel Case Lab",
+      "title_en": "4. Independent production: Semantic Excel Case Lab",
+      "body_tr": "Semantic Case Lab enterprise reporting pack mimarisi için üç karar senaryosunu değerlendirir. Tüm vakalar doğru olmadan bölüm tamamlanmaz. Sonrasında business rule, Excel context'i, beklenen davranış ve doğrulama kanıtını kısa bir decision record olarak yaz.",
+      "body_en": "The Semantic Case Lab evaluates three decisions for enterprise reporting pack architecture. All cases must pass before completion, followed by a short decision record with contract and validation evidence.",
+      "requires_case_lab_pass": "excel-reporting-architecture-case-v1",
+      "evidence_required": [
+        "semantic_case_lab_pass",
+        "business_contract",
+        "excel_context",
+        "validation_evidence"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "5. Debugging: sessiz hatayı görünür evidence'e çevir",
+      "title_en": "5. Debugging: turn silent errors into evidence",
+      "body_tr": "Her ay workbook kopyalayıp değerleri elle yapıştırmak version drift ve lineage kaybı üretir. Tek bir dev workbook da sınırsız ölçeklenebilir mimari değildir. Debugging sırasında formül, query, data model ve source'u aynı anda değiştirme. Minimal fixture, formula evaluation/query step, type/key kontrolü ve refresh state ile problemi katmanlara ayır; sonra tek değişkenli düzeltmeyi regression kontrolüyle doğrula.",
+      "body_en": "Her ay workbook kopyalayıp değerleri elle yapıştırmak version drift ve lineage kaybı üretir. Tek bir dev workbook da sınırsız ölçeklenebilir mimari değildir. Separate source, query, model, formula, and presentation evidence before changing one major factor and rerunning regression checks.",
+      "diagnostic_sequence": [
+        "Business result ve grain'i yeniden yaz.",
+        "Source/key/type ve refresh state'i kontrol et.",
+        "Formula/query/DAX context'ini görünür hale getir.",
+        "Minimal fixture ile hatayı yeniden üret.",
+        "Tek değişkenli düzeltme uygula.",
+        "Total/detail ve downstream raporda regression olmadığını doğrula."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "6. Transfer: aynı contract'ı SQL, Python ve Qlik'e taşı",
+      "title_en": "6. Transfer: carry the contract into SQL, Python, and Qlik",
+      "body_tr": "Bir reporting pack kaynaklardan Power Query ile ingest eder, reusable clean tables/Data Model katmanında ilişkileri ve measures'ı tutar, worksheet/Pivot katmanını presentation için kullanır. Refresh dependency ve failure alerting dışarıdan izlenebilir olmalıdır. Transferde Excel syntax'ını kopyalamak yerine population, grain, filter context, key/type ve validation contract'ını taşı. SQL, pandas ve Qlik aynı analitik soruyu farklı execution modelleriyle çözer.",
+      "body_en": "Transfer population, grain, filter context, key and type rules, and validation evidence rather than copying Excel syntax into SQL, Python, or Qlik.",
+      "transfer_tasks": [
+        {
+          "tool": "SQL",
+          "task_tr": "Enterprise reporting pack mimarisi business rule'unu SQL set/grain ve key contract'ına çevir."
+        },
+        {
+          "tool": "Python / pandas",
+          "task_tr": "Aynı sonucu dataframe dtype/index/cardinality ve test fixture ile yeniden kur."
+        },
+        {
+          "tool": "Qlik Sense",
+          "task_tr": "Aynı metriği associative state/model/script context'iyle karşılaştır."
+        }
+      ]
+    },
+    {
+      "id": "review",
+      "layer": "mental_model",
+      "title_tr": "7. Review: maintainability ve operability gate'leri",
+      "title_en": "7. Review: maintainability and operability gates",
+      "body_tr": "Her ay workbook kopyalayıp değerleri elle yapıştırmak version drift ve lineage kaybı üretir. Tek bir dev workbook da sınırsız ölçeklenebilir mimari değildir. Review yalnız doğru sayı üretildiğini değil, source lineage, owner, refresh, version compatibility, kullanıcı input'u ve rollback durumunu da inceler. Yorumlar preference değil evidence → risk → action biçiminde yazılmalıdır.",
+      "body_en": "Review should cover lineage, ownership, refresh behavior, compatibility, user input, and rollback as well as numerical correctness. Comments should be evidence, risk, and action rather than preference."
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: formül ezberi değil invariant",
+      "title_en": "8. Retrieval: retrieve the invariant, not formula trivia",
+      "body_tr": "D+1'de enterprise reporting pack mimarisi için ana invariant'ı dokümana bakmadan açıkla. D+7'de üç yeni workbook senaryosunda sonucu çalıştırmadan tahmin et. D+30'da gerçek bir raporu source→transform→model→formula/presentation zinciriyle audit eden kısa teknik not hazırla.",
+      "body_en": "On D+1 explain the core invariant from memory. On D+7 predict three new workbook scenarios. On D+30 audit a real report across source, transformation, model, formula, and presentation layers.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explain-excel-invariant"
+        },
+        {
+          "day": 7,
+          "evidence": "predict-excel-cases"
+        },
+        {
+          "day": 30,
+          "evidence": "produce-workbook-audit-memo"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "Enterprise reporting pack mimarisi için mekanizma, context ve sınırları formül isminden bağımsız açıkla.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Yeni workbook senaryosunda sonucu execution öncesi tahmin et ve reference/type/key/context etkisini gerekçelendir.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Semantic Excel Case Lab'ı geç ve gerçek bir workbook için validation/reconciliation evidence üret.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Aynı business contract'ı SQL, Python veya Qlik'e taşı ve execution-model farkını açıkla.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "excel-data-model",
+    "excel-power-pivot",
+    "office-scripts",
+    "power-query-folding",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}

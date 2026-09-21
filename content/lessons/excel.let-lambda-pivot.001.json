@@ -1,0 +1,268 @@
+{
+  "id": "excel.let-lambda-pivot.001",
+  "module_id": "excel.let-lambda-pivot",
+  "track": "excel",
+  "level": "L2",
+  "status": "production-candidate",
+  "title_tr": "LET/LAMBDA ve Pivot analizi",
+  "title_en": "LET/LAMBDA and Pivot analysis",
+  "subtitle_tr": "LET/LAMBDA ve Pivot analizi konusunu formül ezberi yerine veri, context, refresh ve validation sözleşmesiyle öğren.",
+  "subtitle_en": "Learn let/lambda and pivot analysis through data, context, refresh, and validation contracts rather than formula memorization.",
+  "estimated_minutes_range": [
+    85,
+    120
+  ],
+  "why_it_matters_tr": "LET bir formül içindeki ara sonuçlara isim vererek aynı hesabın tekrarını azaltır ve okunabilirliği artırır. LAMBDA workbook içinde yeniden kullanılabilir custom function tanımlamaya izin verir. PivotTable ise satır/kolon/filter/value alanlarıyla aggregate görünüm kurar; source grain ve aggregation seçimi yine doğruluğu belirler. LAMBDA'yı test fixture olmadan merkezî iş kuralına dönüştürmek veya PivotTable'daki `Count`/`Sum` seçimini source dtype/grain kontrol etmeden kabul etmek sessiz hata üretir. Bu nedenle mastery yalnız doğru seçeneği bilmek değil, workbook davranışını evidence ile doğrulamak ve aynı analitik contract'ı farklı araca transfer edebilmektir.",
+  "why_it_matters_en": "LET names intermediate calculations, LAMBDA defines reusable workbook functions, and PivotTables aggregate data across field layouts. Source grain and aggregation choice still determine correctness. Mastery therefore requires evidence-based workbook reasoning and transfer of the same analytical contract to another tool.",
+  "prerequisites": [
+    "excel.dynamic-arrays.001"
+  ],
+  "learning_objectives": [
+    "LET/LAMBDA ve Pivot analizi davranışını input, grain/context ve refresh sözleşmesiyle açıklar.",
+    "Sessiz yanlış sonuç üretebilecek key/type/reference risklerini evidence ile teşhis eder.",
+    "Semantic Case Lab'da doğru Excel/Power Query/Data Model kararını verir ve gerekçelendirir.",
+    "Aynı analitik contract'ı SQL, Python veya Qlik'e transfer eder."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "Önkoşul kanıtları hazır mı: excel.dynamic-arrays.001?",
+      "if_no_tr": "Önkoşul production derslerini tamamla veya eşdeğer mastery evidence üret."
+    }
+  ],
+  "case_lab": {
+    "id": "excel-let-lambda-pivot-case-v1",
+    "title_tr": "Semantic Excel Case Lab · LET/LAMBDA ve Pivot analizi",
+    "title_en": "Semantic Excel Case Lab · LET/LAMBDA and Pivot analysis",
+    "task_tr": "Her senaryoda business contract ve Excel semantiğine en uygun kararı seç. Tüm vakalar exact answer key ile doğru olmadan independent-production gate açılmaz.",
+    "task_en": "Choose the decision that best matches the business contract and Excel semantics. All cases must match the answer key before the independent-production gate opens.",
+    "requires_for_section": "let-lambda-pivot-production",
+    "cases": [
+      {
+        "id": "case-1",
+        "prompt_tr": "LET'in temel yararı nedir?",
+        "prompt_en": "LET'in temel yararı nedir?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Ara ifadeleri isimlendirip tekrar hesap/yazımını azaltmak",
+            "label_en": "Ara ifadeleri isimlendirip tekrar hesap/yazımını azaltmak"
+          },
+          {
+            "id": "b",
+            "label_tr": "Workbook'u otomatik şifrelemek",
+            "label_en": "Workbook'u otomatik şifrelemek"
+          },
+          {
+            "id": "c",
+            "label_tr": "Power Query folding'i zorlamak",
+            "label_en": "Power Query folding'i zorlamak"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek business contract, Excel context'i ve veri kalitesi varsayımını birlikte korur.",
+        "rationale_en": "The correct option preserves the business contract, Excel context, and data-quality assumptions together."
+      },
+      {
+        "id": "case-2",
+        "prompt_tr": "LAMBDA ne sağlar?",
+        "prompt_en": "LAMBDA ne sağlar?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Workbook içinde yeniden kullanılabilir custom function",
+            "label_en": "Workbook içinde yeniden kullanılabilir custom function"
+          },
+          {
+            "id": "b",
+            "label_tr": "Data Model ilişki türü",
+            "label_en": "Data Model ilişki türü"
+          },
+          {
+            "id": "c",
+            "label_tr": "Pivot cache sıkıştırması",
+            "label_en": "Pivot cache sıkıştırması"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek business contract, Excel context'i ve veri kalitesi varsayımını birlikte korur.",
+        "rationale_en": "The correct option preserves the business contract, Excel context, and data-quality assumptions together."
+      },
+      {
+        "id": "case-3",
+        "prompt_tr": "PivotTable'da sayısal alanın beklenmedik şekilde Count olması neyi düşündürür?",
+        "prompt_en": "PivotTable'da sayısal alanın beklenmedik şekilde Count olması neyi düşündürür?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Source dtype veya veri kalitesi kontrolünü",
+            "label_en": "Source dtype veya veri kalitesi kontrolünü"
+          },
+          {
+            "id": "b",
+            "label_tr": "Structured reference'ın bozuk olduğunu",
+            "label_en": "Structured reference'ın bozuk olduğunu"
+          },
+          {
+            "id": "c",
+            "label_tr": "LAMBDA recursion gerektiğini",
+            "label_en": "LAMBDA recursion gerektiğini"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek business contract, Excel context'i ve veri kalitesi varsayımını birlikte korur.",
+        "rationale_en": "The correct option preserves the business contract, Excel context, and data-quality assumptions together."
+      }
+    ]
+  },
+  "sections": [
+    {
+      "id": "mental-model",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: workbook davranışını contract olarak oku",
+      "title_en": "1. Mental model: treat workbook behavior as a contract",
+      "body_tr": "LET bir formül içindeki ara sonuçlara isim vererek aynı hesabın tekrarını azaltır ve okunabilirliği artırır. LAMBDA workbook içinde yeniden kullanılabilir custom function tanımlamaya izin verir. PivotTable ise satır/kolon/filter/value alanlarıyla aggregate görünüm kurar; source grain ve aggregation seçimi yine doğruluğu belirler. Bu derste hücre/formül adından önce population, grain, type, refresh ve kullanıcı etkileşimi sözleşmesi yazılır; Excel özelliği bu sözleşmeyi uygulayan mekanizmadır.",
+      "body_en": "LET names intermediate calculations, LAMBDA defines reusable workbook functions, and PivotTables aggregate data across field layouts. Source grain and aggregation choice still determine correctness. Start from population, grain, type, refresh, and interaction contracts before choosing an Excel feature.",
+      "checks": [
+        "Business question ve hedef grain'i yaz.",
+        "Input/type ve refresh varsayımlarını görünür yap.",
+        "Formula/UI semptomunu root-cause sayma."
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "2. Worked example: küçük örnekle semantiği kanıtla",
+      "title_en": "2. Worked example: prove semantics with a small example",
+      "body_tr": "`=LET(net,[@Revenue]-[@Cost],IF(net>0,net,0))` ara hesabı isimlendirir. Aynı iş kuralı tekrar kullanılıyorsa `LAMBDA(revenue,cost,MAX(0,revenue-cost))` ile named function haline getirilebilir. Amaç syntax kalıbını ezberlemek değil, aynı business sorusunun hangi context ve veri sözleşmesinde doğru cevaplandığını açıklamaktır.",
+      "body_en": "Use a small example to expose the context and data contract that make the result correct instead of memorizing a syntax pattern.",
+      "code": "// Excel / Power Query / DAX context example",
+      "explanation_tr": "Örnek production reçetesi değildir; gerçek workbook'ta field names, data types, key quality, refresh state ve version compatibility yeniden doğrulanmalıdır.",
+      "explanation_en": "The example is not a production prescription. Validate fields, data types, key quality, refresh state, and version compatibility in the real workbook."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "3. Guided practice: sonucu çalıştırmadan önce tahmin et",
+      "title_en": "3. Guided practice: predict before execution",
+      "body_tr": "LET bir formül içindeki ara sonuçlara isim vererek aynı hesabın tekrarını azaltır ve okunabilirliği artırır. LAMBDA workbook içinde yeniden kullanılabilir custom function tanımlamaya izin verir. PivotTable ise satır/kolon/filter/value alanlarıyla aggregate görünüm kurar; source grain ve aggregation seçimi yine doğruluğu belirler. Yeni senaryoda formülün, query step'in veya measure'ın beklenen sonucunu çalıştırmadan önce tahmin et. Tahmin ile gözlem farklıysa önce reference/context/type/grain varsayımlarını kontrol et.",
+      "body_en": "Predict formula, query-step, or measure behavior before execution. If observation differs, inspect reference, context, type, and grain assumptions first.",
+      "prompts": [
+        "LET/LAMBDA ve Pivot analizi için hedef input/output contract'ını yaz.",
+        "Bir edge case seç ve beklenen Excel davranışını tahmin et.",
+        "Sonuç farklıysa ilk üç evidence kontrolün nedir?"
+      ]
+    },
+    {
+      "id": "let-lambda-pivot-production",
+      "layer": "independent_practice",
+      "title_tr": "4. Bağımsız üretim: Semantic Excel Case Lab",
+      "title_en": "4. Independent production: Semantic Excel Case Lab",
+      "body_tr": "Semantic Case Lab let/lambda ve pivot analizi için üç karar senaryosunu değerlendirir. Tüm vakalar doğru olmadan bölüm tamamlanmaz. Sonrasında business rule, Excel context'i, beklenen davranış ve doğrulama kanıtını kısa bir decision record olarak yaz.",
+      "body_en": "The Semantic Case Lab evaluates three decisions for let/lambda and pivot analysis. All cases must pass before completion, followed by a short decision record with contract and validation evidence.",
+      "requires_case_lab_pass": "excel-let-lambda-pivot-case-v1",
+      "evidence_required": [
+        "semantic_case_lab_pass",
+        "business_contract",
+        "excel_context",
+        "validation_evidence"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "5. Debugging: sessiz hatayı görünür evidence'e çevir",
+      "title_en": "5. Debugging: turn silent errors into evidence",
+      "body_tr": "LAMBDA'yı test fixture olmadan merkezî iş kuralına dönüştürmek veya PivotTable'daki `Count`/`Sum` seçimini source dtype/grain kontrol etmeden kabul etmek sessiz hata üretir. Debugging sırasında formül, query, data model ve source'u aynı anda değiştirme. Minimal fixture, formula evaluation/query step, type/key kontrolü ve refresh state ile problemi katmanlara ayır; sonra tek değişkenli düzeltmeyi regression kontrolüyle doğrula.",
+      "body_en": "LAMBDA'yı test fixture olmadan merkezî iş kuralına dönüştürmek veya PivotTable'daki `Count`/`Sum` seçimini source dtype/grain kontrol etmeden kabul etmek sessiz hata üretir. Separate source, query, model, formula, and presentation evidence before changing one major factor and rerunning regression checks.",
+      "diagnostic_sequence": [
+        "Business result ve grain'i yeniden yaz.",
+        "Source/key/type ve refresh state'i kontrol et.",
+        "Formula/query/DAX context'ini görünür hale getir.",
+        "Minimal fixture ile hatayı yeniden üret.",
+        "Tek değişkenli düzeltme uygula.",
+        "Total/detail ve downstream raporda regression olmadığını doğrula."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "6. Transfer: aynı contract'ı SQL, Python ve Qlik'e taşı",
+      "title_en": "6. Transfer: carry the contract into SQL, Python, and Qlik",
+      "body_tr": "`=LET(net,[@Revenue]-[@Cost],IF(net>0,net,0))` ara hesabı isimlendirir. Aynı iş kuralı tekrar kullanılıyorsa `LAMBDA(revenue,cost,MAX(0,revenue-cost))` ile named function haline getirilebilir. Transferde Excel syntax'ını kopyalamak yerine population, grain, filter context, key/type ve validation contract'ını taşı. SQL, pandas ve Qlik aynı analitik soruyu farklı execution modelleriyle çözer.",
+      "body_en": "Transfer population, grain, filter context, key and type rules, and validation evidence rather than copying Excel syntax into SQL, Python, or Qlik.",
+      "transfer_tasks": [
+        {
+          "tool": "SQL",
+          "task_tr": "LET/LAMBDA ve Pivot analizi business rule'unu SQL set/grain ve key contract'ına çevir."
+        },
+        {
+          "tool": "Python / pandas",
+          "task_tr": "Aynı sonucu dataframe dtype/index/cardinality ve test fixture ile yeniden kur."
+        },
+        {
+          "tool": "Qlik Sense",
+          "task_tr": "Aynı metriği associative state/model/script context'iyle karşılaştır."
+        }
+      ]
+    },
+    {
+      "id": "review",
+      "layer": "mental_model",
+      "title_tr": "7. Review: maintainability ve operability gate'leri",
+      "title_en": "7. Review: maintainability and operability gates",
+      "body_tr": "LAMBDA'yı test fixture olmadan merkezî iş kuralına dönüştürmek veya PivotTable'daki `Count`/`Sum` seçimini source dtype/grain kontrol etmeden kabul etmek sessiz hata üretir. Review yalnız doğru sayı üretildiğini değil, source lineage, owner, refresh, version compatibility, kullanıcı input'u ve rollback durumunu da inceler. Yorumlar preference değil evidence → risk → action biçiminde yazılmalıdır.",
+      "body_en": "Review should cover lineage, ownership, refresh behavior, compatibility, user input, and rollback as well as numerical correctness. Comments should be evidence, risk, and action rather than preference."
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: formül ezberi değil invariant",
+      "title_en": "8. Retrieval: retrieve the invariant, not formula trivia",
+      "body_tr": "D+1'de let/lambda ve pivot analizi için ana invariant'ı dokümana bakmadan açıkla. D+7'de üç yeni workbook senaryosunda sonucu çalıştırmadan tahmin et. D+30'da gerçek bir raporu source→transform→model→formula/presentation zinciriyle audit eden kısa teknik not hazırla.",
+      "body_en": "On D+1 explain the core invariant from memory. On D+7 predict three new workbook scenarios. On D+30 audit a real report across source, transformation, model, formula, and presentation layers.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explain-excel-invariant"
+        },
+        {
+          "day": 7,
+          "evidence": "predict-excel-cases"
+        },
+        {
+          "day": 30,
+          "evidence": "produce-workbook-audit-memo"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "LET/LAMBDA ve Pivot analizi için mekanizma, context ve sınırları formül isminden bağımsız açıkla.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Yeni workbook senaryosunda sonucu execution öncesi tahmin et ve reference/type/key/context etkisini gerekçelendir.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Semantic Excel Case Lab'ı geç ve gerçek bir workbook için validation/reconciliation evidence üret.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Aynı business contract'ı SQL, Python veya Qlik'e taşı ve execution-model farkını açıkla.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "excel-let",
+    "excel-lambda",
+    "excel-pq-pivot",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}
