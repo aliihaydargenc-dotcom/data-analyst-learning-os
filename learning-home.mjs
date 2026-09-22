@@ -151,18 +151,18 @@ function formatDate(value,lang){
 function labels(lang){
   return lang==='en'?{
     homeEyebrow:'LEARNING HOME',homeTitle:'Continue from where you left off.',homeCopy:'Your course progress, review queue and evidence state are kept in one place on this browser.',
-    continue:'Continue',start:'Start learning',last:'Last studied',courseProgress:'Track completion',completed:'lessons complete',due:'reviews due',active:'active tracks',evidence:'evidence drafts',mastery:'Mastery status',awarded:'awarded',notStarted:'Not started',learning:'Learning',awaitingEvidence:'Waiting for evidence',readyRetention:'Waiting for review',retentionDue:'Review due',mastered:'mastered',needsReview:'Needs review',
+    continue:'Continue',start:'Start learning',last:'Last studied',courseProgress:'Track completion',completed:'lessons complete',due:'reviews due',active:'active tracks',evidence:'evidence drafts',mastery:'Mastery status',awarded:'awarded',notStarted:'Not started',learning:'Learning',awaitingEvidence:'Waiting for evidence',awaitingAdvanced:'Waiting for advanced evidence',readyRetention:'Waiting for review',retentionDue:'Review due',mastered:'mastered',needsReview:'Needs review',
     retention:'Review queue',retentionEmpty:'No review is due now.',upcoming:'Next review',courses:'Course navigation',coursesCopy:'Open a track, see all 12 production lessons, and continue at the right level.',current:'Current',next:'Next',done:'Done',lesson:'Lesson',reviews:'reviews',openCourse:'Open course',local:'Progress is stored locally in this browser.'
   }:{
     homeEyebrow:'ÖĞRENME ANA SAYFASI',homeTitle:'Kaldığın yerden devam et.',homeCopy:'Ders ilerlemen, tekrar sıran ve kanıt durumun bu tarayıcıda tek yerde tutulur.',
-    continue:'Devam et',start:'Öğrenmeye başla',last:'Son çalışma',courseProgress:'Track ilerlemesi',completed:'ders tamamlandı',due:'tekrar vadesi',active:'aktif track',evidence:'kanıt taslağı',mastery:'Mastery durumu',awarded:'verildi',notStarted:'Başlanmadı',learning:'Öğreniliyor',awaitingEvidence:'Kanıt bekliyor',readyRetention:'Tekrar bekliyor',retentionDue:'Tekrar zamanı',mastered:'mastery',needsReview:'Gözden geçir',
+    continue:'Devam et',start:'Öğrenmeye başla',last:'Son çalışma',courseProgress:'Track ilerlemesi',completed:'ders tamamlandı',due:'tekrar vadesi',active:'aktif track',evidence:'kanıt taslağı',mastery:'Mastery durumu',awarded:'verildi',notStarted:'Başlanmadı',learning:'Öğreniliyor',awaitingEvidence:'Kanıt bekliyor',awaitingAdvanced:'İleri seviye kanıt bekliyor',readyRetention:'Tekrar bekliyor',retentionDue:'Tekrar zamanı',mastered:'mastery',needsReview:'Gözden geçir',
     retention:'Tekrar sırası',retentionEmpty:'Şu an vadesi gelen tekrar yok.',upcoming:'Sıradaki tekrar',courses:'Ders yolları',coursesCopy:'Track’i aç, 12 production dersi gör ve doğru seviyeden devam et.',current:'Devam',next:'Sırada',done:'Tamamlandı',lesson:'Ders',reviews:'tekrar',openCourse:'Track’e git',local:'İlerleme yalnızca bu tarayıcıda saklanır.'
   };
 }
 
 function masteryLabel(state,l){
   return ({
-    not_started:l.notStarted,learning:l.learning,awaiting_evidence:l.awaitingEvidence,
+    not_started:l.notStarted,learning:l.learning,awaiting_evidence:l.awaitingEvidence,awaiting_advanced_evidence:l.awaitingAdvanced,
     ready_for_retention:l.readyRetention,retention_due:l.retentionDue,mastered:l.mastered,needs_review:l.needsReview
   })[state]||l.learning;
 }
@@ -203,6 +203,7 @@ export function renderLearningHome({root=document,catalog,curriculum,storage=loc
     const masteryValue=snapshot.masteryAwarded?`${snapshot.masteryAwarded} ${l.mastered}`:
       snapshot.masteryStates.retention_due?l.retentionDue:
       snapshot.masteryStates.awaiting_evidence?l.awaitingEvidence:
+      snapshot.masteryStates.awaiting_advanced_evidence?l.awaitingAdvanced:
       snapshot.activeTracks?l.learning:l.notStarted;
     stats.innerHTML=`
       <article><span>${escapeHtml(l.completed)}</span><strong>${snapshot.completedLessons}/${snapshot.totalLessons}</strong></article>
