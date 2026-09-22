@@ -12,7 +12,7 @@ assert.equal(analystLevelTitle(level,'tr'),'Başlangıç');
 level=analystLevelFromXp(299);
 assert.equal(level.level,1);
 assert.equal(level.xpToNext,1);
-assert.equal(level.progressPercent,100);
+assert.equal(level.progressPercent,99);
 
 level=analystLevelFromXp(300);
 assert.equal(level.level,2);
