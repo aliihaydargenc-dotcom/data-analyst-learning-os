@@ -1,4 +1,5 @@
 import {checkSqlStructure,computeDomainScores} from './core.mjs';
+import {renderLearningHome} from './learning-home.mjs';
 
 const DEFAULT_SQL=`SELECT
     HOTEL,
@@ -10,7 +11,7 @@ const DEFAULT_SQL=`SELECT
     ) AS PREV_DAY_REVENUE
 FROM hotel_daily;`;
 
-const state={lang:'tr',questions:[],exam:[],answers:{},index:0,roadmap:null,curriculum:null,duckdbReady:false,duckdbInfo:null};
+const state={lang:'tr',questions:[],exam:[],answers:{},index:0,roadmap:null,curriculum:null,catalog:null,duckdbReady:false,duckdbInfo:null};
 const $=s=>document.querySelector(s);
 let sqlLabModulePromise=null;
 
@@ -124,6 +125,7 @@ function applyLanguage(){
   renderMastery();
   renderCurriculum();
   renderRoadmap();
+  if(state.catalog&&state.curriculum)renderLearningHome({root:document,catalog:state.catalog,curriculum:state.curriculum,storage:localStorage,lang:state.lang,now:new Date()});
   if(state.exam.length&&!$('#questionStage').classList.contains('hidden'))renderQuestion();
 }
 
@@ -295,10 +297,11 @@ $('#resetSql').addEventListener('click',()=>{
 
 async function init(){
   try{
-    const [q,r,c]=await Promise.all([fetch('./data/question-bank.json'),fetch('./data/roadmap.json'),fetch('./content/curriculum.json')]);
+    const [q,r,c,l]=await Promise.all([fetch('./data/question-bank.json'),fetch('./data/roadmap.json'),fetch('./content/curriculum.json'),fetch('./content/lesson-catalog.json')]);
     state.questions=await q.json();
     state.roadmap=await r.json();
     state.curriculum=await c.json();
+    state.catalog=await l.json();
     applyLanguage();
     clearSqlTable();
   }catch(err){

@@ -1,13 +1,14 @@
 {
   "name": "data-analyst-learning-os",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "private": true,
   "type": "module",
   "scripts": {
     "test:core": "node tests/core.test.mjs",
     "test:mastery": "node tests/mastery.test.mjs",
+    "test:learning-home": "node tests/learning-home.test.mjs",
     "validate:academy": "node scripts/validate-academy.mjs",
-    "test": "npm run test:core && npm run test:mastery && npm run test:lesson-runtime && npm run test:sql-evaluator && npm run test:python-lab && npm run test:excel-case-lab && npm run test:html-lab && npm run test:english-case-lab && npm run validate:academy && npm run validate:screening && npm run validate:lessons",
+    "test": "npm run test:core && npm run test:mastery && npm run test:learning-home && npm run test:lesson-runtime && npm run test:sql-evaluator && npm run test:python-lab && npm run test:excel-case-lab && npm run test:html-lab && npm run test:english-case-lab && npm run validate:academy && npm run validate:screening && npm run validate:lessons",
     "test:browser": "node tests/browser-smoke.mjs",
     "validate:screening": "node scripts/validate-screening.mjs",
     "test:lesson-runtime": "node tests/lesson-runtime.test.mjs",
