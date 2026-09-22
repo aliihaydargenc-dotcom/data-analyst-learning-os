@@ -1,4 +1,4 @@
-import {evaluateMastery,MASTERY_PROFILES} from './mastery-engine.mjs';
+import {evaluateMastery,MASTERY_PROFILES,buildRemediationPlan} from './mastery-engine.mjs';
 import {evaluateMasteryAssessment,hasSemanticProductionLab,MASTERY_ASSESSMENT_VERSION} from './mastery-assessment.mjs';
 import {evaluateAdvancedMasteryChallenge,advancedRequirementsForLevel,ADVANCED_MASTERY_VERSION} from './advanced-mastery.mjs';
 
@@ -126,6 +126,7 @@ export function refreshMastery(lesson,progress,now=new Date()){
   const nowMs=now.getTime();
   const due=(next.retentionDue||[]).filter(item=>item?.status!=='completed'&&new Date(item?.dueAt||0).getTime()<=nowMs);
   let evaluation=null;
+  let evaluationEvidence=null;
   if(next.completedAt&&missingDimensions.length===0&&missingGates.length===0){
     const evidence={
       knowledge:next.verifiedEvidence.knowledge.score,
@@ -135,6 +136,7 @@ export function refreshMastery(lesson,progress,now=new Date()){
       ...(validScore(next.verifiedEvidence.retention?.score)?{retention:next.verifiedEvidence.retention.score}:{})
     };
     Object.assign(evidence,next.masteryInputs||{});
+    evaluationEvidence=evidence;
     evaluation=evaluateMastery(lesson.level,evidence);
   }
   let state='learning';
@@ -154,6 +156,7 @@ export function refreshMastery(lesson,progress,now=new Date()){
     verifiedDimensions,
     missingGates,
     verifiedGates,
+    remediation:evaluation&&!evaluation.passed?buildRemediationPlan(evaluationEvidence,evaluation):null,
     confidence:(required.length+requiredGates.length)
       ?Math.round(((verifiedDimensions.length+verifiedGates.length)/(required.length+requiredGates.length))*100)
       :0,
