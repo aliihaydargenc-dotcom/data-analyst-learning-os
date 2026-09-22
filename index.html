@@ -88,7 +88,8 @@
             <span id="duckdbStatus" class="pill">DuckDB · hazır</span>
           </summary>
           <div class="utility-body">
-            <p id="sqlTask" class="utility-task">Her otel için günlük geliri ve bir önceki günün gelirini döndür.</p>
+            <div id="sqlChallengeMeta" class="question-meta"></div>
+            <p id="sqlTask" class="utility-task">SQL challenge yükleniyor.</p>
             <div class="lab-grid">
               <div class="schema">
                 <strong>hotel_daily</strong>
@@ -97,17 +98,12 @@
 
               <div>
                 <textarea id="sqlEditor" spellcheck="false">SELECT
-    HOTEL,
-    BUSINESS_DATE,
-    REVENUE_EUR,
-    LAG(REVENUE_EUR) OVER (
-        PARTITION BY HOTEL
-        ORDER BY BUSINESS_DATE
-    ) AS PREV_DAY_REVENUE
+    -- sorgunu buraya yaz
 FROM hotel_daily;</textarea>
                 <div class="lab-actions">
                   <button id="runSql" class="primary">SQL'i Çalıştır</button>
                   <button id="resetSql" class="secondary">Sıfırla</button>
+                  <button id="nextSqlChallenge" class="secondary" hidden>Sonraki Challenge</button>
                   <span id="sqlResult"></span>
                 </div>
               </div>

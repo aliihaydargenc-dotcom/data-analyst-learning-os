@@ -101,6 +101,18 @@ try{
   assert.equal((await page.locator('#learningHome').textContent()).includes('Ders ilerlemen, tekrar sıran'),false);
 
   await page.locator('#sql-lab > summary').click();
+  assert.match(await page.locator('#sqlChallengeMeta').textContent(),/01\/03/);
+  assert.doesNotMatch(await page.locator('#sqlEditor').inputValue(),/LAG\(/i);
+  await page.locator('#sqlEditor').fill(`SELECT
+    HOTEL,
+    BUSINESS_DATE,
+    REVENUE_EUR,
+    LAG(REVENUE_EUR) OVER (
+        PARTITION BY HOTEL
+        ORDER BY BUSINESS_DATE
+    ) AS PREV_DAY_REVENUE
+FROM hotel_daily
+ORDER BY HOTEL, BUSINESS_DATE;`);
   await page.locator('#runSql').click();
   await page.locator('#sqlTable tbody tr').first().waitFor({state:'visible',timeout:120000});
 
@@ -113,6 +125,13 @@ try{
   const firstRow=await page.locator('#sqlTable tbody tr').first().locator('td').allTextContents();
   assert.equal(firstRow.length,4);
   assert.ok(firstRow[0].includes('Regnum'));
+  assert.match(await page.locator('#sqlResult').textContent(),/100\/100/);
+  assert.match(await page.locator('#sqlResult').textContent(),/Challenge geçti/);
+  assert.equal(await page.locator('#nextSqlChallenge').isVisible(),true);
+  await page.locator('#nextSqlChallenge').click();
+  assert.match(await page.locator('#sqlChallengeMeta').textContent(),/02\/03/);
+  assert.match(await page.locator('#sqlTask').textContent(),/ADR/);
+  assert.doesNotMatch(await page.locator('#sqlEditor').inputValue(),/LAG\(ADR_EUR\)/i);
 
   const errorText=(await page.locator('#sqlError').textContent())?.trim();
   assert.equal(errorText,'');
