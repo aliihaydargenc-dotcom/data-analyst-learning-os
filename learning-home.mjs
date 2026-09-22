@@ -1,3 +1,5 @@
+import {aggregateTrackMastery} from './track-mastery.mjs';
+
 const TRACK_ORDER=['sql','qlik','python','excel','html','english'];
 
 const TRACK_FALLBACK={
@@ -101,6 +103,7 @@ export function buildLearningSnapshot({catalog,curriculum,storage,now=new Date()
     const evidenceDrafts=lessons.reduce((sum,item)=>sum+item.evidenceDrafts,0);
     const evaluatedMastery=lessons.filter(item=>item.progress?.mastery?.evaluated===true).length;
     const awardedMastery=lessons.filter(item=>item.progress?.mastery?.passed===true).length;
+    const rollup=aggregateTrackMastery(lessons);
     return {
       id:trackId,
       name:trackMap.get(trackId)?.name||TRACK_FALLBACK[trackId]||trackId,
@@ -114,7 +117,12 @@ export function buildLearningSnapshot({catalog,curriculum,storage,now=new Date()
       upcomingCount,
       evidenceDrafts,
       evaluatedMastery,
-      awardedMastery
+      awardedMastery,
+      masteryState:rollup.state,
+      masteredCount:rollup.masteredCount,
+      masteryPercent:rollup.masteryPercent,
+      masteryBlockingCount:rollup.blockingCount,
+      masteryTarget:rollup.blockingRecords[0]||null
     };
   });
 
@@ -126,13 +134,15 @@ export function buildLearningSnapshot({catalog,curriculum,storage,now=new Date()
   const masteryEvaluated=records.some(item=>item.progress?.mastery?.evaluated===true);
   const masteryAwarded=records.filter(item=>item.progress?.mastery?.passed===true).length;
   const masteryStates=records.reduce((acc,item)=>{acc[item.masteryState]=(acc[item.masteryState]||0)+1;return acc;},{});
+  const trackMasteryStates=tracks.reduce((acc,track)=>{acc[track.masteryState]=(acc[track.masteryState]||0)+1;return acc;},{});
+  const masteredTracks=tracks.filter(track=>track.masteryState==='mastered').length;
 
   return {
     entries,records,tracks,moduleMap,
     continueRecord,lastWorked,
     retentionDue,retentionUpcoming,
     completedLessons,totalLessons:records.length,activeTracks,evidenceDrafts,
-    masteryEvaluated,masteryAwarded,masteryStates,
+    masteryEvaluated,masteryAwarded,masteryStates,trackMasteryStates,masteredTracks,
     title:(entry,lang='tr')=>titleFor(entry,moduleMap,lang)
   };
 }
@@ -151,11 +161,11 @@ function formatDate(value,lang){
 function labels(lang){
   return lang==='en'?{
     homeEyebrow:'LEARNING HOME',homeTitle:'Continue from where you left off.',homeCopy:'Your course progress, review queue and evidence state are kept in one place on this browser.',
-    continue:'Continue',start:'Start learning',last:'Last studied',courseProgress:'Track completion',completed:'lessons complete',due:'reviews due',active:'active tracks',evidence:'evidence drafts',mastery:'Mastery status',awarded:'awarded',notStarted:'Not started',learning:'Learning',awaitingEvidence:'Waiting for evidence',awaitingAdvanced:'Waiting for advanced evidence',readyRetention:'Waiting for review',retentionDue:'Review due',mastered:'mastered',needsReview:'Needs review',
+    continue:'Continue',start:'Start learning',last:'Last studied',courseProgress:'Track completion',completed:'lessons complete',due:'reviews due',active:'active tracks',evidence:'evidence drafts',mastery:'Mastery status',awarded:'awarded',notStarted:'Not started',learning:'Learning',awaitingEvidence:'Waiting for evidence',awaitingAdvanced:'Waiting for advanced evidence',readyRetention:'Waiting for review',retentionDue:'Review due',mastered:'mastered',needsReview:'Needs review',masteredTracks:'tracks mastered',lessonMastery:'lessons mastered',review:'Review',
     retention:'Review queue',retentionEmpty:'No review is due now.',upcoming:'Next review',courses:'Course navigation',coursesCopy:'Open a track, see all 12 production lessons, and continue at the right level.',current:'Current',next:'Next',done:'Done',lesson:'Lesson',reviews:'reviews',openCourse:'Open course',local:'Progress is stored locally in this browser.'
   }:{
     homeEyebrow:'ÖĞRENME ANA SAYFASI',homeTitle:'Kaldığın yerden devam et.',homeCopy:'Ders ilerlemen, tekrar sıran ve kanıt durumun bu tarayıcıda tek yerde tutulur.',
-    continue:'Devam et',start:'Öğrenmeye başla',last:'Son çalışma',courseProgress:'Track ilerlemesi',completed:'ders tamamlandı',due:'tekrar vadesi',active:'aktif track',evidence:'kanıt taslağı',mastery:'Mastery durumu',awarded:'verildi',notStarted:'Başlanmadı',learning:'Öğreniliyor',awaitingEvidence:'Kanıt bekliyor',awaitingAdvanced:'İleri seviye kanıt bekliyor',readyRetention:'Tekrar bekliyor',retentionDue:'Tekrar zamanı',mastered:'mastery',needsReview:'Gözden geçir',
+    continue:'Devam et',start:'Öğrenmeye başla',last:'Son çalışma',courseProgress:'Track ilerlemesi',completed:'ders tamamlandı',due:'tekrar vadesi',active:'aktif track',evidence:'kanıt taslağı',mastery:'Mastery durumu',awarded:'verildi',notStarted:'Başlanmadı',learning:'Öğreniliyor',awaitingEvidence:'Kanıt bekliyor',awaitingAdvanced:'İleri seviye kanıt bekliyor',readyRetention:'Tekrar bekliyor',retentionDue:'Tekrar zamanı',mastered:'mastery',needsReview:'Gözden geçir',masteredTracks:'track mastery',lessonMastery:'ders mastery',review:'Gözden geçir',
     retention:'Tekrar sırası',retentionEmpty:'Şu an vadesi gelen tekrar yok.',upcoming:'Sıradaki tekrar',courses:'Ders yolları',coursesCopy:'Track’i aç, 12 production dersi gör ve doğru seviyeden devam et.',current:'Devam',next:'Sırada',done:'Tamamlandı',lesson:'Ders',reviews:'tekrar',openCourse:'Track’e git',local:'İlerleme yalnızca bu tarayıcıda saklanır.'
   };
 }
@@ -200,10 +210,12 @@ export function renderLearningHome({root=document,catalog,curriculum,storage=loc
 
   const stats=root.querySelector('#learningStats');
   if(stats){
-    const masteryValue=snapshot.masteryAwarded?`${snapshot.masteryAwarded} ${l.mastered}`:
-      snapshot.masteryStates.retention_due?l.retentionDue:
-      snapshot.masteryStates.awaiting_evidence?l.awaitingEvidence:
-      snapshot.masteryStates.awaiting_advanced_evidence?l.awaitingAdvanced:
+    const masteryValue=snapshot.masteredTracks?`${snapshot.masteredTracks}/${snapshot.tracks.length} ${l.masteredTracks}`:
+      snapshot.trackMasteryStates.retention_due?l.retentionDue:
+      snapshot.trackMasteryStates.needs_review?l.needsReview:
+      snapshot.trackMasteryStates.awaiting_evidence?l.awaitingEvidence:
+      snapshot.trackMasteryStates.awaiting_advanced_evidence?l.awaitingAdvanced:
+      snapshot.trackMasteryStates.ready_for_retention?l.readyRetention:
       snapshot.activeTracks?l.learning:l.notStarted;
     stats.innerHTML=`
       <article><span>${escapeHtml(l.completed)}</span><strong>${snapshot.completedLessons}/${snapshot.totalLessons}</strong></article>
@@ -231,7 +243,7 @@ export function renderLearningHome({root=document,catalog,curriculum,storage=loc
     courseGrid.innerHTML=snapshot.tracks.map(track=>{
       const current=track.current;
       const open=continueTrack?.id===track.id?' open':'';
-      const mastery=current?masteryLabel(current.masteryState,l):l.notStarted;
+      const mastery=masteryLabel(track.masteryState,l);
       return `<details class="course-card" data-track="${escapeHtml(track.id)}"${open}>
         <summary>
           <div class="course-summary-main"><span class="course-kicker">${escapeHtml(track.name)}</span><strong>${escapeHtml(track.level)} · ${track.completedCount}/${track.total}</strong><small>${current?escapeHtml(snapshot.title(current.entry,lang)):''}</small></div>
@@ -239,10 +251,15 @@ export function renderLearningHome({root=document,catalog,curriculum,storage=loc
           <div class="course-progress"><span style="width:${track.progressPercent}%"></span></div>
         </summary>
         <div class="course-card-body">
-          <div class="course-state-row"><span>${escapeHtml(l.mastery)}: <strong>${escapeHtml(mastery)}</strong></span><span>${track.evidenceDrafts} ${escapeHtml(l.evidence)}</span></div>
+          <div class="course-state-row"><span>${escapeHtml(l.mastery)}: <strong>${escapeHtml(mastery)}</strong></span><span>${track.masteredCount}/${track.total} ${escapeHtml(l.lessonMastery)}</span><span>${track.evidenceDrafts} ${escapeHtml(l.evidence)}</span></div>
           <div class="course-lessons">${track.lessons.map((record,index)=>{
-            const status=record.completed?'done':record.entry.id===current?.entry.id?'current':'next';
-            const statusText=status==='done'?l.done:status==='current'?l.current:l.next;
+            const status=record.masteryState==='mastered'?'mastered':
+              ['retention_due','needs_review'].includes(record.masteryState)?'review':
+              record.completed?'done':record.entry.id===current?.entry.id?'current':'next';
+            const statusText=status==='mastered'?l.mastered:
+              status==='review'?l.review:
+              status==='done'?l.done:
+              status==='current'?l.current:l.next;
             return `<a class="course-lesson ${status}" href="${escapeHtml(record.entry.runtime)}"><span class="course-lesson-index">${String(index+1).padStart(2,'0')}</span><span><strong>${escapeHtml(snapshot.title(record.entry,lang))}</strong><small>${escapeHtml(record.entry.level)} · ${escapeHtml(statusText)}</small></span></a>`;
           }).join('')}</div>
           ${current?`<a class="secondary course-open" href="${escapeHtml(current.entry.runtime)}">${escapeHtml(l.openCourse)}</a>`:''}

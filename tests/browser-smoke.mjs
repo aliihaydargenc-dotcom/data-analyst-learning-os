@@ -22,6 +22,28 @@ try{
   assert.match(await page.locator('#learningStats').textContent(),/0\/72/);
   assert.match(await page.locator('#learningStats').textContent(),/Başlanmadı/);
   assert.doesNotMatch(await page.locator('#learningStats').textContent(),/Değerlendirilmedi/);
+  assert.match(await page.locator('#courseGrid [data-track="sql"] .course-state-row').textContent(),/Başlanmadı/);
+  assert.match(await page.locator('#courseGrid [data-track="sql"] .course-state-row').textContent(),/0\/12 ders mastery/);
+
+  const sqlLessonIds=await page.locator('#courseGrid [data-track="sql"] .course-lesson').evaluateAll(links=>links.map(link=>new URL(link.href).searchParams.get('id')));
+  await page.evaluate(ids=>{
+    for(const id of ids){
+      localStorage.setItem('da-learning-os:lesson:'+id,JSON.stringify({
+        version:5,lessonId:id,startedAt:'2026-09-20T08:00:00.000Z',updatedAt:'2026-09-21T08:00:00.000Z',
+        completedAt:'2026-09-21T08:00:00.000Z',completedSections:['complete'],responses:{},evidenceDrafts:{},
+        labEvidence:{},verifiedEvidence:{},retentionDue:[],retentionHistory:[],assessmentHistory:[],advancedHistory:[],
+        masteryInputs:{},mastery:{evaluated:true,passed:true,state:'mastered',weighted:100,failures:[],missingDimensions:[],verifiedDimensions:['knowledge','interpretation','production','transfer'],missingGates:[],verifiedGates:[],confidence:100}
+      }));
+    }
+  },sqlLessonIds);
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#courseGrid [data-track="sql"] .course-state-row').waitFor({state:'attached'});
+  assert.match(await page.locator('#courseGrid [data-track="sql"] .course-state-row').textContent(),/12\/12 ders mastery/);
+  assert.match(await page.locator('#courseGrid [data-track="sql"] .course-state-row').textContent(),/mastery/);
+  assert.equal(await page.locator('#courseGrid [data-track="sql"] .course-lesson.mastered').count(),12);
+  await page.evaluate(()=>localStorage.clear());
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#learningContinue .continue-card').waitFor({state:'visible'});
 
   await page.setViewportSize({width:390,height:844});
   const learningHomeMobile=await page.evaluate(()=>({
