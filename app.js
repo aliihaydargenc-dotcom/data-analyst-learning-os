@@ -1,5 +1,6 @@
 import {checkSqlStructure,computeDomainScores} from './core.mjs';
 import {renderLearningHome} from './learning-home.mjs';
+import {installPageTransitions} from './page-transition.mjs';
 
 const DEFAULT_SQL=`SELECT
     HOTEL,
@@ -15,6 +16,7 @@ const state={lang:'tr',questions:[],exam:[],answers:{},index:0,roadmap:null,curr
 const $=s=>document.querySelector(s);
 const setText=(selector,value)=>{const element=$(selector);if(element)element.textContent=value;};
 let sqlLabModulePromise=null;
+installPageTransitions({label:()=>state.lang==='en'?'Loading…':'Yükleniyor…'});
 
 const copy={
   tr:{

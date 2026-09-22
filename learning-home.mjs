@@ -174,15 +174,20 @@ function formatDate(value,lang){
   return new Intl.DateTimeFormat(lang==='tr'?'tr-TR':'en-US',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(date);
 }
 
+export function objectiveFocusHref(entry,dimension){
+  const runtime=entry?.runtime||`lesson.html?id=${encodeURIComponent(entry?.id||'')}`;
+  return `${runtime}${runtime.includes('?')?'&':'?'}focus=${encodeURIComponent(dimension)}`;
+}
+
 function labels(lang){
   return lang==='en'?{
     homeTitle:'Continue',continue:'Continue',start:'Start',courseProgress:'Progress',completed:'Lessons',due:'Review',active:'Tracks',mastery:'Mastery',
     notStarted:'Not started',learning:'Learning',awaitingEvidence:'Evidence needed',awaitingAdvanced:'Advanced evidence',readyRetention:'Review pending',retentionDue:'Review due',mastered:'Mastered',needsReview:'Needs review',
-    masteredTracks:'tracks',lessonMastery:'lessons mastered',review:'Review',retention:'Reviews',upcoming:'Next',courses:'Courses',current:'Continue',next:'Next',done:'Done',lesson:'Lesson',reviews:'reviews'
+    masteredTracks:'tracks',lessonMastery:'lessons mastered',review:'Review',retention:'Reviews',upcoming:'Next',courses:'Courses',current:'Continue',next:'Next',done:'Done',lesson:'Lesson',reviews:'reviews',focusTitle:'Mastery focus',focusRetry:'Practice',focusGap:'gaps'
   }:{
     homeTitle:'Devam et',continue:'Devam et',start:'Başla',courseProgress:'İlerleme',completed:'Ders',due:'Tekrar',active:'Track',mastery:'Mastery',
     notStarted:'Başlanmadı',learning:'Devam ediyor',awaitingEvidence:'Kanıt gerekli',awaitingAdvanced:'İleri kanıt',readyRetention:'Tekrar bekliyor',retentionDue:'Tekrar zamanı',mastered:'Mastered',needsReview:'Gözden geçir',
-    masteredTracks:'track',lessonMastery:'ders mastery',review:'Gözden geçir',retention:'Tekrarlar',upcoming:'Sıradaki',courses:'Dersler',current:'Devam',next:'Sırada',done:'Tamamlandı',lesson:'Ders',reviews:'tekrar'
+    masteredTracks:'track',lessonMastery:'ders mastery',review:'Gözden geçir',retention:'Tekrarlar',upcoming:'Sıradaki',courses:'Dersler',current:'Devam',next:'Sırada',done:'Tamamlandı',lesson:'Ders',reviews:'tekrar',focusTitle:'Mastery odağı',focusRetry:'Tekrarla',focusGap:'açık'
   };
 }
 
@@ -244,6 +249,25 @@ export function renderLearningHome({root=document,catalog,curriculum,storage=loc
       retention.hidden=false;
       retention.innerHTML=`<div class="retention-summary-head"><strong>${escapeHtml(l.retention)}</strong></div>
         ${queue.length?`<div class="retention-queue">${queue.map(({record,item})=>`<a href="${escapeHtml(record.entry.runtime)}"><span>D+${Number(item.day||0)}</span><strong>${escapeHtml(snapshot.title(record.entry,lang))}</strong><small>${escapeHtml(formatDate(item.dueAt,lang))}</small></a>`).join('')}</div>`:`<small>${escapeHtml(l.upcoming)} · ${escapeHtml(snapshot.title(upcoming.record.entry,lang))} · ${escapeHtml(formatDate(upcoming.item.dueAt,lang))}</small>`}`;
+    }
+  }
+
+  const focusRoot=root.querySelector('#objectiveFocus');
+  if(focusRoot){
+    const targets=snapshot.diagnosticTargets.slice(0,3).map(target=>({
+      target,
+      record:snapshot.records.find(record=>record.entry.id===target.lessonId)
+    })).filter(item=>item.record);
+    if(!targets.length){
+      focusRoot.hidden=true;
+      focusRoot.innerHTML='';
+    }else{
+      focusRoot.hidden=false;
+      focusRoot.innerHTML=`<div class="objective-focus-head"><strong>${escapeHtml(l.focusTitle)}</strong><small>${targets.length} ${escapeHtml(l.focusGap)}</small></div>
+        <div class="objective-focus-list">${targets.map(({target,record})=>`<a class="objective-focus-item" href="${escapeHtml(objectiveFocusHref(record.entry,target.dimension))}">
+          <span><strong>${escapeHtml(snapshot.title(record.entry,lang))}</strong><small>${escapeHtml(lang==='en'?target.dimension_en:target.dimension_tr)} · ${target.score}% → ${target.required}%</small></span>
+          <b>${escapeHtml(l.focusRetry)}</b>
+        </a>`).join('')}</div>`;
     }
   }
 

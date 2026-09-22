@@ -24,6 +24,30 @@ try{
   assert.doesNotMatch(await page.locator('#learningStats').textContent(),/Değerlendirilmedi/);
   assert.match(await page.locator('#courseGrid [data-track="sql"] .course-state-row').textContent(),/Başlanmadı/);
   assert.match(await page.locator('#courseGrid [data-track="sql"] .course-state-row').textContent(),/0\/12 ders mastery/);
+  assert.equal(await page.locator('[data-page-transition]').count(),1);
+  assert.equal(await page.locator('[data-page-transition]').isVisible(),false);
+
+  await page.evaluate(()=>{
+    localStorage.setItem('da-learning-os:lesson:sql.relational-thinking.001',JSON.stringify({
+      version:5,lessonId:'sql.relational-thinking.001',startedAt:'2026-09-22T05:00:00.000Z',updatedAt:'2026-09-22T05:30:00.000Z',
+      completedAt:'2026-09-22T05:30:00.000Z',completedSections:['complete'],responses:{},evidenceDrafts:{},labEvidence:{},
+      verifiedEvidence:{
+        knowledge:{score:90,source:'mastery-assessment-v1'},
+        interpretation:{score:70,source:'mastery-assessment-v1'},
+        production:{score:90,source:'semantic-sql-lab'},
+        transfer:{score:60,source:'mastery-assessment-v1'}
+      },
+      retentionDue:[],retentionHistory:[],assessmentHistory:[],advancedHistory:[],masteryInputs:{},
+      mastery:{evaluated:true,passed:false,state:'needs_review'}
+    }));
+  });
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#objectiveFocus').waitFor({state:'visible'});
+  assert.equal(await page.locator('#objectiveFocus .objective-focus-item').count(),2);
+  assert.match(await page.locator('#objectiveFocus .objective-focus-item').first().getAttribute('href'),/focus=interpretation/);
+  await page.evaluate(()=>localStorage.clear());
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#learningContinue .continue-card').waitFor({state:'visible'});
 
   const sqlLessonIds=await page.locator('#courseGrid [data-track="sql"] .course-lesson').evaluateAll(links=>links.map(link=>new URL(link.href).searchParams.get('id')));
   await page.evaluate(ids=>{

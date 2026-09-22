@@ -178,3 +178,23 @@ html{scroll-padding-top:100px}button,input,textarea{accent-color:var(--blue)}
  .home-page .utility-panel>summary,.home-page .utility-body{padding:18px}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important}}
+
+
+/* Objective focus + page transitions */
+.objective-focus{margin-top:12px;padding:14px 18px;box-shadow:none}
+.objective-focus-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:8px}
+.objective-focus-head strong{font-size:15px}.objective-focus-head small{font-size:12px;color:var(--muted)}
+.objective-focus-list{display:grid;gap:6px}
+.objective-focus-item{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 12px;border-radius:10px;color:var(--text);text-decoration:none}
+.objective-focus-item:hover{background:#edf4ff}.objective-focus-item span,.objective-focus-item strong,.objective-focus-item small{display:block}
+.objective-focus-item strong{font-size:13px;font-weight:650}.objective-focus-item small{margin-top:2px;font-size:11px;color:var(--muted)}
+.objective-focus-item b{font-size:12px;color:var(--blue);white-space:nowrap}
+.page-transition[hidden]{display:none!important}
+.page-transition{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:rgba(247,249,252,.76);backdrop-filter:blur(5px);opacity:0;transition:opacity .14s ease;pointer-events:all}
+.page-transition.is-visible{opacity:1}
+.page-transition-card{display:flex;align-items:center;gap:12px;padding:13px 17px;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:0 14px 40px rgba(25,43,67,.12)}
+.page-transition-card strong{font-size:14px;font-weight:650}
+.page-transition-spinner{width:18px;height:18px;border:2px solid #d5deeb;border-top-color:var(--blue);border-radius:50%;animation:page-transition-spin .72s linear infinite}
+@keyframes page-transition-spin{to{transform:rotate(360deg)}}
+@media(max-width:680px){.objective-focus{padding:12px}.objective-focus-item{padding:10px 8px}.page-transition-card{padding:12px 15px}}
+@media(prefers-reduced-motion:reduce){.page-transition{transition:none}.page-transition-spinner{animation:none;border-top-color:#d5deeb}}
