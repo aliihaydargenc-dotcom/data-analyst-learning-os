@@ -2,6 +2,7 @@ import {aggregateTrackMastery} from './track-mastery.mjs';
 import {buildObjectiveMasteryAnalytics,aggregateObjectiveMastery,prioritizeObjectiveTargets} from './objective-mastery.mjs';
 import {buildDailyChallenge} from './daily-challenge.mjs';
 import {readXpLedger} from './xp-system.mjs';
+import {analystLevelFromXp,analystLevelTitle} from './level-system.mjs';
 
 const TRACK_ORDER=['sql','qlik','python','excel','html','english'];
 
@@ -66,6 +67,7 @@ export function buildLearningSnapshot({catalog,curriculum,storage,now=new Date()
   const moduleMap=buildModuleMap(curriculum);
   const trackMap=buildTrackMap(curriculum);
   const xpLedger=readXpLedger(storage);
+  const analystLevel=analystLevelFromXp(xpLedger.totalXp);
 
   const records=entries.map(entry=>{
     const progress=safeParse(storage?.getItem?.(`da-learning-os:lesson:${entry.id}`));
@@ -161,7 +163,7 @@ export function buildLearningSnapshot({catalog,curriculum,storage,now=new Date()
     retentionDue,retentionUpcoming,
     completedLessons,totalLessons:records.length,activeTracks,evidenceDrafts,
     masteryEvaluated,masteryAwarded,masteryStates,trackMasteryStates,masteredTracks,
-    objectiveAnalytics,diagnosticTargets,xpLedger,xpTotal:xpLedger.totalXp,
+    objectiveAnalytics,diagnosticTargets,xpLedger,xpTotal:xpLedger.totalXp,analystLevel,
     title:(entry,lang='tr')=>titleFor(entry,moduleMap,lang)
   };
 }
@@ -186,11 +188,11 @@ function labels(lang){
   return lang==='en'?{
     homeTitle:'Continue',continue:'Continue',start:'Start',courseProgress:'Progress',completed:'Lessons',due:'Review',active:'Tracks',mastery:'Mastery',
     notStarted:'Not started',learning:'Learning',awaitingEvidence:'Evidence needed',awaitingAdvanced:'Advanced evidence',readyRetention:'Review pending',retentionDue:'Review due',mastered:'Mastered',needsReview:'Needs review',
-    masteredTracks:'tracks',lessonMastery:'lessons mastered',review:'Review',retention:'Reviews',upcoming:'Next',courses:'Courses',current:'Continue',next:'Next',done:'Done',lesson:'Lesson',reviews:'reviews',skills:'Skills',skillCoverage:'Evidence',skillMastery:'Mastery',skillTarget:'Focus',skillPractice:'Practice',skillEvidence:'evidence',subSkills:'subskills',skillOpen:'Open',skillMasteredStatus:'Mastered',skillWeakStatus:'Needs review',skillLearningStatus:'Learning',skillNotStartedStatus:'Not started',dailyTitle:'Daily analyst mission',dailyStart:'Start challenge',dailyFocus:'Focus',dailyMinutes:'min',dailyEarned:'Earned',xp:'XP',focusTitle:'Mastery focus',focusRetry:'Practice',focusGap:'gaps'
+    masteredTracks:'tracks',lessonMastery:'lessons mastered',review:'Review',retention:'Reviews',upcoming:'Next',courses:'Courses',current:'Continue',next:'Next',done:'Done',lesson:'Lesson',reviews:'reviews',skills:'Skills',skillCoverage:'Evidence',skillMastery:'Mastery',skillTarget:'Focus',skillPractice:'Practice',skillEvidence:'evidence',subSkills:'subskills',skillOpen:'Open',skillMasteredStatus:'Mastered',skillWeakStatus:'Needs review',skillLearningStatus:'Learning',skillNotStartedStatus:'Not started',dailyTitle:'Daily analyst mission',dailyStart:'Start challenge',dailyFocus:'Focus',dailyMinutes:'min',dailyEarned:'Earned',xp:'XP',level:'Level',maxLevel:'Max level',nextLevel:'next',focusTitle:'Mastery focus',focusRetry:'Practice',focusGap:'gaps'
   }:{
     homeTitle:'Devam et',continue:'Devam et',start:'Başla',courseProgress:'İlerleme',completed:'Ders',due:'Tekrar',active:'Track',mastery:'Mastery',
     notStarted:'Başlanmadı',learning:'Devam ediyor',awaitingEvidence:'Kanıt gerekli',awaitingAdvanced:'İleri kanıt',readyRetention:'Tekrar bekliyor',retentionDue:'Tekrar zamanı',mastered:'Mastered',needsReview:'Gözden geçir',
-    masteredTracks:'track',lessonMastery:'ders mastery',review:'Gözden geçir',retention:'Tekrarlar',upcoming:'Sıradaki',courses:'Dersler',current:'Devam',next:'Sırada',done:'Tamamlandı',lesson:'Ders',reviews:'tekrar',skills:'Beceriler',skillCoverage:'Kanıt',skillMastery:'Mastery',skillTarget:'Odak',skillPractice:'Tekrarla',skillEvidence:'kanıt',subSkills:'alt beceri',skillOpen:'Aç',skillMasteredStatus:'Mastered',skillWeakStatus:'Gözden geçir',skillLearningStatus:'Öğreniliyor',skillNotStartedStatus:'Başlanmadı',dailyTitle:'Günün analist görevi',dailyStart:'Challenge’a başla',dailyFocus:'Odak',dailyMinutes:'dk',dailyEarned:'Kazanıldı',xp:'XP',focusTitle:'Mastery odağı',focusRetry:'Tekrarla',focusGap:'açık'
+    masteredTracks:'track',lessonMastery:'ders mastery',review:'Gözden geçir',retention:'Tekrarlar',upcoming:'Sıradaki',courses:'Dersler',current:'Devam',next:'Sırada',done:'Tamamlandı',lesson:'Ders',reviews:'tekrar',skills:'Beceriler',skillCoverage:'Kanıt',skillMastery:'Mastery',skillTarget:'Odak',skillPractice:'Tekrarla',skillEvidence:'kanıt',subSkills:'alt beceri',skillOpen:'Aç',skillMasteredStatus:'Mastered',skillWeakStatus:'Gözden geçir',skillLearningStatus:'Öğreniliyor',skillNotStartedStatus:'Başlanmadı',dailyTitle:'Günün analist görevi',dailyStart:'Challenge’a başla',dailyFocus:'Odak',dailyMinutes:'dk',dailyEarned:'Kazanıldı',xp:'XP',level:'Seviye',maxLevel:'Maksimum seviye',nextLevel:'sonraki',focusTitle:'Mastery odağı',focusRetry:'Tekrarla',focusGap:'açık'
   };
 }
 
@@ -307,10 +309,16 @@ export function renderLearningHome({root=document,catalog,curriculum,storage=loc
       snapshot.trackMasteryStates.ready_for_retention?l.readyRetention:
       snapshot.activeTracks?l.learning:l.notStarted;
     const formattedXp=new Intl.NumberFormat(lang==='tr'?'tr-TR':'en-US').format(snapshot.xpTotal);
+    const level=snapshot.analystLevel;
+    const levelTitle=analystLevelTitle(level,lang);
+    const levelProgress=level.isMax
+      ?`${levelTitle} · ${l.maxLevel}`
+      :`${levelTitle} · ${level.progressPercent}% · ${level.xpToNext} XP ${l.nextLevel}`;
     stats.innerHTML=`
+      <article data-learning-stat="level"><span>${escapeHtml(l.level)}</span><strong>${String(level.level).padStart(2,'0')}</strong><small>${escapeHtml(levelProgress)}</small></article>
+      <article data-learning-stat="xp"><span>${escapeHtml(l.xp)}</span><strong>${escapeHtml(formattedXp)}</strong></article>
       <article data-learning-stat="completed"><span>${escapeHtml(l.completed)}</span><strong>${snapshot.completedLessons}/${snapshot.totalLessons}</strong></article>
       <article data-learning-stat="due"><span>${escapeHtml(l.due)}</span><strong>${snapshot.retentionDue.length}</strong></article>
-      <article data-learning-stat="xp"><span>${escapeHtml(l.xp)}</span><strong>${escapeHtml(formattedXp)}</strong></article>
       <article data-learning-stat="mastery"><span>${escapeHtml(l.mastery)}</span><strong class="stat-word">${escapeHtml(masteryValue)}</strong></article>`;
   }
 
