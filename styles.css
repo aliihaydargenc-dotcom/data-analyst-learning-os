@@ -124,6 +124,20 @@ html{scroll-padding-top:100px}button,input,textarea{accent-color:var(--blue)}
 .home-page .learning-stats article{display:flex;align-items:baseline;gap:10px;background:none;border:0;border-radius:0;padding:0}
 .home-page .learning-stats span{font-size:13px;text-transform:none;letter-spacing:0}.home-page .learning-stats strong,.home-page .learning-stats .stat-word{margin:0;font-size:16px;font-weight:650}
 .home-page .retention-summary{margin-top:20px}.home-page .retention-summary-head strong{font-size:16px}.home-page .retention-queue strong{font-size:14px}.home-page .retention-summary small{font-size:13px}
+.home-page .skill-matrix-section{padding:32px 0 0}
+.home-page .skill-matrix-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.home-page .skill-matrix-card{padding:18px 20px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.home-page .skill-matrix-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:12px}
+.home-page .skill-matrix-head>span>strong,.home-page .skill-matrix-head>span>small{display:block}
+.home-page .skill-matrix-head>span>strong{font-size:16px;font-weight:700}.home-page .skill-matrix-head>span>small{margin-top:4px;font-size:12px;color:var(--muted)}
+.home-page .skill-mastery-value{text-align:right;flex-shrink:0}.home-page .skill-mastery-value strong{font-size:18px!important;color:var(--text)}.home-page .skill-mastery-value small{margin-top:1px!important}
+.home-page .skill-mastery-progress{height:4px;border-radius:999px;background:#e8edf5;overflow:hidden;margin-bottom:14px}.home-page .skill-mastery-progress span{display:block;height:100%;background:var(--blue);border-radius:inherit}
+.home-page .skill-dimension-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.home-page .skill-dimension{min-width:0;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fafbfd}
+.home-page .skill-dimension span,.home-page .skill-dimension strong,.home-page .skill-dimension small{display:block}.home-page .skill-dimension span{font-size:11px;color:var(--muted)}.home-page .skill-dimension strong{margin-top:4px;font-size:15px}.home-page .skill-dimension small{margin-top:2px;font-size:10px;color:var(--muted)}
+.home-page .skill-dimension.strong{background:#edf8f3;border-color:#cee5da}.home-page .skill-dimension.weak{background:#fff7e8;border-color:#efd9ae}
+.home-page .skill-matrix-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.home-page .skill-matrix-foot>a{display:flex;align-items:center;gap:8px;color:var(--muted);text-decoration:none}.home-page .skill-matrix-foot>a strong{color:var(--blue);font-weight:650}.home-page .skill-matrix-foot>a:hover strong{text-decoration:underline}
 .home-page .course-navigation{padding:32px 0 0}.home-page .section-title h2{font-size:23px;letter-spacing:-.025em;margin:0}
 .home-page .course-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
 .home-page .course-card{border-radius:14px;background:#fff}
@@ -170,11 +184,12 @@ html{scroll-padding-top:100px}button,input,textarea{accent-color:var(--blue)}
  .home-page .continue-card{padding:20px;grid-template-columns:1fr;gap:20px}.home-page .continue-action{width:100%}
  .home-page .learning-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;padding:18px 0}
  .home-page .learning-stats article{flex-wrap:wrap;gap:4px 8px}.home-page .learning-stats .stat-word{font-size:14px}
- .home-page .course-grid,.home-page .home-utilities,.home-page .course-lessons,.home-page .lab-grid{grid-template-columns:1fr}
+ .home-page .course-grid,.home-page .skill-matrix-grid,.home-page .home-utilities,.home-page .course-lessons,.home-page .lab-grid{grid-template-columns:1fr}
  .home-page .course-card[open],.home-page .utility-panel[open]{grid-column:auto}
  .home-page .course-card summary{padding:18px;min-height:94px;gap:12px}
  .home-page .course-card-body{padding:14px 12px}.home-page .course-lessons{gap:2px}
  .home-page .course-lesson{min-height:64px;padding:12px 8px}.home-page .course-state-row{padding:0 6px;font-size:12px}
+ .home-page .skill-matrix-card{padding:16px}.home-page .skill-dimension-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.home-page .skill-matrix-foot{align-items:flex-start;flex-direction:column}
  .home-page .utility-panel>summary,.home-page .utility-body{padding:18px}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important}}

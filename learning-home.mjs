@@ -183,11 +183,11 @@ function labels(lang){
   return lang==='en'?{
     homeTitle:'Continue',continue:'Continue',start:'Start',courseProgress:'Progress',completed:'Lessons',due:'Review',active:'Tracks',mastery:'Mastery',
     notStarted:'Not started',learning:'Learning',awaitingEvidence:'Evidence needed',awaitingAdvanced:'Advanced evidence',readyRetention:'Review pending',retentionDue:'Review due',mastered:'Mastered',needsReview:'Needs review',
-    masteredTracks:'tracks',lessonMastery:'lessons mastered',review:'Review',retention:'Reviews',upcoming:'Next',courses:'Courses',current:'Continue',next:'Next',done:'Done',lesson:'Lesson',reviews:'reviews',focusTitle:'Mastery focus',focusRetry:'Practice',focusGap:'gaps'
+    masteredTracks:'tracks',lessonMastery:'lessons mastered',review:'Review',retention:'Reviews',upcoming:'Next',courses:'Courses',current:'Continue',next:'Next',done:'Done',lesson:'Lesson',reviews:'reviews',skills:'Skills',skillCoverage:'Evidence',skillMastery:'Mastery',skillTarget:'Focus',skillPractice:'Practice',skillEvidence:'evidence',focusTitle:'Mastery focus',focusRetry:'Practice',focusGap:'gaps'
   }:{
     homeTitle:'Devam et',continue:'Devam et',start:'Başla',courseProgress:'İlerleme',completed:'Ders',due:'Tekrar',active:'Track',mastery:'Mastery',
     notStarted:'Başlanmadı',learning:'Devam ediyor',awaitingEvidence:'Kanıt gerekli',awaitingAdvanced:'İleri kanıt',readyRetention:'Tekrar bekliyor',retentionDue:'Tekrar zamanı',mastered:'Mastered',needsReview:'Gözden geçir',
-    masteredTracks:'track',lessonMastery:'ders mastery',review:'Gözden geçir',retention:'Tekrarlar',upcoming:'Sıradaki',courses:'Dersler',current:'Devam',next:'Sırada',done:'Tamamlandı',lesson:'Ders',reviews:'tekrar',focusTitle:'Mastery odağı',focusRetry:'Tekrarla',focusGap:'açık'
+    masteredTracks:'track',lessonMastery:'ders mastery',review:'Gözden geçir',retention:'Tekrarlar',upcoming:'Sıradaki',courses:'Dersler',current:'Devam',next:'Sırada',done:'Tamamlandı',lesson:'Ders',reviews:'tekrar',skills:'Beceriler',skillCoverage:'Kanıt',skillMastery:'Mastery',skillTarget:'Odak',skillPractice:'Tekrarla',skillEvidence:'kanıt',focusTitle:'Mastery odağı',focusRetry:'Tekrarla',focusGap:'açık'
   };
 }
 
@@ -196,6 +196,62 @@ function masteryLabel(state,l){
     not_started:l.notStarted,learning:l.learning,awaiting_evidence:l.awaitingEvidence,awaiting_advanced_evidence:l.awaitingAdvanced,
     ready_for_retention:l.readyRetention,retention_due:l.retentionDue,mastered:l.mastered,needs_review:l.needsReview
   })[state]||l.learning;
+}
+
+const SKILL_DIMENSIONS=Object.freeze(['knowledge','interpretation','production','transfer']);
+const SKILL_DIMENSION_LABELS=Object.freeze({
+  knowledge:{tr:'Bilgi',en:'Knowledge'},
+  interpretation:{tr:'Yorum',en:'Interpretation'},
+  production:{tr:'Üretim',en:'Production'},
+  transfer:{tr:'Transfer',en:'Transfer'}
+});
+
+function skillDimensionState(summary){
+  if(!summary||summary.evaluatedCount===0)return'unverified';
+  if(summary.weakCount>0)return'weak';
+  if(summary.strongCount===summary.evaluatedCount)return'strong';
+  return'learning';
+}
+
+export function buildSkillMatrixRows(snapshot,lang='tr'){
+  const records=snapshot?.records||[];
+  return (snapshot?.tracks||[]).map(track=>{
+    const analytics=track.objectiveAnalytics||{};
+    const summaries=analytics.dimensionSummary||{};
+    const target=(track.objectiveTargets||[])[0]||null;
+    const targetRecord=target?records.find(record=>record.entry.id===target.lessonId):null;
+    return {
+      id:track.id,
+      name:track.name,
+      level:track.level,
+      masteryState:track.masteryState,
+      masteryPercent:analytics.masteryPercent||0,
+      coveragePercent:analytics.coveragePercent||0,
+      masteredCount:track.masteredCount||0,
+      total:track.total||0,
+      dimensions:SKILL_DIMENSIONS.map(dimension=>{
+        const summary=summaries[dimension]||{total:0,evaluatedCount:0,strongCount:0,weakCount:0,averageScore:null};
+        return {
+          dimension,
+          label:SKILL_DIMENSION_LABELS[dimension][lang==='en'?'en':'tr'],
+          score:summary.averageScore,
+          total:summary.total||0,
+          evaluatedCount:summary.evaluatedCount||0,
+          strongCount:summary.strongCount||0,
+          weakCount:summary.weakCount||0,
+          state:skillDimensionState(summary)
+        };
+      }),
+      target:target&&targetRecord?{
+        dimension:target.dimension,
+        label:lang==='en'?target.dimension_en:target.dimension_tr,
+        score:target.score,
+        required:target.required,
+        gap:target.gap,
+        href:objectiveFocusHref(targetRecord.entry,target.dimension)
+      }:null
+    };
+  });
 }
 
 export function renderLearningHome({root=document,catalog,curriculum,storage=localStorage,lang='tr',now=new Date()}){
@@ -269,6 +325,30 @@ export function renderLearningHome({root=document,catalog,curriculum,storage=loc
           <b>${escapeHtml(l.focusRetry)}</b>
         </a>`).join('')}</div>`;
     }
+  }
+
+  const skillTitle=root.querySelector('#skillMatrixTitle');
+  if(skillTitle)skillTitle.textContent=l.skills;
+
+  const skillRoot=root.querySelector('#skillMatrixGrid');
+  if(skillRoot){
+    const skillRows=buildSkillMatrixRows(snapshot,lang);
+    skillRoot.innerHTML=skillRows.map(row=>`<article class="skill-matrix-card" data-skill-track="${escapeHtml(row.id)}">
+      <div class="skill-matrix-head">
+        <span><strong>${escapeHtml(row.name)}</strong><small>${escapeHtml(row.level)} · ${row.masteredCount}/${row.total} ${escapeHtml(l.lessonMastery)}</small></span>
+        <span class="skill-mastery-value"><strong>${row.masteryPercent}%</strong><small>${escapeHtml(l.skillMastery)}</small></span>
+      </div>
+      <div class="skill-mastery-progress" aria-label="${escapeHtml(l.skillMastery)}"><span style="width:${row.masteryPercent}%"></span></div>
+      <div class="skill-dimension-grid">${row.dimensions.map(dimension=>`<div class="skill-dimension ${escapeHtml(dimension.state)}">
+        <span>${escapeHtml(dimension.label)}</span>
+        <strong>${dimension.score===null?'—':`${dimension.score}%`}</strong>
+        <small>${dimension.evaluatedCount}/${dimension.total} ${escapeHtml(l.skillEvidence)}</small>
+      </div>`).join('')}</div>
+      <div class="skill-matrix-foot">
+        <span>${escapeHtml(l.skillCoverage)} · ${row.coveragePercent}%</span>
+        ${row.target?`<a href="${escapeHtml(row.target.href)}"><span>${escapeHtml(l.skillTarget)} · ${escapeHtml(row.target.label)}</span><strong>${escapeHtml(l.skillPractice)}</strong></a>`:''}
+      </div>
+    </article>`).join('');
   }
 
   const courseTitle=root.querySelector('#courseNavigationTitle');

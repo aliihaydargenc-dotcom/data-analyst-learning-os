@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {buildLearningSnapshot,objectiveFocusHref} from '../learning-home.mjs';
+import {buildLearningSnapshot,buildSkillMatrixRows,objectiveFocusHref} from '../learning-home.mjs';
 
 class MemoryStorage{
   constructor(values={}){this.values=new Map(Object.entries(values));}
@@ -86,5 +86,16 @@ assert.deepEqual(snapshot.diagnosticTargets.map(item=>item.dimension),['interpre
 
 // Priority follows distance from the level floor, not raw score.
 assert.deepEqual(snapshot.diagnosticTargets.map(item=>item.gap),[10,5]);
+
+const skillRows=buildSkillMatrixRows(snapshot,'tr');
+const sqlSkill=skillRows.find(item=>item.id==='sql');
+assert.equal(skillRows.length,2);
+assert.equal(sqlSkill.coveragePercent,50);
+assert.equal(sqlSkill.masteryPercent,25);
+assert.equal(sqlSkill.dimensions.find(item=>item.dimension==='knowledge').score,90);
+assert.equal(sqlSkill.dimensions.find(item=>item.dimension==='interpretation').state,'weak');
+assert.equal(sqlSkill.target.dimension,'interpretation');
+assert.equal(sqlSkill.target.href,'lesson.html?id=sql.one.001&focus=interpretation');
+
 assert.equal(objectiveFocusHref(catalog.production_lessons[0],'interpretation'),'lesson.html?id=sql.one.001&focus=interpretation');
 console.log('learning home: PASS');
