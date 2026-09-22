@@ -5,13 +5,15 @@ import {
 } from './lesson-runtime.mjs';
 import {buildMasteryAssessment} from './mastery-assessment.mjs';
 import {buildAdvancedMasteryChallenge} from './advanced-mastery.mjs';
+import {installPageTransitions} from './page-transition.mjs';
 
 const $=selector=>document.querySelector(selector);
 const params=new URLSearchParams(location.search);
-const state={lang:'tr',catalog:null,entry:null,lesson:null,sources:null,progress:null,sectionIndex:0,remediationAssessmentDimensions:null,remediationAdvancedGates:null};
+const state={lang:'tr',catalog:null,entry:null,lesson:null,sources:null,progress:null,sectionIndex:0,remediationAssessmentDimensions:null,remediationAdvancedGates:null,requestedFocus:null};
 let sqlLabModulePromise=null;
 let pythonLabModulePromise=null;
 let htmlLabModulePromise=null;
+installPageTransitions({label:()=>state.lang==='en'?'Loading…':'Yükleniyor…'});
 
 const labels={
   tr:{
@@ -517,6 +519,24 @@ function renderAdvancedMastery(){
   });
 }
 
+function configureRequestedObjectiveFocus(){
+  const focus=params.get('focus');
+  if(!['knowledge','interpretation','production','transfer'].includes(focus))return;
+  state.requestedFocus=focus;
+  if(['knowledge','interpretation','transfer'].includes(focus)||(focus==='production'&&!lessonLabId(state.lesson))){
+    state.remediationAssessmentDimensions=[focus];
+  }
+}
+
+function revealRequestedObjectiveFocus(){
+  if(!state.requestedFocus)return;
+  const target=remediationTargetElement(state.requestedFocus);
+  if(!target)return;
+  target.classList.add('remediation-focus');
+  requestAnimationFrame(()=>target.scrollIntoView({behavior:'smooth',block:'start'}));
+  window.setTimeout(()=>target.classList.remove('remediation-focus'),1800);
+}
+
 function remediationTargetElement(dimension){
   if(['knowledge','interpretation','transfer'].includes(dimension))return document.querySelector('[data-assessment-dimension="'+dimension+'"]')||$('#masteryAssessment');
   if(dimension==='production'){
@@ -797,6 +817,7 @@ async function init(){
     if(!lessonResponse.ok) throw new Error('Lesson content could not be loaded.');
     state.lesson=await lessonResponse.json();
     loadProgress();
+    configureRequestedObjectiveFocus();
 
     $('#lessonHero').classList.remove('hidden');
     $('#lessonContext').classList.remove('hidden');
@@ -806,6 +827,7 @@ async function init(){
     $('#lessonSources').classList.remove('hidden');
     renderAll();
     configureResponsiveLessonUi();
+    revealRequestedObjectiveFocus();
   }catch(error){
     console.error(error);
     $('#lessonError').textContent=error instanceof Error?error.message:String(error);
