@@ -5,9 +5,10 @@ import {
   createLessonProgress,normalizeLessonProgress,canCompleteSection,
   completionPercent,completeSection,buildRetentionSchedule,saveEvidenceDraft,
   labPassed,recordLabAttempt,recordCaseLabAttempt,recordPythonLabAttempt,recordHtmlLabAttempt,
-  completeRetentionReview,recordVerifiedEvidence,recordMasteryAssessment
+  completeRetentionReview,recordVerifiedEvidence,recordMasteryAssessment,recordAdvancedMasteryChallenge
 } from '../lesson-runtime.mjs';
 import {buildMasteryAssessment,evaluateMasteryAssessment} from '../mastery-assessment.mjs';
+import {buildAdvancedMasteryChallenge} from '../advanced-mastery.mjs';
 
 const lesson=JSON.parse(fs.readFileSync('content/lessons/sql.relational-thinking.001.json','utf8'));
 const result=validateLessonStructure(lesson);
@@ -27,7 +28,7 @@ assert.ok(brokenResult.errors.includes('layer:transfer'));
 const now=new Date('2026-09-21T12:00:00.000Z');
 let progress=createLessonProgress(lesson,now);
 assert.equal(progress.lessonId,lesson.id);
-assert.equal(progress.version,4);
+assert.equal(progress.version,5);
 assert.deepEqual(progress.labEvidence,{});
 assert.deepEqual(progress.verifiedEvidence,{});
 assert.equal(progress.mastery.state,'learning');
@@ -156,5 +157,43 @@ htmlProgress=recordHtmlLabAttempt(htmlLesson,htmlProgress,htmlLesson.html_lab.id
 assert.equal(labPassed(htmlProgress,htmlLesson.html_lab.id),true);
 htmlGated=completeSection(htmlLesson,htmlProgress,htmlIndependent.id,htmlResponse,now);
 assert.equal(htmlGated.ok,true);
+
+// L5 advanced gate lifecycle: core + retention evidence is not enough without a verified rubric gate.
+const l5Lesson=JSON.parse(fs.readFileSync('content/lessons/sql.production-tuning.001.json','utf8'));
+let l5Progress=createLessonProgress(l5Lesson,now);
+l5Progress.completedAt=now.toISOString();
+l5Progress.retentionDue=[];
+for(const dimension of ['knowledge','interpretation','production','transfer','retention']){
+  l5Progress=recordVerifiedEvidence(l5Lesson,l5Progress,dimension,100,'unit-test',now);
+}
+assert.equal(l5Progress.mastery.state,'awaiting_advanced_evidence');
+assert.deepEqual(l5Progress.mastery.missingGates,['rubric']);
+const l5Challenge=buildAdvancedMasteryChallenge(l5Lesson);
+const l5Answers=Object.fromEntries(l5Challenge.gates.flatMap(gate=>gate.items.map(item=>[item.id,item.answerId])));
+const l5Advanced=recordAdvancedMasteryChallenge(l5Lesson,l5Progress,l5Answers,now);
+assert.equal(l5Advanced.ok,true);
+l5Progress=l5Advanced.progress;
+assert.equal(l5Progress.masteryInputs.rubricMin,5);
+assert.equal(l5Progress.mastery.state,'mastered');
+
+// Expert requires rubric + capstone + architecture-review evidence.
+const expertLesson=JSON.parse(fs.readFileSync('content/lessons/sql.architecture-review.001.json','utf8'));
+let expertProgress=createLessonProgress(expertLesson,now);
+expertProgress.completedAt=now.toISOString();
+expertProgress.retentionDue=[];
+for(const dimension of ['knowledge','interpretation','production','transfer','retention']){
+  expertProgress=recordVerifiedEvidence(expertLesson,expertProgress,dimension,100,'unit-test',now);
+}
+assert.equal(expertProgress.mastery.state,'awaiting_advanced_evidence');
+assert.deepEqual(expertProgress.mastery.missingGates,['rubric','capstone','architectureReview']);
+const expertChallenge=buildAdvancedMasteryChallenge(expertLesson);
+const expertAnswers=Object.fromEntries(expertChallenge.gates.flatMap(gate=>gate.items.map(item=>[item.id,item.answerId])));
+const expertAdvanced=recordAdvancedMasteryChallenge(expertLesson,expertProgress,expertAnswers,now);
+assert.equal(expertAdvanced.ok,true);
+expertProgress=expertAdvanced.progress;
+assert.equal(expertProgress.masteryInputs.rubricMin,5);
+assert.equal(expertProgress.masteryInputs.capstone,100);
+assert.equal(expertProgress.masteryInputs.architectureReview,true);
+assert.equal(expertProgress.mastery.state,'mastered');
 
 console.log('lesson runtime tests: PASS');

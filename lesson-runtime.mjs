@@ -1,5 +1,6 @@
 import {evaluateMastery,MASTERY_PROFILES} from './mastery-engine.mjs';
 import {evaluateMasteryAssessment,hasSemanticProductionLab,MASTERY_ASSESSMENT_VERSION} from './mastery-assessment.mjs';
+import {evaluateAdvancedMasteryChallenge,advancedRequirementsForLevel,ADVANCED_MASTERY_VERSION} from './advanced-mastery.mjs';
 
 export const REQUIRED_LAYERS=Object.freeze([
   'mental_model','worked_example','guided_practice','independent_practice','debugging','transfer','retention'
@@ -43,7 +44,7 @@ export function lessonLayerSummary(lesson){
 
 export function createLessonProgress(lesson,now=new Date()){
   return {
-    version:4,
+    version:5,
     lessonId:lesson.id,
     startedAt:now.toISOString(),
     updatedAt:now.toISOString(),
@@ -56,6 +57,7 @@ export function createLessonProgress(lesson,now=new Date()){
     retentionDue:[],
     retentionHistory:[],
     assessmentHistory:[],
+    advancedHistory:[],
     masteryInputs:{},
     mastery:{
       evaluated:false,passed:false,state:'learning',weighted:null,failures:[],
@@ -73,7 +75,7 @@ export function normalizeLessonProgress(lesson,value,now=new Date()){
   const next={
     ...base,
     ...value,
-    version:4,
+    version:5,
     lessonId:lesson.id,
     completedSections:completed,
     responses:{...(value.responses||{})},
@@ -83,6 +85,7 @@ export function normalizeLessonProgress(lesson,value,now=new Date()){
     retentionDue:Array.isArray(value.retentionDue)?value.retentionDue:[],
     retentionHistory:Array.isArray(value.retentionHistory)?value.retentionHistory:[],
     assessmentHistory:Array.isArray(value.assessmentHistory)?value.assessmentHistory:[],
+    advancedHistory:Array.isArray(value.advancedHistory)?value.advancedHistory:[],
     masteryInputs:{...(value.masteryInputs||{})}
   };
   return refreshMastery(lesson,next,now);
@@ -105,17 +108,25 @@ export function lessonLabId(lesson){
 }
 
 export function refreshMastery(lesson,progress,now=new Date()){
-  const next={...progress,verifiedEvidence:{...(progress?.verifiedEvidence||{})}};
+  const next={...progress,verifiedEvidence:{...(progress?.verifiedEvidence||{})},masteryInputs:{...(progress?.masteryInputs||{})}};
   const profile=MASTERY_PROFILES[lesson?.level];
   if(!profile) return next;
   const required=['knowledge','interpretation','production','transfer'];
   if(profile.floors?.retention!==undefined) required.push('retention');
   const verifiedDimensions=required.filter(dimension=>validScore(next.verifiedEvidence?.[dimension]?.score));
   const missingDimensions=required.filter(dimension=>!verifiedDimensions.includes(dimension));
+  const requiredGates=advancedRequirementsForLevel(lesson?.level);
+  const gatePresence={
+    rubric:typeof next.masteryInputs.rubricMin==='number'&&Number.isFinite(next.masteryInputs.rubricMin)&&next.masteryInputs.rubricMin>=1&&next.masteryInputs.rubricMin<=5,
+    capstone:validScore(next.masteryInputs.capstone),
+    architectureReview:typeof next.masteryInputs.architectureReview==='boolean'
+  };
+  const missingGates=requiredGates.filter(gate=>!gatePresence[gate]);
+  const verifiedGates=requiredGates.filter(gate=>gatePresence[gate]);
   const nowMs=now.getTime();
   const due=(next.retentionDue||[]).filter(item=>item?.status!=='completed'&&new Date(item?.dueAt||0).getTime()<=nowMs);
   let evaluation=null;
-  if(next.completedAt&&missingDimensions.length===0){
+  if(next.completedAt&&missingDimensions.length===0&&missingGates.length===0){
     const evidence={
       knowledge:next.verifiedEvidence.knowledge.score,
       interpretation:next.verifiedEvidence.interpretation.score,
@@ -130,6 +141,7 @@ export function refreshMastery(lesson,progress,now=new Date()){
   if(next.completedAt){
     if(due.length) state='retention_due';
     else if(missingDimensions.length) state=missingDimensions.every(item=>item==='retention')?'ready_for_retention':'awaiting_evidence';
+    else if(missingGates.length) state='awaiting_advanced_evidence';
     else state=evaluation?.passed?'mastered':'needs_review';
   }
   next.mastery={
@@ -140,7 +152,11 @@ export function refreshMastery(lesson,progress,now=new Date()){
     failures:evaluation?.failures||[],
     missingDimensions,
     verifiedDimensions,
-    confidence:required.length?Math.round((verifiedDimensions.length/required.length)*100):0,
+    missingGates,
+    verifiedGates,
+    confidence:(required.length+requiredGates.length)
+      ?Math.round(((verifiedDimensions.length+verifiedGates.length)/(required.length+requiredGates.length))*100)
+      :0,
     updatedAt:now.toISOString()
   };
   return next;
@@ -185,6 +201,43 @@ export function recordMasteryAssessment(lesson,progress,answers={},now=new Date(
       correct:evaluation.dimensions[dimension].correct,
       total:evaluation.dimensions[dimension].total
     }]))
+  }].slice(-20);
+  next.updatedAt=now.toISOString();
+  return {ok:true,reason:null,progress:refreshMastery(lesson,next,now),evaluation};
+}
+
+export function recordAdvancedMasteryChallenge(lesson,progress,answers={},now=new Date()){
+  const next=normalizeLessonProgress(lesson,progress,now);
+  if(!next.completedAt) return {ok:false,reason:'lesson_incomplete',progress:next,evaluation:null};
+  const required=advancedRequirementsForLevel(lesson?.level);
+  if(required.length===0) return {ok:false,reason:'advanced_not_required',progress:next,evaluation:null};
+  const evaluation=evaluateAdvancedMasteryChallenge(lesson,answers);
+  if(!evaluation||evaluation.lessonId!==lesson.id||evaluation.version!==ADVANCED_MASTERY_VERSION||evaluation.complete!==true){
+    return {ok:false,reason:'invalid_advanced_assessment',progress:next,evaluation};
+  }
+  if(required.includes('rubric')&&!(typeof evaluation.inputs?.rubricMin==='number'&&evaluation.inputs.rubricMin>=1&&evaluation.inputs.rubricMin<=5)){
+    return {ok:false,reason:'invalid_advanced_assessment',progress:next,evaluation};
+  }
+  if(required.includes('capstone')&&!validScore(evaluation.inputs?.capstone)){
+    return {ok:false,reason:'invalid_advanced_assessment',progress:next,evaluation};
+  }
+  if(required.includes('architectureReview')&&typeof evaluation.inputs?.architectureReview!=='boolean'){
+    return {ok:false,reason:'invalid_advanced_assessment',progress:next,evaluation};
+  }
+  next.masteryInputs={
+    ...next.masteryInputs,
+    ...(required.includes('rubric')?{rubricMin:evaluation.inputs.rubricMin}:{}),
+    ...(required.includes('capstone')?{capstone:evaluation.inputs.capstone}:{}),
+    ...(required.includes('architectureReview')?{architectureReview:evaluation.inputs.architectureReview}:{})
+  };
+  next.advancedHistory=[...(next.advancedHistory||[]),{
+    version:evaluation.version,
+    completedAt:now.toISOString(),
+    results:evaluation.results,
+    inputs:Object.fromEntries(required.map(gate=>{
+      const key=gate==='rubric'?'rubricMin':gate==='capstone'?'capstone':'architectureReview';
+      return [key,evaluation.inputs[key]];
+    }))
   }].slice(-20);
   next.updatedAt=now.toISOString();
   return {ok:true,reason:null,progress:refreshMastery(lesson,next,now),evaluation};

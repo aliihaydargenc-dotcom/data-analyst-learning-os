@@ -1,9 +1,10 @@
 import {
   createLessonProgress,normalizeLessonProgress,completeSection,completionPercent,
   sectionNeedsResponse,saveEvidenceDraft,recordLabAttempt,recordCaseLabAttempt,recordPythonLabAttempt,recordHtmlLabAttempt,labPassed,
-  completeRetentionReview,lessonLabId,recordMasteryAssessment
+  completeRetentionReview,lessonLabId,recordMasteryAssessment,recordAdvancedMasteryChallenge
 } from './lesson-runtime.mjs';
 import {buildMasteryAssessment} from './mastery-assessment.mjs';
+import {buildAdvancedMasteryChallenge} from './advanced-mastery.mjs';
 
 const $=selector=>document.querySelector(selector);
 const params=new URLSearchParams(location.search);
@@ -34,9 +35,9 @@ const labels={
     labError:'Lab çalıştırılamadı.',labPassed:'Semantik kanıt · geçti',labRows:'satır',
     caseIdle:'Çalıştırılmadı',caseRun:'Senaryoları değerlendir',casePass:'Semantic Case Lab geçti.',caseFail:'Semantic Case Lab geçmedi.',caseRequired:'Bu bağımsız üretim bölümü için önce Semantic Case Lab’ı geçirmen gerekiyor.',caseMissing:'Tüm senaryolarda bir seçenek işaretle.',
     pythonIdle:'Çalıştırılmadı',pythonLoading:'Python runtime hazırlanıyor…',pythonRun:'Python testlerini çalıştır',pythonReset:'Sıfırla',pythonPass:'Semantic Python Lab geçti.',pythonFail:'Semantic Python Lab geçmedi.',pythonRequired:'Bu bağımsız üretim bölümü için önce Semantic Python Lab’ı geçirmen gerekiyor.',pythonError:'Python lab çalıştırılamadı.',pythonPassed:'Python kanıtı · geçti',htmlIdle:'Çalıştırılmadı',htmlRun:'DOM testlerini çalıştır',htmlReset:'Sıfırla',htmlPass:'Semantic HTML DOM Lab geçti.',htmlFail:'Semantic HTML DOM Lab geçmedi.',htmlRequired:'Bu bağımsız üretim bölümü için önce Semantic HTML DOM Lab’ı geçirmen gerekiyor.',htmlError:'HTML DOM lab çalıştırılamadı.',htmlPassed:'HTML DOM kanıtı · geçti',
-    masteryLearning:'Öğreniliyor',masteryAwaiting:'Kanıt bekliyor',masteryReadyRetention:'Tekrar bekliyor',masteryRetentionDue:'Tekrar zamanı',masteryMastered:'Mastery doğrulandı',masteryNeedsReview:'Gözden geçir',
+    masteryLearning:'Öğreniliyor',masteryAwaiting:'Kanıt bekliyor',masteryAdvanced:'İleri seviye kanıt bekliyor',masteryReadyRetention:'Tekrar bekliyor',masteryRetentionDue:'Tekrar zamanı',masteryMastered:'Mastery doğrulandı',masteryNeedsReview:'Gözden geçir',
     masteryVerified:'doğrulanmış boyut',retentionComplete:'Tekrarı tamamla',retentionResponse:'Geri çağırma yanıtın',retentionResponsePlaceholder:'Kaynaklara bakmadan çözümünü ve gerekçeni yaz.',retentionCompleted:'tamamlandı',retentionNotDue:'henüz vadesi gelmedi',
-    retentionLabRequired:'Bu retention kanıtı için semantic labı vade tarihinden sonra yeniden çalıştır.',retentionSaved:'Retention kanıtı kaydedildi.',retentionNeedsResponse:'En az 20 karakterlik bir geri çağırma yanıtı yaz.',assessmentTitle:'Mastery Assessment',assessmentIntro:'Knowledge, interpretation ve transfer burada cevap anahtarlı görevlerle doğrulanır. Serbest metin taslağı doğruluk kanıtı sayılmaz.',assessmentLocked:'Assessment, dersin tüm bölümleri tamamlandıktan sonra açılır.',assessmentRun:'Değerlendir ve kanıtı doğrula',assessmentMissing:'Tüm assessment sorularını yanıtla.',assessmentSaved:'Assessment doğrulandı.',assessmentProduction:'Production semantic lab tarafından doğrulanır.',assessmentFallbackProduction:'Bu derste semantic lab olmadığı için production boyutu yapılandırılmış assessment ile doğrulanır.',verified:'Doğrulandı',notVerified:'Henüz doğrulanmadı'
+    retentionLabRequired:'Bu retention kanıtı için semantic labı vade tarihinden sonra yeniden çalıştır.',retentionSaved:'Retention kanıtı kaydedildi.',retentionNeedsResponse:'En az 20 karakterlik bir geri çağırma yanıtı yaz.',assessmentTitle:'Mastery Assessment',assessmentIntro:'Knowledge, interpretation ve transfer burada cevap anahtarlı görevlerle doğrulanır. Serbest metin taslağı doğruluk kanıtı sayılmaz.',assessmentLocked:'Assessment, dersin tüm bölümleri tamamlandıktan sonra açılır.',assessmentRun:'Değerlendir ve kanıtı doğrula',assessmentMissing:'Tüm assessment sorularını yanıtla.',assessmentSaved:'Assessment doğrulandı.',assessmentProduction:'Production semantic lab tarafından doğrulanır.',assessmentFallbackProduction:'Bu derste semantic lab olmadığı için production boyutu yapılandırılmış assessment ile doğrulanır.',verified:'Doğrulandı',notVerified:'Henüz doğrulanmadı',advancedTitle:'Advanced Mastery Gates',advancedIntro:'L5 ve Expert seviyelerinde engine kararı için rubric, capstone ve architecture review kapıları ayrıca doğrulanır.',advancedLocked:'Advanced gate görevleri ders tamamlandıktan sonra açılır.',advancedRun:'İleri seviye kapıları değerlendir',advancedMissing:'Tüm ileri seviye sorularını yanıtla.',advancedSaved:'İleri seviye kanıtlar kaydedildi.',rubricGate:'Rubric floor',capstoneGate:'Capstone',architectureGate:'Architecture review',advancedNeedsReview:'Gözden geçir'
   },
   en:{
     loading:'Loading',progress:'Progress',estimate:'Estimated study',minutes:'min',
@@ -59,9 +60,9 @@ const labels={
     labError:'The lab could not be executed.',labPassed:'Semantic evidence · passed',labRows:'rows',
     caseIdle:'Not run',caseRun:'Evaluate scenarios',casePass:'Semantic Case Lab passed.',caseFail:'Semantic Case Lab did not pass.',caseRequired:'Pass the Semantic Case Lab before completing this independent-production section.',caseMissing:'Choose one option for every scenario.',
     pythonIdle:'Not run',pythonLoading:'Preparing Python runtime…',pythonRun:'Run Python tests',pythonReset:'Reset',pythonPass:'Semantic Python Lab passed.',pythonFail:'Semantic Python Lab did not pass.',pythonRequired:'Pass the Semantic Python Lab before completing this independent-production section.',pythonError:'Python lab could not be executed.',pythonPassed:'Python evidence · passed',htmlIdle:'Not run',htmlRun:'Run DOM tests',htmlReset:'Reset',htmlPass:'Semantic HTML DOM Lab passed.',htmlFail:'Semantic HTML DOM Lab did not pass.',htmlRequired:'Pass the Semantic HTML DOM Lab before completing this independent-production section.',htmlError:'HTML DOM lab could not be executed.',htmlPassed:'HTML DOM evidence · passed',
-    masteryLearning:'Learning',masteryAwaiting:'Waiting for evidence',masteryReadyRetention:'Waiting for review',masteryRetentionDue:'Review due',masteryMastered:'Mastery verified',masteryNeedsReview:'Needs review',
+    masteryLearning:'Learning',masteryAwaiting:'Waiting for evidence',masteryAdvanced:'Waiting for advanced evidence',masteryReadyRetention:'Waiting for review',masteryRetentionDue:'Review due',masteryMastered:'Mastery verified',masteryNeedsReview:'Needs review',
     masteryVerified:'verified dimensions',retentionComplete:'Complete review',retentionResponse:'Retrieval response',retentionResponsePlaceholder:'Solve and explain from memory before checking sources.',retentionCompleted:'completed',retentionNotDue:'not due yet',
-    retentionLabRequired:'Re-run the semantic lab after this review becomes due.',retentionSaved:'Retention evidence saved.',retentionNeedsResponse:'Write at least 20 characters of retrieval evidence.',assessmentTitle:'Mastery Assessment',assessmentIntro:'Knowledge, interpretation, and transfer are verified here with answer-keyed tasks. Free-text drafts are not correctness evidence.',assessmentLocked:'The assessment unlocks after every lesson section is complete.',assessmentRun:'Evaluate and verify evidence',assessmentMissing:'Answer every assessment question.',assessmentSaved:'Assessment evidence verified.',assessmentProduction:'Production is verified by the semantic lab.',assessmentFallbackProduction:'This lesson has no semantic lab, so production is verified by a structured assessment fallback.',verified:'Verified',notVerified:'Not verified yet'
+    retentionLabRequired:'Re-run the semantic lab after this review becomes due.',retentionSaved:'Retention evidence saved.',retentionNeedsResponse:'Write at least 20 characters of retrieval evidence.',assessmentTitle:'Mastery Assessment',assessmentIntro:'Knowledge, interpretation, and transfer are verified here with answer-keyed tasks. Free-text drafts are not correctness evidence.',assessmentLocked:'The assessment unlocks after every lesson section is complete.',assessmentRun:'Evaluate and verify evidence',assessmentMissing:'Answer every assessment question.',assessmentSaved:'Assessment evidence verified.',assessmentProduction:'Production is verified by the semantic lab.',assessmentFallbackProduction:'This lesson has no semantic lab, so production is verified by a structured assessment fallback.',verified:'Verified',notVerified:'Not verified yet',advancedTitle:'Advanced Mastery Gates',advancedIntro:'L5 and Expert engine decisions also require verified rubric, capstone, and architecture-review gates.',advancedLocked:'Advanced gate tasks unlock after the lesson is complete.',advancedRun:'Evaluate advanced gates',advancedMissing:'Answer every advanced-gate question.',advancedSaved:'Advanced evidence saved.',rubricGate:'Rubric floor',capstoneGate:'Capstone',architectureGate:'Architecture review',advancedNeedsReview:'Needs review'
   }
 };
 
@@ -459,17 +460,69 @@ function renderMasteryAssessment(){
   });
 }
 
+function renderAdvancedMastery(){
+  const root=$('#advancedMastery');
+  if(!root)return;
+  const l=labels[state.lang];
+  const challenge=buildAdvancedMasteryChallenge(state.lesson);
+  if(challenge.gates.length===0){
+    root.classList.add('hidden');
+    root.innerHTML='';
+    return;
+  }
+  root.classList.remove('hidden');
+  if(!state.progress.completedAt){
+    root.innerHTML='<div class="advanced-head"><span class="eyebrow">ADVANCED VERIFIED EVIDENCE</span><h3>'+escapeHtml(l.advancedTitle)+'</h3><p>'+escapeHtml(l.advancedIntro)+'</p></div><div class="assessment-lock">'+escapeHtml(l.advancedLocked)+'</div>';
+    return;
+  }
+  const inputs=state.progress.masteryInputs||{};
+  const gateStatus=gate=>{
+    if(gate==='rubric')return typeof inputs.rubricMin==='number'?inputs.rubricMin+'/5':l.notVerified;
+    if(gate==='capstone')return typeof inputs.capstone==='number'?inputs.capstone+'%':l.notVerified;
+    if(gate==='architectureReview')return typeof inputs.architectureReview==='boolean'?(inputs.architectureReview?l.verified:l.advancedNeedsReview):l.notVerified;
+    return l.notVerified;
+  };
+  const gateLabel=gate=>gate==='rubric'?l.rubricGate:gate==='capstone'?l.capstoneGate:l.architectureGate;
+  root.innerHTML='<div class="advanced-head"><span class="eyebrow">ADVANCED VERIFIED EVIDENCE</span><h3>'+escapeHtml(l.advancedTitle)+'</h3><p>'+escapeHtml(l.advancedIntro)+'</p></div>'+
+    '<div class="advanced-gates">'+challenge.gates.map(gate=>'<section class="advanced-gate" data-advanced-gate="'+escapeHtml(gate.gate)+'"><header><strong>'+escapeHtml(gateLabel(gate.gate))+'</strong><span>'+escapeHtml(gateStatus(gate.gate))+'</span></header>'+
+      gate.items.map((item,index)=>'<fieldset class="assessment-question"><legend>'+(index+1)+'. '+escapeHtml(state.lang==='tr'?item.prompt_tr:item.prompt_en)+'</legend>'+
+        item.options.map(option=>'<label><input type="radio" name="advanced-'+escapeHtml(item.id)+'" value="'+escapeHtml(option.id)+'"><span>'+escapeHtml(state.lang==='tr'?option.label_tr:option.label_en)+'</span></label>').join('')+
+      '</fieldset>').join('')+'</section>').join('')+'</div>'+
+    '<div class="assessment-actions"><button id="runAdvancedMastery" class="primary">'+escapeHtml(l.advancedRun)+'</button><p id="advancedMasteryFeedback"></p></div>';
+  $('#runAdvancedMastery')?.addEventListener('click',()=>{
+    const answers={};
+    for(const gate of challenge.gates){
+      for(const item of gate.items){
+        const selected=document.querySelector('input[name="advanced-'+CSS.escape(item.id)+'"]:checked');
+        if(selected)answers[item.id]=selected.value;
+      }
+    }
+    const result=recordAdvancedMasteryChallenge(state.lesson,state.progress,answers);
+    if(!result.ok){
+      $('#advancedMasteryFeedback').textContent=result.reason==='lesson_incomplete'?l.advancedLocked:l.advancedMissing;
+      $('#advancedMasteryFeedback').style.color='var(--red)';
+      return;
+    }
+    state.progress=result.progress;
+    persistProgress();
+    renderEvidence();
+    renderRetention();
+    const feedback=$('#advancedMasteryFeedback');
+    if(feedback){feedback.textContent=l.advancedSaved;feedback.style.color='var(--green)';}
+  });
+}
+
 function renderEvidence(){
   const l=labels[state.lang];
   $('#evidenceTitle').textContent=l.evidenceTitle;
   $('#evidenceIntro').textContent=l.evidenceIntro;
   const mastery=state.progress.mastery||{};
   const stateLabels={
-    learning:l.masteryLearning,awaiting_evidence:l.masteryAwaiting,ready_for_retention:l.masteryReadyRetention,
+    learning:l.masteryLearning,awaiting_evidence:l.masteryAwaiting,awaiting_advanced_evidence:l.masteryAdvanced,ready_for_retention:l.masteryReadyRetention,
     retention_due:l.masteryRetentionDue,mastered:l.masteryMastered,needs_review:l.masteryNeedsReview
   };
   const verified=(mastery.verifiedDimensions||[]).length;
-  const missing=(mastery.missingDimensions||[]);
+  const missing=[...(mastery.missingDimensions||[]),...(mastery.missingGates||[])];
   const failures=(mastery.failures||[]).map(item=>`${item.dimension}: ${item.actual??'—'} / ${item.required}`);
   $('#masteryState').innerHTML=`<div><span class="eyebrow">ENGINE STATE</span><strong>${escapeHtml(stateLabels[mastery.state]||l.masteryLearning)}</strong></div>
     <div><span>${verified} ${escapeHtml(l.masteryVerified)}</span>${mastery.evaluated&&mastery.weighted!==null?`<strong>${mastery.weighted}%</strong>`:''}${missing.length?`<small>${escapeHtml(missing.join(' · '))}</small>`:''}${failures.length?`<small>${escapeHtml(failures.join(' · '))}</small>`:''}</div>`;
@@ -493,6 +546,7 @@ function renderEvidence(){
     });
   });
   renderMasteryAssessment();
+  renderAdvancedMastery();
 }
 
 function renderRetention(){
