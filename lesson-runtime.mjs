@@ -1,6 +1,7 @@
 import {evaluateMastery,MASTERY_PROFILES,buildRemediationPlan,nextRetentionIntervalDays} from './mastery-engine.mjs';
 import {evaluateMasteryAssessment,hasSemanticProductionLab,MASTERY_ASSESSMENT_VERSION} from './mastery-assessment.mjs';
 import {evaluateAdvancedMasteryChallenge,advancedRequirementsForLevel,ADVANCED_MASTERY_VERSION} from './advanced-mastery.mjs';
+import {recordMasteryDecision} from './mastery-ledger.mjs';
 
 export const REQUIRED_LAYERS=Object.freeze([
   'mental_model','worked_example','guided_practice','independent_practice','debugging','transfer','retention'
@@ -44,7 +45,7 @@ export function lessonLayerSummary(lesson){
 
 export function createLessonProgress(lesson,now=new Date()){
   return {
-    version:5,
+    version:6,
     lessonId:lesson.id,
     startedAt:now.toISOString(),
     updatedAt:now.toISOString(),
@@ -58,6 +59,7 @@ export function createLessonProgress(lesson,now=new Date()){
     retentionHistory:[],
     assessmentHistory:[],
     advancedHistory:[],
+    masteryHistory:[],
     masteryInputs:{},
     mastery:{
       evaluated:false,passed:false,state:'learning',weighted:null,failures:[],
@@ -75,7 +77,7 @@ export function normalizeLessonProgress(lesson,value,now=new Date()){
   const next={
     ...base,
     ...value,
-    version:5,
+    version:6,
     lessonId:lesson.id,
     completedSections:completed,
     responses:{...(value.responses||{})},
@@ -86,6 +88,7 @@ export function normalizeLessonProgress(lesson,value,now=new Date()){
     retentionHistory:Array.isArray(value.retentionHistory)?value.retentionHistory:[],
     assessmentHistory:Array.isArray(value.assessmentHistory)?value.assessmentHistory:[],
     advancedHistory:Array.isArray(value.advancedHistory)?value.advancedHistory:[],
+    masteryHistory:Array.isArray(value.masteryHistory)?value.masteryHistory:[],
     masteryInputs:{...(value.masteryInputs||{})}
   };
   return refreshMastery(lesson,next,now);
@@ -108,7 +111,8 @@ export function lessonLabId(lesson){
 }
 
 export function refreshMastery(lesson,progress,now=new Date()){
-  const next={...progress,verifiedEvidence:{...(progress?.verifiedEvidence||{})},masteryInputs:{...(progress?.masteryInputs||{})}};
+  const previousMastery=progress?.mastery||null;
+  const next={...progress,verifiedEvidence:{...(progress?.verifiedEvidence||{})},masteryInputs:{...(progress?.masteryInputs||{})},masteryHistory:Array.isArray(progress?.masteryHistory)?[...progress.masteryHistory]:[]};
   const profile=MASTERY_PROFILES[lesson?.level];
   if(!profile) return next;
   const required=['knowledge','interpretation','production','transfer'];
@@ -162,6 +166,11 @@ export function refreshMastery(lesson,progress,now=new Date()){
       :0,
     updatedAt:now.toISOString()
   };
+  next.masteryHistory=recordMasteryDecision(next.masteryHistory,previousMastery,next.mastery,{
+    verifiedEvidence:next.verifiedEvidence,
+    masteryInputs:next.masteryInputs,
+    observedAt:now
+  });
   return next;
 }
 
