@@ -61,7 +61,7 @@ assert.equal(masteredSql.masteryPercent,100);
 assert.equal(snapshot.masteredTracks,1);
 assert.equal(snapshot.trackMasteryStates.mastered,1);
 
-console.log('learning home: PASS');
+
 
 
 const objectiveStorage=new MemoryStorage({
@@ -80,6 +80,10 @@ snapshot=buildLearningSnapshot({catalog,curriculum,storage:objectiveStorage,now:
 const objectiveSql=snapshot.tracks.find(track=>track.id==='sql');
 assert.equal(objectiveSql.objectiveAnalytics.evaluatedCount,4);
 assert.equal(objectiveSql.objectiveAnalytics.weakCount,2);
-assert.deepEqual(objectiveSql.objectiveTargets.map(item=>item.dimension),['transfer','interpretation']);
+assert.deepEqual(objectiveSql.objectiveTargets.map(item=>item.dimension),['interpretation','transfer']);
 assert.equal(snapshot.objectiveAnalytics.total,12);
-assert.deepEqual(snapshot.diagnosticTargets.map(item=>item.dimension),['transfer','interpretation']);
+assert.deepEqual(snapshot.diagnosticTargets.map(item=>item.dimension),['interpretation','transfer']);
+
+// Priority follows distance from the level floor, not raw score.
+assert.deepEqual(snapshot.diagnosticTargets.map(item=>item.gap),[10,5]);
+console.log('learning home: PASS');
