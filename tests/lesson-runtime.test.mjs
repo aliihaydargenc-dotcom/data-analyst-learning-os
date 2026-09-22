@@ -4,7 +4,8 @@ import {
   validateLessonStructure,lessonLayerSummary,REQUIRED_LAYERS,
   createLessonProgress,normalizeLessonProgress,canCompleteSection,
   completionPercent,completeSection,buildRetentionSchedule,saveEvidenceDraft,
-  labPassed,recordLabAttempt,recordCaseLabAttempt,recordPythonLabAttempt,recordHtmlLabAttempt
+  labPassed,recordLabAttempt,recordCaseLabAttempt,recordPythonLabAttempt,recordHtmlLabAttempt,
+  completeRetentionReview,recordVerifiedEvidence
 } from '../lesson-runtime.mjs';
 
 const lesson=JSON.parse(fs.readFileSync('content/lessons/sql.relational-thinking.001.json','utf8'));
@@ -25,8 +26,10 @@ assert.ok(brokenResult.errors.includes('layer:transfer'));
 const now=new Date('2026-09-21T12:00:00.000Z');
 let progress=createLessonProgress(lesson,now);
 assert.equal(progress.lessonId,lesson.id);
-assert.equal(progress.version,2);
+assert.equal(progress.version,3);
 assert.deepEqual(progress.labEvidence,{});
+assert.deepEqual(progress.verifiedEvidence,{});
+assert.equal(progress.mastery.state,'learning');
 assert.equal(completionPercent(lesson,progress),0);
 
 const guided=lesson.sections.find(section=>section.layer==='guided_practice');
@@ -53,6 +56,23 @@ const schedule=buildRetentionSchedule(lesson,'2026-09-21T12:00:00.000Z');
 assert.equal(schedule[0].dueAt,'2026-09-22T12:00:00.000Z');
 assert.equal(schedule[2].dueAt,'2026-10-21T12:00:00.000Z');
 
+for(const dimension of ['knowledge','interpretation','production','transfer']){
+  progress=recordVerifiedEvidence(lesson,progress,dimension,100,'unit-test',now);
+}
+assert.equal(progress.mastery.evaluated,true);
+assert.equal(progress.mastery.passed,true);
+assert.equal(progress.mastery.state,'mastered');
+const retentionResult=completeRetentionReview(
+  lesson,progress,1,
+  {response:'Kaynaklara bakmadan grain, key ve cardinality ilişkisini yeniden kurup fan-out riskini açıklıyorum.'},
+  new Date('2026-09-22T12:00:00.000Z')
+);
+assert.equal(retentionResult.ok,true);
+progress=retentionResult.progress;
+assert.equal(progress.retentionDue[0].status,'completed');
+assert.equal(progress.retentionHistory.length,1);
+assert.equal(progress.mastery.state,'mastered');
+
 progress=saveEvidenceDraft(lesson,progress,'production','Yeni dataset için grain ve uniqueness testi taslağı.',now);
 assert.match(progress.evidenceDrafts.production,/grain/);
 
@@ -71,11 +91,14 @@ assert.equal(gated.reason,'lab_required');
 filterProgress=recordLabAttempt(filterLesson,filterProgress,filterLesson.lab.id,{passed:false,summary:{visible:false,edge:false}},now);
 assert.equal(labPassed(filterProgress,filterLesson.lab.id),false);
 assert.equal(filterProgress.labEvidence[filterLesson.lab.id].attempts,1);
+assert.equal(filterProgress.labEvidence[filterLesson.lab.id].lastAttemptAt,now.toISOString());
+assert.equal(filterProgress.verifiedEvidence.production.score,0);
 
 filterProgress=recordLabAttempt(filterLesson,filterProgress,filterLesson.lab.id,{passed:true,summary:{visible:true,edge:true}},now);
 assert.equal(labPassed(filterProgress,filterLesson.lab.id),true);
 assert.equal(filterProgress.labEvidence[filterLesson.lab.id].attempts,2);
 assert.equal(filterProgress.labEvidence[filterLesson.lab.id].passedAt,now.toISOString());
+assert.equal(filterProgress.verifiedEvidence.production.score,100);
 
 gated=completeSection(filterLesson,filterProgress,independent.id,response,now);
 assert.equal(gated.ok,true);

@@ -1,3 +1,5 @@
+import {evaluateMastery,MASTERY_PROFILES} from './mastery-engine.mjs';
+
 export const REQUIRED_LAYERS=Object.freeze([
   'mental_model','worked_example','guided_practice','independent_practice','debugging','transfer','retention'
 ]);
@@ -40,7 +42,7 @@ export function lessonLayerSummary(lesson){
 
 export function createLessonProgress(lesson,now=new Date()){
   return {
-    version:2,
+    version:3,
     lessonId:lesson.id,
     startedAt:now.toISOString(),
     updatedAt:now.toISOString(),
@@ -49,7 +51,15 @@ export function createLessonProgress(lesson,now=new Date()){
     responses:{},
     evidenceDrafts:{},
     labEvidence:{},
-    retentionDue:[]
+    verifiedEvidence:{},
+    retentionDue:[],
+    retentionHistory:[],
+    masteryInputs:{},
+    mastery:{
+      evaluated:false,passed:false,state:'learning',weighted:null,failures:[],
+      missingDimensions:['knowledge','interpretation','production','transfer'],
+      verifiedDimensions:[],confidence:0,updatedAt:now.toISOString()
+    }
   };
 }
 
@@ -58,17 +68,21 @@ export function normalizeLessonProgress(lesson,value,now=new Date()){
   if(!value||value.lessonId!==lesson.id) return base;
   const validIds=new Set((lesson.sections||[]).map(section=>section.id));
   const completed=[...new Set((value.completedSections||[]).filter(id=>validIds.has(id)))];
-  return {
+  const next={
     ...base,
     ...value,
-    version:2,
+    version:3,
     lessonId:lesson.id,
     completedSections:completed,
     responses:{...(value.responses||{})},
     evidenceDrafts:{...(value.evidenceDrafts||{})},
     labEvidence:{...(value.labEvidence||{})},
-    retentionDue:Array.isArray(value.retentionDue)?value.retentionDue:[]
+    verifiedEvidence:{...(value.verifiedEvidence||{})},
+    retentionDue:Array.isArray(value.retentionDue)?value.retentionDue:[],
+    retentionHistory:Array.isArray(value.retentionHistory)?value.retentionHistory:[],
+    masteryInputs:{...(value.masteryInputs||{})}
   };
+  return refreshMastery(lesson,next,now);
 }
 
 export function sectionNeedsResponse(section){
@@ -77,6 +91,98 @@ export function sectionNeedsResponse(section){
 
 export function responseIsSubstantive(value){
   return typeof value==='string'&&value.trim().length>=20;
+}
+
+function validScore(value){
+  return typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<=100;
+}
+
+export function lessonLabId(lesson){
+  return lesson?.lab?.id||lesson?.case_lab?.id||lesson?.python_lab?.id||lesson?.html_lab?.id||null;
+}
+
+export function refreshMastery(lesson,progress,now=new Date()){
+  const next={...progress,verifiedEvidence:{...(progress?.verifiedEvidence||{})}};
+  const profile=MASTERY_PROFILES[lesson?.level];
+  if(!profile) return next;
+  const required=['knowledge','interpretation','production','transfer'];
+  if(profile.floors?.retention!==undefined) required.push('retention');
+  const verifiedDimensions=required.filter(dimension=>validScore(next.verifiedEvidence?.[dimension]?.score));
+  const missingDimensions=required.filter(dimension=>!verifiedDimensions.includes(dimension));
+  const nowMs=now.getTime();
+  const due=(next.retentionDue||[]).filter(item=>item?.status!=='completed'&&new Date(item?.dueAt||0).getTime()<=nowMs);
+  let evaluation=null;
+  if(next.completedAt&&missingDimensions.length===0){
+    const evidence={
+      knowledge:next.verifiedEvidence.knowledge.score,
+      interpretation:next.verifiedEvidence.interpretation.score,
+      production:next.verifiedEvidence.production.score,
+      transfer:next.verifiedEvidence.transfer.score,
+      ...(validScore(next.verifiedEvidence.retention?.score)?{retention:next.verifiedEvidence.retention.score}:{})
+    };
+    Object.assign(evidence,next.masteryInputs||{});
+    evaluation=evaluateMastery(lesson.level,evidence);
+  }
+  let state='learning';
+  if(next.completedAt){
+    if(due.length) state='retention_due';
+    else if(missingDimensions.length) state=missingDimensions.every(item=>item==='retention')?'ready_for_retention':'awaiting_evidence';
+    else state=evaluation?.passed?'mastered':'needs_review';
+  }
+  next.mastery={
+    evaluated:Boolean(evaluation),
+    passed:evaluation?.passed===true,
+    state,
+    weighted:evaluation?.weighted??null,
+    failures:evaluation?.failures||[],
+    missingDimensions,
+    verifiedDimensions,
+    confidence:required.length?Math.round((verifiedDimensions.length/required.length)*100):0,
+    updatedAt:now.toISOString()
+  };
+  return next;
+}
+
+export function recordVerifiedEvidence(lesson,progress,dimension,score,source='assessment',now=new Date()){
+  const allowed=new Set([...(lesson?.mastery_evidence||[]).map(item=>item.dimension),'retention']);
+  if(!allowed.has(dimension)) throw new Error(`Unknown verified evidence dimension: ${dimension}`);
+  if(!validScore(score)) throw new Error(`Invalid verified evidence score for ${dimension}`);
+  const next=normalizeLessonProgress(lesson,progress,now);
+  next.verifiedEvidence[dimension]={status:'verified',score,source,observedAt:now.toISOString()};
+  next.updatedAt=now.toISOString();
+  return refreshMastery(lesson,next,now);
+}
+
+export function completeRetentionReview(lesson,progress,day,{response='',verified=false,passed=null,source='retrieval-response'}={},now=new Date()){
+  const next=normalizeLessonProgress(lesson,progress,now);
+  const index=(next.retentionDue||[]).findIndex(item=>Number(item?.day)===Number(day)&&item?.status!=='completed');
+  if(index<0) return {ok:false,reason:'review_not_found',progress:next};
+  const item=next.retentionDue[index];
+  const dueAt=new Date(item.dueAt||0).getTime();
+  if(!Number.isFinite(dueAt)||now.getTime()<dueAt) return {ok:false,reason:'not_due',progress:next};
+  if(!verified&&!responseIsSubstantive(response)) return {ok:false,reason:'response_required',progress:next};
+  const completed={
+    ...item,
+    status:'completed',
+    completedAt:now.toISOString(),
+    response:responseIsSubstantive(response)?response.trim():'',
+    verified:Boolean(verified),
+    passed:verified&&typeof passed==='boolean'?passed:null,
+    source
+  };
+  next.retentionDue=[...next.retentionDue];
+  next.retentionDue[index]=completed;
+  next.retentionHistory=[...(next.retentionHistory||[]),{
+    day:Number(item.day||0),dueAt:item.dueAt,completedAt:completed.completedAt,
+    verified:completed.verified,passed:completed.passed,source
+  }];
+  if(completed.verified&&typeof completed.passed==='boolean'){
+    next.verifiedEvidence.retention={
+      status:'verified',score:completed.passed?100:0,source,observedAt:now.toISOString()
+    };
+  }
+  next.updatedAt=now.toISOString();
+  return {ok:true,reason:null,progress:refreshMastery(lesson,next,now)};
 }
 
 export function canCompleteSection(section,response=''){
@@ -90,59 +196,73 @@ export function labPassed(progress,labId){
 export function recordLabAttempt(lesson,progress,labId,attempt,now=new Date()){
   if(!lesson?.lab||lesson.lab.id!==labId) throw new Error(`Unknown lesson lab: ${labId}`);
   const next=normalizeLessonProgress(lesson,progress,now);
-  const previous=next.labEvidence[labId]||{attempts:0,passed:false,passedAt:null,lastPassed:false,lastSummary:null};
+  const previous=next.labEvidence[labId]||{attempts:0,passed:false,passedAt:null,lastPassed:false,lastSummary:null,lastAttemptAt:null};
   const passedNow=attempt?.passed===true;
   next.labEvidence[labId]={
     attempts:Number(previous.attempts||0)+1,
     passed:previous.passed===true||passedNow,
     passedAt:previous.passedAt||(passedNow?now.toISOString():null),
     lastPassed:passedNow,
-    lastSummary:attempt?.summary??null
+    lastSummary:attempt?.summary??null,
+    lastAttemptAt:now.toISOString()
   };
+  next.verifiedEvidence.production={status:'verified',score:passedNow?100:0,source:'semantic-sql-lab',observedAt:now.toISOString()};
   next.updatedAt=now.toISOString();
-  return next;
+  return refreshMastery(lesson,next,now);
 }
 
 export function recordCaseLabAttempt(lesson,progress,caseLabId,attempt,now=new Date()){
   if(!lesson?.case_lab||lesson.case_lab.id!==caseLabId) throw new Error(`Unknown lesson case lab: ${caseLabId}`);
   const next=normalizeLessonProgress(lesson,progress,now);
-  const previous=next.labEvidence[caseLabId]||{attempts:0,passed:false,passedAt:null,lastPassed:false,lastSummary:null};
+  const previous=next.labEvidence[caseLabId]||{attempts:0,passed:false,passedAt:null,lastPassed:false,lastSummary:null,lastAttemptAt:null};
   const passedNow=attempt?.passed===true;
   next.labEvidence[caseLabId]={
     attempts:Number(previous.attempts||0)+1,
     passed:previous.passed===true||passedNow,
     passedAt:previous.passedAt||(passedNow?now.toISOString():null),
     lastPassed:passedNow,
-    lastSummary:attempt?.summary??null
+    lastSummary:attempt?.summary??null,
+    lastAttemptAt:now.toISOString()
   };
+  next.verifiedEvidence.production={status:'verified',score:passedNow?100:0,source:'semantic-case-lab',observedAt:now.toISOString()};
   next.updatedAt=now.toISOString();
-  return next;
+  return refreshMastery(lesson,next,now);
 }
 
 export function recordPythonLabAttempt(lesson,progress,pythonLabId,attempt,now=new Date()){
-  if(!lesson?.python_lab||lesson.python_lab.id!==pythonLabId) throw new Error(`Unknown lesson Python lab: ${pythonLabId}`);
+  if(!lesson?.python_lab||lesson.python_lab.id!==pythonLabId) throw new Error(`Unknown lesson python lab: ${pythonLabId}`);
   const next=normalizeLessonProgress(lesson,progress,now);
-  const previous=next.labEvidence[pythonLabId]||{attempts:0,passed:false,passedAt:null,lastPassed:false,lastSummary:null};
+  const previous=next.labEvidence[pythonLabId]||{attempts:0,passed:false,passedAt:null,lastPassed:false,lastSummary:null,lastAttemptAt:null};
   const passedNow=attempt?.passed===true;
   next.labEvidence[pythonLabId]={
     attempts:Number(previous.attempts||0)+1,
     passed:previous.passed===true||passedNow,
     passedAt:previous.passedAt||(passedNow?now.toISOString():null),
     lastPassed:passedNow,
-    lastSummary:attempt?.summary??null
+    lastSummary:attempt?.summary??null,
+    lastAttemptAt:now.toISOString()
   };
+  next.verifiedEvidence.production={status:'verified',score:passedNow?100:0,source:'semantic-python-lab',observedAt:now.toISOString()};
   next.updatedAt=now.toISOString();
-  return next;
+  return refreshMastery(lesson,next,now);
 }
 
 export function recordHtmlLabAttempt(lesson,progress,htmlLabId,attempt,now=new Date()){
-  if(!lesson?.html_lab||lesson.html_lab.id!==htmlLabId) throw new Error(`Unknown lesson HTML lab: ${htmlLabId}`);
+  if(!lesson?.html_lab||lesson.html_lab.id!==htmlLabId) throw new Error(`Unknown lesson html lab: ${htmlLabId}`);
   const next=normalizeLessonProgress(lesson,progress,now);
-  const previous=next.labEvidence[htmlLabId]||{attempts:0,passed:false,passedAt:null,lastPassed:false,lastSummary:null};
+  const previous=next.labEvidence[htmlLabId]||{attempts:0,passed:false,passedAt:null,lastPassed:false,lastSummary:null,lastAttemptAt:null};
   const passedNow=attempt?.passed===true;
-  next.labEvidence[htmlLabId]={attempts:Number(previous.attempts||0)+1,passed:previous.passed===true||passedNow,passedAt:previous.passedAt||(passedNow?now.toISOString():null),lastPassed:passedNow,lastSummary:attempt?.summary??null};
+  next.labEvidence[htmlLabId]={
+    attempts:Number(previous.attempts||0)+1,
+    passed:previous.passed===true||passedNow,
+    passedAt:previous.passedAt||(passedNow?now.toISOString():null),
+    lastPassed:passedNow,
+    lastSummary:attempt?.summary??null,
+    lastAttemptAt:now.toISOString()
+  };
+  next.verifiedEvidence.production={status:'verified',score:passedNow?100:0,source:'semantic-html-lab',observedAt:now.toISOString()};
   next.updatedAt=now.toISOString();
-  return next;
+  return refreshMastery(lesson,next,now);
 }
 
 export function completionPercent(lesson,progress){
@@ -170,29 +290,20 @@ export function completeSection(lesson,progress,sectionId,response='',now=new Da
   const section=(lesson.sections||[]).find(item=>item.id===sectionId);
   if(!section) throw new Error(`Unknown section: ${sectionId}`);
   if(!canCompleteSection(section,response)) return {ok:false,reason:'response_required',progress};
-  if(section.requires_lab_pass&&!labPassed(progress,section.requires_lab_pass)){
-    return {ok:false,reason:'lab_required',progress};
-  }
-  if(section.requires_case_lab_pass&&!labPassed(progress,section.requires_case_lab_pass)){
-    return {ok:false,reason:'case_lab_required',progress};
-  }
-  if(section.requires_python_lab_pass&&!labPassed(progress,section.requires_python_lab_pass)){
-    return {ok:false,reason:'python_lab_required',progress};
-  }
-  if(section.requires_html_lab_pass&&!labPassed(progress,section.requires_html_lab_pass)){
-    return {ok:false,reason:'html_lab_required',progress};
-  }
+  if(section.requires_lab_pass&&!labPassed(progress,section.requires_lab_pass)) return {ok:false,reason:'lab_required',progress};
+  if(section.requires_case_lab_pass&&!labPassed(progress,section.requires_case_lab_pass)) return {ok:false,reason:'case_lab_required',progress};
+  if(section.requires_python_lab_pass&&!labPassed(progress,section.requires_python_lab_pass)) return {ok:false,reason:'python_lab_required',progress};
+  if(section.requires_html_lab_pass&&!labPassed(progress,section.requires_html_lab_pass)) return {ok:false,reason:'html_lab_required',progress};
 
   const next=normalizeLessonProgress(lesson,progress,now);
   if(responseIsSubstantive(response)) next.responses[sectionId]=response.trim();
   next.completedSections=[...new Set([...next.completedSections,sectionId])];
   next.updatedAt=now.toISOString();
-
   if(next.completedSections.length===lesson.sections.length&&!next.completedAt){
     next.completedAt=now.toISOString();
     next.retentionDue=buildRetentionSchedule(lesson,next.completedAt);
   }
-  return {ok:true,reason:null,progress:next};
+  return {ok:true,reason:null,progress:refreshMastery(lesson,next,now)};
 }
 
 export function saveEvidenceDraft(lesson,progress,dimension,value,now=new Date()){
@@ -201,5 +312,5 @@ export function saveEvidenceDraft(lesson,progress,dimension,value,now=new Date()
   const next=normalizeLessonProgress(lesson,progress,now);
   next.evidenceDrafts[dimension]=String(value??'');
   next.updatedAt=now.toISOString();
-  return next;
+  return refreshMastery(lesson,next,now);
 }

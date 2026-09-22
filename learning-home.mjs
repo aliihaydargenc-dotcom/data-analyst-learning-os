@@ -50,6 +50,12 @@ function progressStatus(progress,now){
   return {pending,due,upcoming};
 }
 
+function masteryStateFor(progress,retention,activity){
+  if(!activity)return'not_started';
+  if(retention.due.length)return'retention_due';
+  return progress?.mastery?.state||(progress?.completedAt?'awaiting_evidence':'learning');
+}
+
 export function buildLearningSnapshot({catalog,curriculum,storage,now=new Date()}){
   const entries=sortLessons(catalog?.production_lessons||[]);
   const moduleMap=buildModuleMap(curriculum);
@@ -58,10 +64,12 @@ export function buildLearningSnapshot({catalog,curriculum,storage,now=new Date()
   const records=entries.map(entry=>{
     const progress=safeParse(storage?.getItem?.(`da-learning-os:lesson:${entry.id}`));
     const retention=progressStatus(progress,now);
+    const activity=hasActivity(progress);
     return {
       entry,
       progress,
-      activity:hasActivity(progress),
+      activity,
+      masteryState:masteryStateFor(progress,retention,activity),
       completed:Boolean(progress?.completedAt),
       updatedAt:progress?.updatedAt||progress?.completedAt||progress?.startedAt||null,
       evidenceDrafts:substantiveDraftCount(progress),
@@ -117,13 +125,14 @@ export function buildLearningSnapshot({catalog,curriculum,storage,now=new Date()
   const evidenceDrafts=records.reduce((sum,item)=>sum+item.evidenceDrafts,0);
   const masteryEvaluated=records.some(item=>item.progress?.mastery?.evaluated===true);
   const masteryAwarded=records.filter(item=>item.progress?.mastery?.passed===true).length;
+  const masteryStates=records.reduce((acc,item)=>{acc[item.masteryState]=(acc[item.masteryState]||0)+1;return acc;},{});
 
   return {
     entries,records,tracks,moduleMap,
     continueRecord,lastWorked,
     retentionDue,retentionUpcoming,
     completedLessons,totalLessons:records.length,activeTracks,evidenceDrafts,
-    masteryEvaluated,masteryAwarded,
+    masteryEvaluated,masteryAwarded,masteryStates,
     title:(entry,lang='tr')=>titleFor(entry,moduleMap,lang)
   };
 }
@@ -142,13 +151,20 @@ function formatDate(value,lang){
 function labels(lang){
   return lang==='en'?{
     homeEyebrow:'LEARNING HOME',homeTitle:'Continue from where you left off.',homeCopy:'Your course progress, review queue and evidence state are kept in one place on this browser.',
-    continue:'Continue',start:'Start learning',last:'Last studied',courseProgress:'Track completion',completed:'lessons complete',due:'reviews due',active:'active tracks',evidence:'evidence drafts',mastery:'Mastery status',notEvaluated:'Not evaluated',awarded:'awarded',
+    continue:'Continue',start:'Start learning',last:'Last studied',courseProgress:'Track completion',completed:'lessons complete',due:'reviews due',active:'active tracks',evidence:'evidence drafts',mastery:'Mastery status',awarded:'awarded',notStarted:'Not started',learning:'Learning',awaitingEvidence:'Waiting for evidence',readyRetention:'Waiting for review',retentionDue:'Review due',mastered:'mastered',needsReview:'Needs review',
     retention:'Review queue',retentionEmpty:'No review is due now.',upcoming:'Next review',courses:'Course navigation',coursesCopy:'Open a track, see all 12 production lessons, and continue at the right level.',current:'Current',next:'Next',done:'Done',lesson:'Lesson',reviews:'reviews',openCourse:'Open course',local:'Progress is stored locally in this browser.'
   }:{
     homeEyebrow:'ÖĞRENME ANA SAYFASI',homeTitle:'Kaldığın yerden devam et.',homeCopy:'Ders ilerlemen, tekrar sıran ve kanıt durumun bu tarayıcıda tek yerde tutulur.',
-    continue:'Devam et',start:'Öğrenmeye başla',last:'Son çalışma',courseProgress:'Track ilerlemesi',completed:'ders tamamlandı',due:'tekrar vadesi',active:'aktif track',evidence:'kanıt taslağı',mastery:'Mastery durumu',notEvaluated:'Değerlendirilmedi',awarded:'verildi',
+    continue:'Devam et',start:'Öğrenmeye başla',last:'Son çalışma',courseProgress:'Track ilerlemesi',completed:'ders tamamlandı',due:'tekrar vadesi',active:'aktif track',evidence:'kanıt taslağı',mastery:'Mastery durumu',awarded:'verildi',notStarted:'Başlanmadı',learning:'Öğreniliyor',awaitingEvidence:'Kanıt bekliyor',readyRetention:'Tekrar bekliyor',retentionDue:'Tekrar zamanı',mastered:'mastery',needsReview:'Gözden geçir',
     retention:'Tekrar sırası',retentionEmpty:'Şu an vadesi gelen tekrar yok.',upcoming:'Sıradaki tekrar',courses:'Ders yolları',coursesCopy:'Track’i aç, 12 production dersi gör ve doğru seviyeden devam et.',current:'Devam',next:'Sırada',done:'Tamamlandı',lesson:'Ders',reviews:'tekrar',openCourse:'Track’e git',local:'İlerleme yalnızca bu tarayıcıda saklanır.'
   };
+}
+
+function masteryLabel(state,l){
+  return ({
+    not_started:l.notStarted,learning:l.learning,awaiting_evidence:l.awaitingEvidence,
+    ready_for_retention:l.readyRetention,retention_due:l.retentionDue,mastered:l.mastered,needs_review:l.needsReview
+  })[state]||l.learning;
 }
 
 export function renderLearningHome({root=document,catalog,curriculum,storage=localStorage,lang='tr',now=new Date()}){
@@ -184,7 +200,10 @@ export function renderLearningHome({root=document,catalog,curriculum,storage=loc
 
   const stats=root.querySelector('#learningStats');
   if(stats){
-    const masteryValue=snapshot.masteryEvaluated?`${snapshot.masteryAwarded} ${l.awarded}`:l.notEvaluated;
+    const masteryValue=snapshot.masteryAwarded?`${snapshot.masteryAwarded} ${l.mastered}`:
+      snapshot.masteryStates.retention_due?l.retentionDue:
+      snapshot.masteryStates.awaiting_evidence?l.awaitingEvidence:
+      snapshot.activeTracks?l.learning:l.notStarted;
     stats.innerHTML=`
       <article><span>${escapeHtml(l.completed)}</span><strong>${snapshot.completedLessons}/${snapshot.totalLessons}</strong></article>
       <article><span>${escapeHtml(l.due)}</span><strong>${snapshot.retentionDue.length}</strong></article>
@@ -211,7 +230,7 @@ export function renderLearningHome({root=document,catalog,curriculum,storage=loc
     courseGrid.innerHTML=snapshot.tracks.map(track=>{
       const current=track.current;
       const open=continueTrack?.id===track.id?' open':'';
-      const mastery=track.evaluatedMastery?`${track.awardedMastery}/${track.evaluatedMastery}`:l.notEvaluated;
+      const mastery=current?masteryLabel(current.masteryState,l):l.notStarted;
       return `<details class="course-card" data-track="${escapeHtml(track.id)}"${open}>
         <summary>
           <div class="course-summary-main"><span class="course-kicker">${escapeHtml(track.name)}</span><strong>${escapeHtml(track.level)} · ${track.completedCount}/${track.total}</strong><small>${current?escapeHtml(snapshot.title(current.entry,lang)):''}</small></div>

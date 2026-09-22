@@ -32,6 +32,8 @@ assert.equal(snapshot.continueRecord.entry.id,'sql.two.001');
 assert.equal(snapshot.completedLessons,1);
 assert.equal(snapshot.activeTracks,1);
 assert.equal(snapshot.retentionDue.length,1);
+assert.equal(snapshot.records.find(item=>item.entry.id==='sql.one.001').masteryState,'retention_due');
+assert.equal(snapshot.masteryStates.retention_due,1);
 assert.equal(snapshot.tracks.find(track=>track.id==='sql').progressPercent,50);
 assert.equal(snapshot.tracks.find(track=>track.id==='sql').level,'L2');
 assert.equal(snapshot.evidenceDrafts,1);

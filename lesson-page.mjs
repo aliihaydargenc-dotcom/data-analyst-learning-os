@@ -1,6 +1,7 @@
 import {
   createLessonProgress,normalizeLessonProgress,completeSection,completionPercent,
-  sectionNeedsResponse,saveEvidenceDraft,recordLabAttempt,recordCaseLabAttempt,recordPythonLabAttempt,recordHtmlLabAttempt,labPassed
+  sectionNeedsResponse,saveEvidenceDraft,recordLabAttempt,recordCaseLabAttempt,recordPythonLabAttempt,recordHtmlLabAttempt,labPassed,
+  completeRetentionReview,lessonLabId
 } from './lesson-runtime.mjs';
 
 const $=selector=>document.querySelector(selector);
@@ -31,7 +32,10 @@ const labels={
     labFail:'Semantic test geçmedi.',labRequired:'Bu bağımsız üretim bölümü için önce Semantic SQL Lab’ı geçirmen gerekiyor.',
     labError:'Lab çalıştırılamadı.',labPassed:'Semantik kanıt · geçti',labRows:'satır',
     caseIdle:'Çalıştırılmadı',caseRun:'Senaryoları değerlendir',casePass:'Semantic Case Lab geçti.',caseFail:'Semantic Case Lab geçmedi.',caseRequired:'Bu bağımsız üretim bölümü için önce Semantic Case Lab’ı geçirmen gerekiyor.',caseMissing:'Tüm senaryolarda bir seçenek işaretle.',
-    pythonIdle:'Çalıştırılmadı',pythonLoading:'Python runtime hazırlanıyor…',pythonRun:'Python testlerini çalıştır',pythonReset:'Sıfırla',pythonPass:'Semantic Python Lab geçti.',pythonFail:'Semantic Python Lab geçmedi.',pythonRequired:'Bu bağımsız üretim bölümü için önce Semantic Python Lab’ı geçirmen gerekiyor.',pythonError:'Python lab çalıştırılamadı.',pythonPassed:'Python kanıtı · geçti',htmlIdle:'Çalıştırılmadı',htmlRun:'DOM testlerini çalıştır',htmlReset:'Sıfırla',htmlPass:'Semantic HTML DOM Lab geçti.',htmlFail:'Semantic HTML DOM Lab geçmedi.',htmlRequired:'Bu bağımsız üretim bölümü için önce Semantic HTML DOM Lab’ı geçirmen gerekiyor.',htmlError:'HTML DOM lab çalıştırılamadı.',htmlPassed:'HTML DOM kanıtı · geçti'
+    pythonIdle:'Çalıştırılmadı',pythonLoading:'Python runtime hazırlanıyor…',pythonRun:'Python testlerini çalıştır',pythonReset:'Sıfırla',pythonPass:'Semantic Python Lab geçti.',pythonFail:'Semantic Python Lab geçmedi.',pythonRequired:'Bu bağımsız üretim bölümü için önce Semantic Python Lab’ı geçirmen gerekiyor.',pythonError:'Python lab çalıştırılamadı.',pythonPassed:'Python kanıtı · geçti',htmlIdle:'Çalıştırılmadı',htmlRun:'DOM testlerini çalıştır',htmlReset:'Sıfırla',htmlPass:'Semantic HTML DOM Lab geçti.',htmlFail:'Semantic HTML DOM Lab geçmedi.',htmlRequired:'Bu bağımsız üretim bölümü için önce Semantic HTML DOM Lab’ı geçirmen gerekiyor.',htmlError:'HTML DOM lab çalıştırılamadı.',htmlPassed:'HTML DOM kanıtı · geçti',
+    masteryLearning:'Öğreniliyor',masteryAwaiting:'Kanıt bekliyor',masteryReadyRetention:'Tekrar bekliyor',masteryRetentionDue:'Tekrar zamanı',masteryMastered:'Mastery doğrulandı',masteryNeedsReview:'Gözden geçir',
+    masteryVerified:'doğrulanmış boyut',retentionComplete:'Tekrarı tamamla',retentionResponse:'Geri çağırma yanıtın',retentionResponsePlaceholder:'Kaynaklara bakmadan çözümünü ve gerekçeni yaz.',retentionCompleted:'tamamlandı',retentionNotDue:'henüz vadesi gelmedi',
+    retentionLabRequired:'Bu retention kanıtı için semantic labı vade tarihinden sonra yeniden çalıştır.',retentionSaved:'Retention kanıtı kaydedildi.',retentionNeedsResponse:'En az 20 karakterlik bir geri çağırma yanıtı yaz.'
   },
   en:{
     loading:'Loading',progress:'Progress',estimate:'Estimated study',minutes:'min',
@@ -53,7 +57,10 @@ const labels={
     labFail:'Semantic test did not pass.',labRequired:'Pass the Semantic SQL Lab before completing this independent-production section.',
     labError:'The lab could not be executed.',labPassed:'Semantic evidence · passed',labRows:'rows',
     caseIdle:'Not run',caseRun:'Evaluate scenarios',casePass:'Semantic Case Lab passed.',caseFail:'Semantic Case Lab did not pass.',caseRequired:'Pass the Semantic Case Lab before completing this independent-production section.',caseMissing:'Choose one option for every scenario.',
-    pythonIdle:'Not run',pythonLoading:'Preparing Python runtime…',pythonRun:'Run Python tests',pythonReset:'Reset',pythonPass:'Semantic Python Lab passed.',pythonFail:'Semantic Python Lab did not pass.',pythonRequired:'Pass the Semantic Python Lab before completing this independent-production section.',pythonError:'Python lab could not be executed.',pythonPassed:'Python evidence · passed',htmlIdle:'Not run',htmlRun:'Run DOM tests',htmlReset:'Reset',htmlPass:'Semantic HTML DOM Lab passed.',htmlFail:'Semantic HTML DOM Lab did not pass.',htmlRequired:'Pass the Semantic HTML DOM Lab before completing this independent-production section.',htmlError:'HTML DOM lab could not be executed.',htmlPassed:'HTML DOM evidence · passed'
+    pythonIdle:'Not run',pythonLoading:'Preparing Python runtime…',pythonRun:'Run Python tests',pythonReset:'Reset',pythonPass:'Semantic Python Lab passed.',pythonFail:'Semantic Python Lab did not pass.',pythonRequired:'Pass the Semantic Python Lab before completing this independent-production section.',pythonError:'Python lab could not be executed.',pythonPassed:'Python evidence · passed',htmlIdle:'Not run',htmlRun:'Run DOM tests',htmlReset:'Reset',htmlPass:'Semantic HTML DOM Lab passed.',htmlFail:'Semantic HTML DOM Lab did not pass.',htmlRequired:'Pass the Semantic HTML DOM Lab before completing this independent-production section.',htmlError:'HTML DOM lab could not be executed.',htmlPassed:'HTML DOM evidence · passed',
+    masteryLearning:'Learning',masteryAwaiting:'Waiting for evidence',masteryReadyRetention:'Waiting for review',masteryRetentionDue:'Review due',masteryMastered:'Mastery verified',masteryNeedsReview:'Needs review',
+    masteryVerified:'verified dimensions',retentionComplete:'Complete review',retentionResponse:'Retrieval response',retentionResponsePlaceholder:'Solve and explain from memory before checking sources.',retentionCompleted:'completed',retentionNotDue:'not due yet',
+    retentionLabRequired:'Re-run the semantic lab after this review becomes due.',retentionSaved:'Retention evidence saved.',retentionNeedsResponse:'Write at least 20 characters of retrieval evidence.'
   }
 };
 
@@ -260,7 +267,7 @@ async function runLessonSqlLab(){
 
     const summary=Object.fromEntries(evaluation.tests.map(test=>[test.variant,test.passed]));
     state.progress=recordLabAttempt(state.lesson,state.progress,lab.id,{passed:evaluation.passed,summary});
-    persistProgress();
+    persistProgress();renderEvidence();renderRetention();
 
     const detail=evaluation.tests.map(test=>`${test.variant}: ${test.passed?'PASS':'FAIL'} (${test.actualRows}/${test.expectedRows} ${l.labRows})`).join(' · ');
     $('#lessonSqlFeedback').textContent=`${evaluation.passed?l.labPass:l.labFail} ${detail}`;
@@ -318,7 +325,7 @@ async function runLessonPythonLab(){
     const evaluation=await module.evaluateLessonPython(lab.id,$('#lessonPythonEditor').value);
     const summary=Object.fromEntries(evaluation.tests.map(test=>[test.variant,test.passed]));
     state.progress=recordPythonLabAttempt(state.lesson,state.progress,lab.id,{passed:evaluation.passed,summary});
-    persistProgress();
+    persistProgress();renderEvidence();renderRetention();
     const detail=evaluation.tests.map(test=>`${test.variant}: ${test.passed?'PASS':'FAIL'} · ${test.detail}`).join(' · ');
     $('#lessonPythonFeedback').textContent=`${evaluation.passed?l.pythonPass:l.pythonFail} ${detail}`;
     $('#lessonPythonFeedback').style.color=evaluation.passed?'var(--green)':'var(--red)';
@@ -356,7 +363,7 @@ async function runLessonHtmlLab(){
     const module=await getLessonHtmlLabModule();
     const evaluation=module.evaluateLessonHtml(lab.id,$('#lessonHtmlEditor').value);
     const summary=Object.fromEntries(evaluation.tests.map(test=>[test.variant,test.passed]));
-    state.progress=recordHtmlLabAttempt(state.lesson,state.progress,lab.id,{passed:evaluation.passed,summary});persistProgress();
+    state.progress=recordHtmlLabAttempt(state.lesson,state.progress,lab.id,{passed:evaluation.passed,summary});persistProgress();renderEvidence();renderRetention();
     const detail=evaluation.tests.map(test=>`${test.variant}: ${test.passed?'PASS':'FAIL'} · ${test.detail}`).join(' · ');
     $('#lessonHtmlFeedback').textContent=`${evaluation.passed?l.htmlPass:l.htmlFail} ${detail}`;$('#lessonHtmlFeedback').style.color=evaluation.passed?'var(--green)':'var(--red)';$('#lessonHtmlLabStatus').textContent=evaluation.passed?l.htmlPassed:l.htmlFail;
     $('#lessonHtmlOutput').textContent=evaluation.tests.flatMap(test=>test.checks.map(check=>`[${test.variant}] ${check.name}: ${check.passed?'PASS':'FAIL'} · ${check.detail}`)).join('\n');
@@ -395,7 +402,7 @@ function runLessonCaseLab(){
   const results=(lab.cases||[]).map(item=>({id:item.id,passed:answers[item.id]===item.answer}));
   const passed=results.every(item=>item.passed);
   state.progress=recordCaseLabAttempt(state.lesson,state.progress,lab.id,{passed,summary:Object.fromEntries(results.map(item=>[item.id,item.passed]))});
-  persistProgress();
+  persistProgress();renderEvidence();renderRetention();
   const detail=results.map(item=>`${item.id}: ${item.passed?'PASS':'FAIL'}`).join(' · ');
   $('#lessonCaseFeedback').textContent=`${passed?l.casePass:l.caseFail} ${detail}`;
   $('#lessonCaseFeedback').style.color=passed?'var(--green)':'var(--red)';
@@ -406,6 +413,15 @@ function renderEvidence(){
   const l=labels[state.lang];
   $('#evidenceTitle').textContent=l.evidenceTitle;
   $('#evidenceIntro').textContent=l.evidenceIntro;
+  const mastery=state.progress.mastery||{};
+  const stateLabels={
+    learning:l.masteryLearning,awaiting_evidence:l.masteryAwaiting,ready_for_retention:l.masteryReadyRetention,
+    retention_due:l.masteryRetentionDue,mastered:l.masteryMastered,needs_review:l.masteryNeedsReview
+  };
+  const verified=(mastery.verifiedDimensions||[]).length;
+  const missing=(mastery.missingDimensions||[]);
+  $('#masteryState').innerHTML=`<div><span class="eyebrow">ENGINE STATE</span><strong>${escapeHtml(stateLabels[mastery.state]||l.masteryLearning)}</strong></div>
+    <div><span>${verified} ${escapeHtml(l.masteryVerified)}</span>${mastery.evaluated&&mastery.weighted!==null?`<strong>${mastery.weighted}%</strong>`:''}${missing.length?`<small>${escapeHtml(missing.join(' · '))}</small>`:''}</div>`;
   $('#evidenceGrid').innerHTML=state.lesson.mastery_evidence.map(item=>`<article class="evidence-card">
     <header><span>${item.dimension}</span><strong>${item.weight}%</strong></header>
     <p>${escapeHtml(item.task_tr)}</p>
@@ -430,7 +446,50 @@ function renderRetention(){
   const complete=Boolean(state.progress.completedAt);
   $('#retentionPanel').classList.toggle('hidden',!complete);
   if(!complete)return;
-  $('#retentionList').innerHTML=state.progress.retentionDue.map(item=>`<div class="retention-item"><div><strong>D+${item.day}</strong><br><span>${escapeHtml(item.evidence)}</span></div><div><strong>${l.due}</strong><br><span>${new Date(item.dueAt).toLocaleDateString(state.lang==='tr'?'tr-TR':'en-US')} · ${l.pending}</span></div></div>`).join('');
+  const nowMs=Date.now();
+  const labId=lessonLabId(state.lesson);
+  const labRecord=labId?state.progress.labEvidence?.[labId]:null;
+  $('#retentionList').innerHTML=state.progress.retentionDue.map(item=>{
+    const done=item.status==='completed';
+    const dueMs=new Date(item.dueAt).getTime();
+    const due=Number.isFinite(dueMs)&&dueMs<=nowMs;
+    const labReady=Boolean(labId&&labRecord?.lastAttemptAt&&new Date(labRecord.lastAttemptAt).getTime()>=dueMs);
+    const status=done?l.retentionCompleted:(due?l.pending:l.retentionNotDue);
+    const controls=!done&&due?`<div class="retention-task">
+      <label>${escapeHtml(l.retentionResponse)}<textarea data-retention-response="${item.day}" rows="4" placeholder="${escapeHtml(l.retentionResponsePlaceholder)}"></textarea></label>
+      <button class="primary" data-retention-complete="${item.day}">${escapeHtml(l.retentionComplete)}</button>
+      <small data-retention-feedback="${item.day}">${labId&&!labReady?escapeHtml(l.retentionLabRequired):''}</small>
+    </div>`:'';
+    return `<div class="retention-item ${done?'complete':''}"><div><strong>D+${item.day}</strong><br><span>${escapeHtml(item.evidence)}</span></div><div><strong>${l.due}</strong><br><span>${new Date(item.dueAt).toLocaleDateString(state.lang==='tr'?'tr-TR':'en-US')} · ${escapeHtml(status)}</span></div>${controls}</div>`;
+  }).join('');
+
+  document.querySelectorAll('[data-retention-complete]').forEach(button=>button.addEventListener('click',()=>{
+    const day=Number(button.dataset.retentionComplete);
+    const item=state.progress.retentionDue.find(entry=>Number(entry.day)===day&&entry.status!=='completed');
+    if(!item)return;
+    const response=document.querySelector(`[data-retention-response="${day}"]`)?.value||'';
+    const feedback=document.querySelector(`[data-retention-feedback="${day}"]`);
+    let payload={response,verified:false,passed:null,source:'retrieval-response'};
+    if(labId){
+      const latest=state.progress.labEvidence?.[labId];
+      const dueMs=new Date(item.dueAt).getTime();
+      const attemptMs=new Date(latest?.lastAttemptAt||0).getTime();
+      if(!latest||!Number.isFinite(attemptMs)||attemptMs<dueMs){
+        if(feedback)feedback.textContent=l.retentionLabRequired;
+        return;
+      }
+      payload={response,verified:true,passed:latest.lastPassed===true,source:`semantic-lab:${labId}`};
+    }
+    const result=completeRetentionReview(state.lesson,state.progress,day,payload,new Date());
+    if(!result.ok){
+      if(feedback)feedback.textContent=result.reason==='response_required'?l.retentionNeedsResponse:(result.reason==='not_due'?l.retentionNotDue:result.reason);
+      return;
+    }
+    state.progress=result.progress;
+    persistProgress();
+    renderEvidence();
+    renderRetention();
+  }));
 }
 
 
@@ -531,7 +590,7 @@ $('#completeSection').addEventListener('click',()=>{
   }
   state.progress=result.progress;
   persistProgress();
-  renderHero();renderOutline();renderSection();renderRetention();
+  renderHero();renderOutline();renderSection();renderEvidence();renderRetention();
   $('#sectionFeedback').textContent=state.progress.completedAt?l.noMastery:l.saved;
 });
 
