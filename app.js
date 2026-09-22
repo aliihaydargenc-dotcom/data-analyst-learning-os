@@ -13,6 +13,7 @@ FROM hotel_daily;`;
 
 const state={lang:'tr',questions:[],exam:[],answers:{},index:0,roadmap:null,curriculum:null,catalog:null,duckdbReady:false,duckdbInfo:null};
 const $=s=>document.querySelector(s);
+const setText=(selector,value)=>{const element=$(selector);if(element)element.textContent=value;};
 let sqlLabModulePromise=null;
 
 const copy={
@@ -60,7 +61,9 @@ const tracks=[
 ];
 
 function renderTracks(){
-  $('#trackGrid').innerHTML=tracks.map((t,i)=>`<article class="track-card">
+  const root=$('#trackGrid');
+  if(!root)return;
+  root.innerHTML=tracks.map((t,i)=>`<article class="track-card">
     <div class="n">TRACK ${String(i+1).padStart(2,'0')}</div>
     <h3>${t.name}</h3><p>${state.lang==='tr'?t.tr:t.en}</p>
     <div class="tags">${t.tags.map(x=>`<span>${x}</span>`).join('')}</div>
@@ -69,16 +72,19 @@ function renderTracks(){
 
 
 function renderMastery(){
+  const root=$('#masteryGrid');
+  if(!root)return;
   const items=state.lang==='tr'
     ?[['01','Bilgi','Kuralı ve kavramı bil'],['02','Yorum','Kod, model ve çıktıyı oku'],['03','Üretim','Sıfırdan doğru çözüm üret'],['04','Transfer','Aynı prensibi yeni probleme taşı'],['05','Retention','Günler sonra yeniden kanıtla']]
     :[['01','Knowledge','Know the rule and concept'],['02','Interpret','Read code, models and outputs'],['03','Production','Build the solution independently'],['04','Transfer','Apply the principle to a new problem'],['05','Retention','Prove it again after delay']];
-  $('#masteryGrid').innerHTML=items.map(([n,title,desc])=>`<article class="mastery-card"><span>${n}</span><strong>${title}</strong><small>${desc}</small></article>`).join('');
+  root.innerHTML=items.map(([n,title,desc])=>`<article class="mastery-card"><span>${n}</span><strong>${title}</strong><small>${desc}</small></article>`).join('');
 }
 
 function renderCurriculum(){
-  if(!state.curriculum)return;
+  const root=$('#curriculumGrid');
+  if(!state.curriculum||!root)return;
   const order=['L1','L2','L3','L4','L5','Expert'];
-  $('#curriculumGrid').innerHTML=state.curriculum.tracks.map(track=>`<article class="curriculum-card">
+  root.innerHTML=state.curriculum.tracks.map(track=>`<article class="curriculum-card">
     <div class="curriculum-head"><span>${track.name}</span><strong>${track.modules.length} module</strong></div>
     <p>${track.purpose_tr}</p>
     <div class="level-ladder">${order.map(level=>{
@@ -102,25 +108,27 @@ function updateDuckdbStatus(){
 function applyLanguage(){
   const c=copy[state.lang];
   document.documentElement.lang=state.lang;
-  $('#languageToggle').textContent=state.lang==='tr'?'EN':'TR';
-  $('#heroTitle').textContent=c.heroTitle;
-  $('#heroText').textContent=c.heroText;
-  $('#tracksTitle').textContent=c.tracksTitle;
-  $('#academyTitle').textContent=c.academyTitle;
-  $('#academyIntro').textContent=c.academyIntro;
-  $('#diagTitle').textContent=c.diagTitle;
-  $('#diagIntro').textContent=c.diagIntro;
-  $('#startDiagnostic').textContent=c.start;
-  $('#startExamTop').textContent=c.topStart;
-  $('#roadmapTitle').textContent=c.roadmap;
-  $('#sqlTask').textContent=c.sqlTask;
-  $('#runSql').textContent=c.runSql;
-  $('#resetSql').textContent=c.reset;
-  $('#sandboxNote').textContent=c.sandbox;
-  $('#sqlOutputTitle').textContent=c.outputTitle;
-  if(!$('#sqlEmpty').classList.contains('hidden'))$('#sqlEmpty').textContent=c.empty;
+  setText('#languageToggle',state.lang==='tr'?'EN':'TR');
+  setText('#heroTitle',c.heroTitle);
+  setText('#heroText',c.heroText);
+  setText('#tracksTitle',c.tracksTitle);
+  setText('#academyTitle',c.academyTitle);
+  setText('#academyIntro',c.academyIntro);
+  setText('#diagTitle',c.diagTitle);
+  setText('#diagIntro',c.diagIntro);
+  setText('#startDiagnostic',c.start);
+  setText('#startExamTop',c.topStart);
+  setText('#roadmapTitle',c.roadmap);
+  setText('#sqlTask',c.sqlTask);
+  setText('#runSql',c.runSql);
+  setText('#resetSql',c.reset);
+  setText('#sandboxNote',c.sandbox);
+  setText('#sqlOutputTitle',c.outputTitle);
+  const sqlEmpty=$('#sqlEmpty');
+  if(sqlEmpty&&!sqlEmpty.classList.contains('hidden'))sqlEmpty.textContent=c.empty;
   updateDuckdbStatus();
-  if(!state.exam.length)$('#diagCounter').textContent=c.ready;
+  const diagCounter=$('#diagCounter');
+  if(diagCounter&&!state.exam.length)diagCounter.textContent=c.ready;
   renderTracks();
   renderMastery();
   renderCurriculum();
@@ -184,8 +192,9 @@ function showResults(){
 }
 
 function renderRoadmap(){
-  if(!state.roadmap)return;
-  $('#roadmapGrid').innerHTML=state.roadmap.phases.filter(p=>p.id!=='P0').map(p=>`<article class="phase">
+  const root=$('#roadmapGrid');
+  if(!state.roadmap||!root)return;
+  root.innerHTML=state.roadmap.phases.filter(p=>p.id!=='P0').map(p=>`<article class="phase">
     <div class="weeks">${state.lang==='tr'?'Hafta':'Weeks'} ${p.weeks[0]}–${p.weeks[p.weeks.length-1]}</div>
     <h3>${state.lang==='tr'?p.name_tr:p.name_en}</h3>
     <p>${p.outcome_tr}</p>
@@ -280,7 +289,7 @@ async function executeSql(){
 
 $('#languageToggle').addEventListener('click',()=>{state.lang=state.lang==='tr'?'en':'tr';applyLanguage()});
 $('#startDiagnostic').addEventListener('click',startExam);
-$('#startExamTop').addEventListener('click',startExam);
+$('#startExamTop')?.addEventListener('click',startExam);
 $('#nextQuestion').addEventListener('click',()=>{
   if(state.index<state.exam.length-1){state.index++;renderQuestion()}else showResults();
 });

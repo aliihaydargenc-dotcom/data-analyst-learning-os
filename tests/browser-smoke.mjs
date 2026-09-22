@@ -62,13 +62,14 @@ try{
   assert.ok(learningHomeMobile.continueHeight>=44);
   await page.setViewportSize({width:1280,height:900});
 
-  await page.locator('#trackGrid .track-card').first().waitFor({state:'visible'});
-  assert.equal(await page.locator('#trackGrid .track-card').count(),6);
-  await page.locator('#curriculumGrid .curriculum-card').first().waitFor({state:'visible'});
-  assert.equal(await page.locator('#curriculumGrid .curriculum-card').count(),6);
-  assert.equal(await page.locator('#curriculumGrid .level-step').count(),36); 
-  assert.equal(await page.getByText('HTML & Web Foundations',{exact:true}).count(),3);
+  assert.equal(await page.locator('.hero').count(),0);
+  assert.equal(await page.locator('#tracks').count(),0);
+  assert.equal(await page.locator('#academy').count(),0);
+  assert.equal(await page.locator('#roadmap').count(),0);
+  assert.equal(await page.locator('.home-utilities .utility-panel').count(),2);
+  assert.equal((await page.locator('#learningHome').textContent()).includes('Ders ilerlemen, tekrar sıran'),false);
 
+  await page.locator('#sql-lab > summary').click();
   await page.locator('#runSql').click();
   await page.locator('#sqlTable tbody tr').first().waitFor({state:'visible',timeout:120000});
 
