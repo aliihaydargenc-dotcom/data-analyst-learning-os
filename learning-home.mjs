@@ -1,5 +1,6 @@
 import {aggregateTrackMastery} from './track-mastery.mjs';
 import {buildObjectiveMasteryAnalytics,aggregateObjectiveMastery,prioritizeObjectiveTargets} from './objective-mastery.mjs';
+import {buildDailyChallenge} from './daily-challenge.mjs';
 
 const TRACK_ORDER=['sql','qlik','python','excel','html','english'];
 
@@ -183,11 +184,11 @@ function labels(lang){
   return lang==='en'?{
     homeTitle:'Continue',continue:'Continue',start:'Start',courseProgress:'Progress',completed:'Lessons',due:'Review',active:'Tracks',mastery:'Mastery',
     notStarted:'Not started',learning:'Learning',awaitingEvidence:'Evidence needed',awaitingAdvanced:'Advanced evidence',readyRetention:'Review pending',retentionDue:'Review due',mastered:'Mastered',needsReview:'Needs review',
-    masteredTracks:'tracks',lessonMastery:'lessons mastered',review:'Review',retention:'Reviews',upcoming:'Next',courses:'Courses',current:'Continue',next:'Next',done:'Done',lesson:'Lesson',reviews:'reviews',skills:'Skills',skillCoverage:'Evidence',skillMastery:'Mastery',skillTarget:'Focus',skillPractice:'Practice',skillEvidence:'evidence',subSkills:'subskills',skillOpen:'Open',skillMasteredStatus:'Mastered',skillWeakStatus:'Needs review',skillLearningStatus:'Learning',skillNotStartedStatus:'Not started',focusTitle:'Mastery focus',focusRetry:'Practice',focusGap:'gaps'
+    masteredTracks:'tracks',lessonMastery:'lessons mastered',review:'Review',retention:'Reviews',upcoming:'Next',courses:'Courses',current:'Continue',next:'Next',done:'Done',lesson:'Lesson',reviews:'reviews',skills:'Skills',skillCoverage:'Evidence',skillMastery:'Mastery',skillTarget:'Focus',skillPractice:'Practice',skillEvidence:'evidence',subSkills:'subskills',skillOpen:'Open',skillMasteredStatus:'Mastered',skillWeakStatus:'Needs review',skillLearningStatus:'Learning',skillNotStartedStatus:'Not started',dailyTitle:'Daily analyst mission',dailyStart:'Start challenge',dailyFocus:'Focus',dailyMinutes:'min',focusTitle:'Mastery focus',focusRetry:'Practice',focusGap:'gaps'
   }:{
     homeTitle:'Devam et',continue:'Devam et',start:'Başla',courseProgress:'İlerleme',completed:'Ders',due:'Tekrar',active:'Track',mastery:'Mastery',
     notStarted:'Başlanmadı',learning:'Devam ediyor',awaitingEvidence:'Kanıt gerekli',awaitingAdvanced:'İleri kanıt',readyRetention:'Tekrar bekliyor',retentionDue:'Tekrar zamanı',mastered:'Mastered',needsReview:'Gözden geçir',
-    masteredTracks:'track',lessonMastery:'ders mastery',review:'Gözden geçir',retention:'Tekrarlar',upcoming:'Sıradaki',courses:'Dersler',current:'Devam',next:'Sırada',done:'Tamamlandı',lesson:'Ders',reviews:'tekrar',skills:'Beceriler',skillCoverage:'Kanıt',skillMastery:'Mastery',skillTarget:'Odak',skillPractice:'Tekrarla',skillEvidence:'kanıt',subSkills:'alt beceri',skillOpen:'Aç',skillMasteredStatus:'Mastered',skillWeakStatus:'Gözden geçir',skillLearningStatus:'Öğreniliyor',skillNotStartedStatus:'Başlanmadı',focusTitle:'Mastery odağı',focusRetry:'Tekrarla',focusGap:'açık'
+    masteredTracks:'track',lessonMastery:'ders mastery',review:'Gözden geçir',retention:'Tekrarlar',upcoming:'Sıradaki',courses:'Dersler',current:'Devam',next:'Sırada',done:'Tamamlandı',lesson:'Ders',reviews:'tekrar',skills:'Beceriler',skillCoverage:'Kanıt',skillMastery:'Mastery',skillTarget:'Odak',skillPractice:'Tekrarla',skillEvidence:'kanıt',subSkills:'alt beceri',skillOpen:'Aç',skillMasteredStatus:'Mastered',skillWeakStatus:'Gözden geçir',skillLearningStatus:'Öğreniliyor',skillNotStartedStatus:'Başlanmadı',dailyTitle:'Günün analist görevi',dailyStart:'Challenge’a başla',dailyFocus:'Odak',dailyMinutes:'dk',focusTitle:'Mastery odağı',focusRetry:'Tekrarla',focusGap:'açık'
   };
 }
 
@@ -341,6 +342,31 @@ export function renderLearningHome({root=document,catalog,curriculum,storage=loc
           <b>${escapeHtml(l.focusRetry)}</b>
         </a>`).join('')}</div>`;
     }
+  }
+
+  const dailyTitle=root.querySelector('#dailyChallengeTitle');
+  if(dailyTitle)dailyTitle.textContent=l.dailyTitle;
+
+  const dailyRoot=root.querySelector('#dailyChallengeCard');
+  if(dailyRoot){
+    const challenge=buildDailyChallenge(snapshot,{lang,now});
+    dailyRoot.innerHTML=challenge?`<article class="daily-challenge-card panel" data-daily-challenge="${escapeHtml(challenge.id)}">
+      <div class="daily-challenge-copy">
+        <div class="daily-challenge-meta">
+          <span>${escapeHtml(challenge.trackName)}</span>
+          <span>${escapeHtml(challenge.level)}</span>
+          <span>${escapeHtml(challenge.difficulty)}</span>
+        </div>
+        <h3>${escapeHtml(challenge.topic)}</h3>
+        <p>${escapeHtml(challenge.task)}</p>
+        <small>${escapeHtml(l.dailyFocus)} · ${escapeHtml(challenge.dimensionLabel)}</small>
+      </div>
+      <div class="daily-challenge-action">
+        <span>${challenge.estimatedMinutes} ${escapeHtml(l.dailyMinutes)}</span>
+        <strong>+${challenge.rewardXp} XP</strong>
+        <a class="primary" href="${escapeHtml(challenge.href)}">${escapeHtml(l.dailyStart)}</a>
+      </div>
+    </article>`:'';
   }
 
   const skillTitle=root.querySelector('#skillMatrixTitle');

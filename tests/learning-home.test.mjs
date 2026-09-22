@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {buildLearningSnapshot,buildSkillMatrixRows,objectiveFocusHref} from '../learning-home.mjs';
+import {buildDailyChallenge} from '../daily-challenge.mjs';
 
 class MemoryStorage{
   constructor(values={}){this.values=new Map(Object.entries(values));}
@@ -21,6 +22,13 @@ assert.equal(snapshot.continueRecord.entry.id,'sql.one.001');
 assert.equal(snapshot.completedLessons,0);
 assert.equal(snapshot.retentionDue.length,0);
 assert.equal(snapshot.title(snapshot.continueRecord.entry,'tr'),'SQL Bir');
+const freshDaily=buildDailyChallenge(snapshot,{lang:'tr',now:new Date('2026-09-22T06:00:00Z')});
+assert.equal(freshDaily.dateKey,'2026-09-22');
+assert.equal(freshDaily.lessonId,'sql.one.001');
+assert.equal(freshDaily.dimension,'production');
+assert.equal(freshDaily.level,'L1');
+assert.match(freshDaily.href,/source=daily-challenge/);
+assert.match(freshDaily.task,/grain/);
 
 const storage=new MemoryStorage({
   'da-learning-os:lesson:sql.one.001':JSON.stringify({lessonId:'sql.one.001',startedAt:'2026-09-20T08:00:00Z',updatedAt:'2026-09-20T09:00:00Z',completedAt:'2026-09-20T09:00:00Z',completedSections:['a'],evidenceDrafts:{knowledge:'Yeterince uzun ve gerekçeli bir kanıt taslağı yazıldı.'},labEvidence:{lab:{passed:true}},retentionDue:[{day:1,dueAt:'2026-09-21T09:00:00Z',status:'pending'}]}),
@@ -86,6 +94,13 @@ assert.deepEqual(snapshot.diagnosticTargets.map(item=>item.dimension),['interpre
 
 // Priority follows distance from the level floor, not raw score.
 assert.deepEqual(snapshot.diagnosticTargets.map(item=>item.gap),[10,5]);
+
+const targetedDaily=buildDailyChallenge(snapshot,{lang:'tr',now:new Date('2026-09-22T06:00:00Z')});
+assert.equal(targetedDaily.lessonId,'sql.one.001');
+assert.equal(targetedDaily.dimension,'interpretation');
+assert.equal(targetedDaily.dimensionLabel,'Yorum');
+assert.match(targetedDaily.href,/focus=interpretation/);
+assert.match(targetedDaily.task,/yanıltıcı sonuç/);
 
 const skillRows=buildSkillMatrixRows(snapshot,'tr');
 const sqlSkill=skillRows.find(item=>item.id==='sql');
