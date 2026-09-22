@@ -138,6 +138,15 @@ html{scroll-padding-top:100px}button,input,textarea{accent-color:var(--blue)}
 .home-page .skill-dimension.strong{background:#edf8f3;border-color:#cee5da}.home-page .skill-dimension.weak{background:#fff7e8;border-color:#efd9ae}
 .home-page .skill-matrix-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
 .home-page .skill-matrix-foot>a{display:flex;align-items:center;gap:8px;color:var(--muted);text-decoration:none}.home-page .skill-matrix-foot>a strong{color:var(--blue);font-weight:650}.home-page .skill-matrix-foot>a:hover strong{text-decoration:underline}
+.home-page .skill-drilldown{margin-top:10px;border-top:1px solid var(--line)}
+.home-page .skill-drilldown>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 2px 2px;cursor:pointer;list-style:none;color:var(--muted);font-size:12px}
+.home-page .skill-drilldown>summary::-webkit-details-marker{display:none}.home-page .skill-drilldown>summary b{font-weight:650;color:var(--blue)}
+.home-page .skill-drilldown[open]>summary{padding-bottom:10px}.home-page .skill-drilldown[open]>summary b{font-size:0}.home-page .skill-drilldown[open]>summary b::after{content:'−';font-size:17px}
+.home-page .skill-drilldown-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.home-page .skill-topic{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;padding:9px 10px;border:1px solid transparent;border-radius:9px;text-decoration:none;color:var(--text);background:#fafbfd}
+.home-page .skill-topic>span{min-width:0}.home-page .skill-topic strong,.home-page .skill-topic small{display:block}.home-page .skill-topic strong{font-size:12px;font-weight:600;line-height:1.35}.home-page .skill-topic small{margin-top:3px;font-size:10px;color:var(--muted)}
+.home-page .skill-topic>b{font-size:11px;font-weight:650;color:var(--muted);flex-shrink:0}.home-page .skill-topic:hover{border-color:#d2e0f8;background:#edf4ff}
+.home-page .skill-topic.mastered{background:#edf8f3;border-color:#cee5da}.home-page .skill-topic.weak{background:#fff7e8;border-color:#efd9ae}
 .home-page .course-navigation{padding:32px 0 0}.home-page .section-title h2{font-size:23px;letter-spacing:-.025em;margin:0}
 .home-page .course-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
 .home-page .course-card{border-radius:14px;background:#fff}
@@ -189,7 +198,7 @@ html{scroll-padding-top:100px}button,input,textarea{accent-color:var(--blue)}
  .home-page .course-card summary{padding:18px;min-height:94px;gap:12px}
  .home-page .course-card-body{padding:14px 12px}.home-page .course-lessons{gap:2px}
  .home-page .course-lesson{min-height:64px;padding:12px 8px}.home-page .course-state-row{padding:0 6px;font-size:12px}
- .home-page .skill-matrix-card{padding:16px}.home-page .skill-dimension-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.home-page .skill-matrix-foot{align-items:flex-start;flex-direction:column}
+ .home-page .skill-matrix-card{padding:16px}.home-page .skill-dimension-grid,.home-page .skill-drilldown-list{grid-template-columns:repeat(2,minmax(0,1fr))}.home-page .skill-matrix-foot{align-items:flex-start;flex-direction:column}
  .home-page .utility-panel>summary,.home-page .utility-body{padding:18px}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important}}

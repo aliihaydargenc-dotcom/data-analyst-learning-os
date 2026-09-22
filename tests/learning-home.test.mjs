@@ -96,6 +96,13 @@ assert.equal(sqlSkill.dimensions.find(item=>item.dimension==='knowledge').score,
 assert.equal(sqlSkill.dimensions.find(item=>item.dimension==='interpretation').state,'weak');
 assert.equal(sqlSkill.target.dimension,'interpretation');
 assert.equal(sqlSkill.target.href,'lesson.html?id=sql.one.001&focus=interpretation');
+assert.equal(sqlSkill.skills.length,2);
+assert.equal(sqlSkill.skills[0].title,'SQL Bir');
+assert.equal(sqlSkill.skills[0].state,'weak');
+assert.equal(sqlSkill.skills[0].masteryPercent,50);
+assert.equal(sqlSkill.skills[0].coveragePercent,100);
+assert.equal(sqlSkill.skills[0].href,'lesson.html?id=sql.one.001&focus=interpretation');
+assert.equal(sqlSkill.skills[1].state,'not_started');
 
 assert.equal(objectiveFocusHref(catalog.production_lessons[0],'interpretation'),'lesson.html?id=sql.one.001&focus=interpretation');
 console.log('learning home: PASS');
