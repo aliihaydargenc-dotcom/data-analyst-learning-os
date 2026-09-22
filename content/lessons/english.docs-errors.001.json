@@ -1,0 +1,268 @@
+{
+  "id": "english.docs-errors.001",
+  "module_id": "english.docs-errors",
+  "track": "english",
+  "level": "L2",
+  "status": "production-candidate",
+  "title_tr": "Dokümantasyon ve hata mesajı okuma",
+  "title_en": "Reading documentation and error messages",
+  "subtitle_tr": "Dokümantasyon ve hata mesajı okuma konusunu gerçek veri analisti iş akışındaki requirement, evidence, review ve stakeholder iletişimi üzerinden öğren.",
+  "subtitle_en": "Learn reading documentation and error messages through analyst workflows involving requirements, evidence, review, and stakeholder communication.",
+  "estimated_minutes_range": [
+    55,
+    85
+  ],
+  "why_it_matters_tr": "Dokümantasyon ve hata mesajı okuma dersinin çekirdeği resmî dokümanda scope, version, parameter, return behavior ve exception koşullarını bulmak; exact error text ile runtime context’i eşleştirmek. Amaç “iyi İngilizce” göstermek değil; metric, scope, evidence ve karar bağlamını ekip içinde yanlış anlaşılmayacak biçimde taşımaktır. Her teknik cümlede neyin observation, requirement, assumption, inference ve recommendation olduğu gerektiği kadar açık olmalıdır. Tipik failure mode tek bir hata kelimesinden root cause uydurmak veya yanlış sürüm dokümanını uygulamak. Bu yalnız dil hatası değildir; yanlış population, yanlış acceptance criteria, gereksiz rework veya aşırı güvenli bir conclusion üretebilir.",
+  "why_it_matters_en": "The core of reading documentation and error messages is locating scope, version, parameters, return behavior, and exception conditions in official documentation and tying exact error text to runtime context. The goal is not decorative English; it is to preserve metric, scope, evidence, and decision context so technical meaning survives handoff and review. A typical failure mode is inventing a root cause from one error word or applying documentation for the wrong version. This is not merely a language issue; it can produce the wrong population, wrong acceptance criteria, unnecessary rework, or an overconfident conclusion.",
+  "prerequisites": [
+    "english.task-reading.001"
+  ],
+  "learning_objectives": [
+    "Dokümantasyon ve hata mesajı okuma için ana iletişim sözleşmesini metric, scope ve evidence açısından açıklar.",
+    "Yeni bir İngilizce teknik metinde requirement, assumption, observation ve recommendation ayrımını yapar.",
+    "Belirsiz veya aşırı iddialı cümleyi kanıta dayalı ve doğrulanabilir hale getirir.",
+    "Aynı analitik anlamı issue, PR, memo, briefing veya stakeholder açıklamasına transfer eder."
+  ],
+  "prerequisite_check": [
+    {
+      "prompt_tr": "Önkoşul kanıtı hazır mı: english.task-reading.001?",
+      "if_no_tr": "Önceki production dersini tamamla veya eşdeğer communication evidence üret."
+    }
+  ],
+  "case_lab": {
+    "id": "english-docs-errors-case-v1",
+    "title_tr": "Technical Communication Case Lab · Dokümantasyon ve hata mesajı okuma",
+    "title_en": "Technical Communication Case Lab · Reading documentation and error messages",
+    "task_tr": "Üç analist senaryosunda anlamı, scope’u ve evidence sınırını en doğru koruyan seçeneği işaretle. Tüm vakalar doğru olmadan bağımsız üretim bölümü açılmaz.",
+    "task_en": "Choose the option that best preserves meaning, scope, and evidence boundaries in all three analyst scenarios. Every case must pass before the independent-production gate opens.",
+    "requires_for_section": "docs-errors-production",
+    "cases": [
+      {
+        "id": "case-1",
+        "prompt_tr": "“column X does not exist” hatasında ilk kanıt ne olmalı?",
+        "prompt_en": "What should be the first evidence for “column X does not exist”?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Exact error, işlem bağlamı ve mevcut schema",
+            "label_en": "Exact error, işlem bağlamı ve mevcut schema"
+          },
+          {
+            "id": "b",
+            "label_tr": "Network sorunu varsayımı",
+            "label_en": "Network sorunu varsayımı"
+          },
+          {
+            "id": "c",
+            "label_tr": "UI rengini değiştirmek",
+            "label_en": "UI rengini değiştirmek"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek dokümantasyon ve hata mesajı okuma bağlamında anlamı, kapsamı ve kanıt sınırını birlikte korur.",
+        "rationale_en": "The correct option preserves meaning, scope, and evidence boundaries for reading documentation and error messages."
+      },
+      {
+        "id": "case-2",
+        "prompt_tr": "Doküman fonksiyonun belirli sürümde deprecated olduğunu söylüyor. Ne yaparsın?",
+        "prompt_en": "Docs say a function is deprecated in a specific version. What should you do?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Kurulu sürümü ve migration guidance’ı doğrulamak",
+            "label_en": "Kurulu sürümü ve migration guidance’ı doğrulamak"
+          },
+          {
+            "id": "b",
+            "label_tr": "Her sürümde kaldırılmış saymak",
+            "label_en": "Her sürümde kaldırılmış saymak"
+          },
+          {
+            "id": "c",
+            "label_tr": "Uyarıyı gizlemek",
+            "label_en": "Uyarıyı gizlemek"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek dokümantasyon ve hata mesajı okuma bağlamında anlamı, kapsamı ve kanıt sınırını birlikte korur.",
+        "rationale_en": "The correct option preserves meaning, scope, and evidence boundaries for reading documentation and error messages."
+      },
+      {
+        "id": "case-3",
+        "prompt_tr": "Bir issue’ya hata eklerken en yararlı paket hangisi?",
+        "prompt_en": "Which evidence bundle is most useful in an issue?",
+        "options": [
+          {
+            "id": "a",
+            "label_tr": "Exact message + environment + minimal reproduction",
+            "label_en": "Exact message + environment + minimal reproduction"
+          },
+          {
+            "id": "b",
+            "label_tr": "“Çalışmıyor”",
+            "label_en": "“Çalışmıyor”"
+          },
+          {
+            "id": "c",
+            "label_tr": "Sadece ekran görüntüsü",
+            "label_en": "Sadece ekran görüntüsü"
+          }
+        ],
+        "answer": "a",
+        "rationale_tr": "Doğru seçenek dokümantasyon ve hata mesajı okuma bağlamında anlamı, kapsamı ve kanıt sınırını birlikte korur.",
+        "rationale_en": "The correct option preserves meaning, scope, and evidence boundaries for reading documentation and error messages."
+      }
+    ]
+  },
+  "sections": [
+    {
+      "id": "mental-model",
+      "layer": "mental_model",
+      "title_tr": "1. Zihinsel model: dil değil analitik sözleşme",
+      "title_en": "1. Mental model: analytical contract, not decorative language",
+      "body_tr": "Dokümantasyon ve hata mesajı okuma dersinin çekirdeği resmî dokümanda scope, version, parameter, return behavior ve exception koşullarını bulmak; exact error text ile runtime context’i eşleştirmek. Amaç “iyi İngilizce” göstermek değil; metric, scope, evidence ve karar bağlamını ekip içinde yanlış anlaşılmayacak biçimde taşımaktır. Her teknik cümlede neyin observation, requirement, assumption, inference ve recommendation olduğu gerektiği kadar açık olmalıdır. Cümleyi yazmadan önce target reader, decision, metric ve evidence seviyesini belirle. Technical English; SQL, Qlik, Python, Excel ve web çıktılarının ekip içinde güvenilir biçimde taşınmasını sağlayan ortak interface’tir.",
+      "body_en": "The core of reading documentation and error messages is locating scope, version, parameters, return behavior, and exception conditions in official documentation and tying exact error text to runtime context. The goal is not decorative English; it is to preserve metric, scope, evidence, and decision context so technical meaning survives handoff and review. Before writing, identify the target reader, decision, metric, and evidence level. Technical English is an interface across SQL, Qlik, Python, Excel, and web-delivery work.",
+      "checks": [
+        "Reader ve decision context’i yaz.",
+        "Metric/scope terimlerini explicit tut.",
+        "Observation ile inference’ı ayır."
+      ]
+    },
+    {
+      "id": "worked-example",
+      "layer": "worked_example",
+      "title_tr": "2. Worked example: anlamı sıkıştır ama kanıtı kaybetme",
+      "title_en": "2. Worked example: compress the message without losing evidence",
+      "body_tr": "İyi teknik yazı kısa olmakla birlikte eksik değildir: önce ana karar veya problem, sonra gerekli evidence, ardından constraint ve verification görünür olur. Tipik failure mode tek bir hata kelimesinden root cause uydurmak veya yanlış sürüm dokümanını uygulamak. Bu yalnız dil hatası değildir; yanlış population, yanlış acceptance criteria, gereksiz rework veya aşırı güvenli bir conclusion üretebilir. Her örnekte “reader bu cümleden hangi kararı verebilir ve hangi şeyi henüz kesin sanmamalı?” sorusu sorulur.",
+      "body_en": "Strong technical writing can be concise without becoming incomplete: lead with the decision or problem, preserve the required evidence, and make constraints plus verification visible. A typical failure mode is inventing a root cause from one error word or applying documentation for the wrong version. This is not merely a language issue; it can produce the wrong population, wrong acceptance criteria, unnecessary rework, or an overconfident conclusion.",
+      "code": "Context: hotel analytics workflow\nTopic: Reading documentation and error messages\nEvidence: metric definition + scope + reproducible observation\nOutput: decision-ready technical communication",
+      "explanation_tr": "Format tek başına kalite değildir; yapı gerçek metric, gerçek scope ve doğrulanabilir evidence ile doldurulmalıdır.",
+      "explanation_en": "Format alone is not quality; the structure must contain real metrics, real scope, and verifiable evidence."
+    },
+    {
+      "id": "guided-practice",
+      "layer": "guided_practice",
+      "title_tr": "3. Guided practice: okuyucunun yanlış çıkarımını önceden yakala",
+      "title_en": "3. Guided practice: predict the reader’s likely misinterpretation",
+      "body_tr": "Dokümantasyon ve hata mesajı okuma pratiğinde önce kısa draft yaz, sonra dört kontrol yap: metric tanımı, population/scope, evidence seviyesi ve next action. Tipik failure mode tek bir hata kelimesinden root cause uydurmak veya yanlış sürüm dokümanını uygulamak. Bu yalnız dil hatası değildir; yanlış population, yanlış acceptance criteria, gereksiz rework veya aşırı güvenli bir conclusion üretebilir. Draft’ı düzeltirken kaynağın veya verinin desteklemediği certainty ekleme.",
+      "body_en": "In reading documentation and error messages practice, draft briefly and then check metric definition, population or scope, evidence strength, and next action. Revise without adding certainty the data or source does not support.",
+      "prompts": [
+        "Dokümantasyon ve hata mesajı okuma için reader, decision ve evidence seviyesini üç kısa maddede yaz.",
+        "Bir cümlede observation ile inference’ı ayrı etiketle ve neden ayrılması gerektiğini açıkla.",
+        "Aynı mesajı teknik ekip ve yönetici için iki farklı yoğunlukta yeniden ifade et."
+      ]
+    },
+    {
+      "id": "docs-errors-production",
+      "layer": "independent_practice",
+      "title_tr": "4. Bağımsız üretim: Technical Communication Case Lab",
+      "title_en": "4. Independent production: Technical Communication Case Lab",
+      "body_tr": "Case Lab üç ayrı karar senaryosunda dokümantasyon ve hata mesajı okuma sözleşmesini sınar. Tüm vakalar doğru olmadan bu bölüm tamamlanmaz. Lab sonrasında reader, business rule, evidence boundary ve next action içeren kısa bir technical artifact üret.",
+      "body_en": "The Case Lab tests the communication contract for reading documentation and error messages across three decisions. Every case must pass before completion. Then produce a short technical artifact that makes the reader, evidence boundary, and next action explicit.",
+      "requires_case_lab_pass": "english-docs-errors-case-v1",
+      "evidence_required": [
+        "technical_communication_case_lab_pass",
+        "meaning_scope_evidence_contract",
+        "reader_and_decision_context",
+        "verification_or_next_action"
+      ]
+    },
+    {
+      "id": "debugging",
+      "layer": "debugging",
+      "title_tr": "5. Debugging: dil semptomunu karar hatasından ayır",
+      "title_en": "5. Debugging: separate wording symptoms from decision errors",
+      "body_tr": "Tipik failure mode tek bir hata kelimesinden root cause uydurmak veya yanlış sürüm dokümanını uygulamak. Bu yalnız dil hatası değildir; yanlış population, yanlış acceptance criteria, gereksiz rework veya aşırı güvenli bir conclusion üretebilir. Debug sırasında önce “gramer kötü mü?” diye değil, “okuyucu hangi yanlış kararı verebilir?” diye sor. Metric, subject, comparison baseline, modal certainty, version/scope ve evidence referanslarını tek tek kontrol et; düzeltmeyi küçük tut ve ambiguity regression kontrolü yap.",
+      "body_en": "A typical failure mode is inventing a root cause from one error word or applying documentation for the wrong version. This is not merely a language issue; it can produce the wrong population, wrong acceptance criteria, unnecessary rework, or an overconfident conclusion. Debugging starts by asking what wrong decision a reader could make, not merely whether grammar sounds awkward. Check metrics, subject, comparison baseline, certainty, version or scope, and evidence references one at a time.",
+      "diagnostic_sequence": [
+        "Reader’ın verebileceği yanlış kararı yaz.",
+        "Metric, scope, baseline ve certainty ifadelerini işaretle.",
+        "Observation, requirement, assumption ve recommendation alanlarını ayır.",
+        "Desteklenmeyen certainty ifadesini kaldır veya qualify et.",
+        "Daha kısa draft üret ama evidence sınırını koru.",
+        "Ambiguity regression kontrolü yap."
+      ]
+    },
+    {
+      "id": "transfer",
+      "layer": "transfer",
+      "title_tr": "6. Transfer: aynı anlamı araçlar arasında taşı",
+      "title_en": "6. Transfer: carry the same meaning across tools",
+      "body_tr": "Dokümantasyon ve hata mesajı okuma yalnız iletişim dersi değildir; analitik contract’ın araçlar arası taşınmasıdır. SQL population/grain, Qlik selection context, Python validation veya Excel reconciliation bulgusu issue, memo ve briefing’de aynı anlamı korumalıdır. Syntax değişebilir fakat metric, scope, evidence ve uncertainty değişmemelidir.",
+      "body_en": "Reading documentation and error messages is part of the analytical contract across tools. SQL population and grain, Qlik selection context, Python validation, or Excel reconciliation should retain the same meaning when translated into an issue, memo, review, or briefing.",
+      "transfer_tasks": [
+        {
+          "tool": "SQL / Qlik",
+          "task_tr": "Bir metric sorgusunun population, grain ve filter context’ini İngilizce acceptance criteria olarak yaz."
+        },
+        {
+          "tool": "Python / Excel",
+          "task_tr": "Bir validation/reconciliation sonucunu evidence, failure condition ve next action formatına çevir."
+        },
+        {
+          "tool": "Stakeholder",
+          "task_tr": "Aynı bulguyu jargon azaltarak fakat uncertainty ve metric tanımını koruyarak yeniden yaz."
+        }
+      ]
+    },
+    {
+      "id": "review",
+      "layer": "mental_model",
+      "title_tr": "7. Review: clarity, evidence ve reader contract",
+      "title_en": "7. Review: clarity, evidence, and reader contract",
+      "body_tr": "Peer review yalnız spelling ve grammar aramaz. Dokümantasyon ve hata mesajı okuma için reviewer şu soruları sorar: reader kim, hangi karar verilecek, metric ve scope açık mı, source/evidence nerede, certainty seviyesi kanıtla uyumlu mu, limitation ve next action görünür mü? İyi review yanlış karar riskini azaltır.",
+      "body_en": "Peer review is not limited to spelling and grammar. For reading documentation and error messages, verify the reader, decision, metric and scope, evidence location, calibrated certainty, limitations, and next action. The goal is to reduce decision risk rather than decorate prose."
+    },
+    {
+      "id": "retention",
+      "layer": "retention",
+      "title_tr": "8. Retrieval: kalıp değil iletişim invariant’ı",
+      "title_en": "8. Retrieval: retrieve the communication invariant, not a phrase template",
+      "body_tr": "D+1’de dokümantasyon ve hata mesajı okuma için ana communication contract’ı dokümana bakmadan açıkla. D+7’de yeni bir analitik senaryoda kötü draft’ı evidence ve scope açısından düzelt. D+30’da gerçek işinden bir teknik artifact üret ve farklı reader için ikinci versiyonunu yaz; anlamın korunup korunmadığını karşılaştır.",
+      "body_en": "On D+1, explain the core communication contract for reading documentation and error messages from memory. On D+7, repair a weak draft for evidence and scope. On D+30, produce a real analytical artifact and adapt it for a different reader while preserving meaning.",
+      "schedule": [
+        {
+          "day": 1,
+          "evidence": "explain-communication-contract-from-memory"
+        },
+        {
+          "day": 7,
+          "evidence": "repair-new-technical-draft"
+        },
+        {
+          "day": 30,
+          "evidence": "produce-and-adapt-real-analyst-artifact"
+        }
+      ]
+    }
+  ],
+  "mastery_evidence": [
+    {
+      "dimension": "knowledge",
+      "task_tr": "Dokümantasyon ve hata mesajı okuma için temel communication contract’ı metric, scope, reader ve evidence sınırlarıyla açıkla.",
+      "weight": 15
+    },
+    {
+      "dimension": "interpretation",
+      "task_tr": "Yeni bir İngilizce teknik metinde requirement, observation, assumption, inference ve uncertainty ayrımını kanıtla.",
+      "weight": 20
+    },
+    {
+      "dimension": "production",
+      "task_tr": "Case Lab’ı geçir ve dokümantasyon ve hata mesajı okuma için decision-ready bir artifact üret; acceptance ve evidence ayrıntılarını göster.",
+      "weight": 35
+    },
+    {
+      "dimension": "transfer",
+      "task_tr": "Aynı analitik anlamı teknik ekip, stakeholder ve executive formatları arasında certainty veya metric tanımını bozmadan transfer et.",
+      "weight": 30
+    }
+  ],
+  "sources": [
+    "google-tech-writing",
+    "ms-writing-style",
+    "cefr-companion",
+    "retrieval-practice",
+    "spacing-meta"
+  ]
+}

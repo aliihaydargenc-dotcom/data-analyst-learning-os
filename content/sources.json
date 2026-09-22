@@ -458,5 +458,20 @@
     "type": "official",
     "title": "web.dev — Image performance",
     "url": "https://web.dev/learn/performance/image-performance"
+  },
+  "google-tech-writing": {
+    "type": "official",
+    "title": "Google for Developers — Technical Writing",
+    "url": "https://developers.google.com/tech-writing"
+  },
+  "ms-writing-style": {
+    "type": "official",
+    "title": "Microsoft Writing Style Guide",
+    "url": "https://learn.microsoft.com/style-guide/"
+  },
+  "cefr-companion": {
+    "type": "official",
+    "title": "Council of Europe — CEFR Companion Volume",
+    "url": "https://www.coe.int/en/web/common-european-framework-reference-languages/cefr-companion-volume-and-its-language-versions"
   }
 }
