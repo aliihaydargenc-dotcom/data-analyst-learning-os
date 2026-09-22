@@ -1,6 +1,6 @@
 {
   "name": "data-analyst-learning-os",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +9,7 @@
     "test:mastery": "node tests/mastery.test.mjs",
     "test:learning-home": "node tests/learning-home.test.mjs",
     "validate:academy": "node scripts/validate-academy.mjs",
-    "test": "npm run test:core && npm run test:adaptive-assessment && npm run test:mastery && npm run test:objective-mastery && npm run test:mastery-assessment && npm run test:advanced-mastery && npm run test:targeted-remediation && npm run test:track-mastery && npm run test:mastery-ledger && npm run test:learning-home && npm run test:daily-challenge && npm run test:xp-system && npm run test:lesson-runtime && npm run test:sql-evaluator && npm run test:python-lab && npm run test:excel-case-lab && npm run test:html-lab && npm run test:english-case-lab && npm run validate:academy && npm run validate:screening && npm run validate:lessons",
+    "test": "npm run test:core && npm run test:adaptive-assessment && npm run test:mastery && npm run test:objective-mastery && npm run test:mastery-assessment && npm run test:advanced-mastery && npm run test:targeted-remediation && npm run test:track-mastery && npm run test:mastery-ledger && npm run test:learning-home && npm run test:daily-challenge && npm run test:xp-system && npm run test:level-system && npm run test:lesson-runtime && npm run test:sql-evaluator && npm run test:python-lab && npm run test:excel-case-lab && npm run test:html-lab && npm run test:english-case-lab && npm run validate:academy && npm run validate:screening && npm run validate:lessons",
     "test:browser": "node tests/browser-smoke.mjs",
     "validate:screening": "node scripts/validate-screening.mjs",
     "test:lesson-runtime": "node tests/lesson-runtime.test.mjs",
@@ -26,7 +26,8 @@
     "test:mastery-ledger": "node tests/mastery-ledger.test.mjs",
     "test:adaptive-assessment": "node tests/adaptive-assessment.test.mjs",
     "test:daily-challenge": "node tests/daily-challenge.test.mjs",
-    "test:xp-system": "node tests/xp-system.test.mjs"
+    "test:xp-system": "node tests/xp-system.test.mjs",
+    "test:level-system": "node tests/level-system.test.mjs"
   },
   "devDependencies": {
     "playwright": "1.63.0"
