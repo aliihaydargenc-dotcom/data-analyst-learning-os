@@ -1,4 +1,5 @@
-import {checkSqlStructure,computeDomainScores} from './core.mjs';
+import {checkSqlStructure} from './core.mjs';
+import {createAdaptiveAssessment,nextAdaptiveQuestion,submitAdaptiveAnswer,summarizeAdaptiveAssessment} from './adaptive-assessment.mjs';
 import {renderLearningHome} from './learning-home.mjs';
 import {installPageTransitions} from './page-transition.mjs';
 
@@ -12,7 +13,7 @@ const DEFAULT_SQL=`SELECT
     ) AS PREV_DAY_REVENUE
 FROM hotel_daily;`;
 
-const state={lang:'tr',questions:[],exam:[],answers:{},index:0,roadmap:null,curriculum:null,catalog:null,duckdbReady:false,duckdbInfo:null};
+const state={lang:'tr',questions:[],assessment:null,currentQuestion:null,selectedAnswer:null,roadmap:null,curriculum:null,catalog:null,duckdbReady:false,duckdbInfo:null};
 const $=s=>document.querySelector(s);
 const setText=(selector,value)=>{const element=$(selector);if(element)element.textContent=value;};
 let sqlLabModulePromise=null;
@@ -22,9 +23,9 @@ const copy={
   tr:{
     heroTitle:'Kurs izlemek değil, seviye ölçmek ve uygulamak.',
     heroText:'Altı alan tek mastery sisteminde ilerler. Bildiğin konular kanıtla sıkıştırılır; açıklar konu bazında derinleşir ve gerçek görevlerle kapanır.',
-    tracksTitle:'Altı kümülatif uzmanlık yolu',diagTitle:'Hızlı Ön Tarama',
-    diagIntro:'Her trackten küçük bir örneklem seçilir. Bu ekran yalnızca hızlı ön taramadır; gerçek placement yorumlama, üretim, debugging, transfer ve retention kanıtı ister.',
-    start:'Hızlı Ön Taramayı Başlat',topStart:'Ön Taramayı Başlat',next:'Sonraki',finish:'Sonucu Gör',
+    tracksTitle:'Altı kümülatif uzmanlık yolu',diagTitle:'Adaptif Seviye Tespiti',
+    diagIntro:'Her alan L3 seviyesinden başlar. Doğru yanıtta daha zor, yanlış yanıtta daha temel soruya geçilir; alan başına 2–3 soruda başlangıç seviyesi belirlenir. Bu sonuç mastery kanıtı değildir.',
+    start:'Adaptif Taramayı Başlat',topStart:'Seviyemi Belirle',next:'Yanıtla',finish:'Sonucu Gör',
     academyTitle:'Temelden Expert seviyesine, kanıtla ilerleyen müfredat',academyIntro:'Hafta doldurmak değil; kavramı açıklamak, üretmek, hata ayıklamak, başka probleme taşımak ve daha sonra yeniden hatırlamak gerekiyor.',
     roadmap:'24 haftalık referans tempo planı',ready:'Hazır',
     sqlTask:'Görev: Her otel için günlük REVENUE_EUR değerini ve bir önceki günün gelirini döndür. BUSINESS_DATE sırasını kullan.',
@@ -38,9 +39,9 @@ const copy={
   en:{
     heroTitle:'Do not just watch courses. Measure, practice, and prove skill.',
     heroText:'Six domains progress inside one mastery system. Proven strengths are compressed; gaps deepen by objective and close through authentic work.',
-    tracksTitle:'Six cumulative specialization tracks',diagTitle:'Quick Screening',
-    diagIntro:'A small sample is drawn from each track. This is only a quick screen; final placement requires interpretation, production, debugging, transfer and retention evidence.',
-    start:'Start Quick Screening',topStart:'Start Screening',next:'Next',finish:'View Results',
+    tracksTitle:'Six cumulative specialization tracks',diagTitle:'Adaptive Placement',
+    diagIntro:'Each domain starts at L3. Correct answers move up and incorrect answers move down; placement is calibrated in 2–3 questions per domain. This result is not mastery evidence.',
+    start:'Start Adaptive Screening',topStart:'Assess My Level',next:'Submit',finish:'View Results',
     academyTitle:'From foundations to Expert, progress by evidence',academyIntro:'Progress requires explanation, production, debugging, transfer and delayed retention — not simply finishing weeks.',
     roadmap:'24-week reference pace plan',ready:'Ready',
     sqlTask:'Task: For each hotel, return daily REVENUE_EUR and previous-day revenue ordered by BUSINESS_DATE.',
@@ -130,64 +131,79 @@ function applyLanguage(){
   if(sqlEmpty&&!sqlEmpty.classList.contains('hidden'))sqlEmpty.textContent=c.empty;
   updateDuckdbStatus();
   const diagCounter=$('#diagCounter');
-  if(diagCounter&&!state.exam.length)diagCounter.textContent=c.ready;
+  if(diagCounter&&!state.assessment)diagCounter.textContent=c.ready;
   renderTracks();
   renderMastery();
   renderCurriculum();
   renderRoadmap();
   if(state.catalog&&state.curriculum)renderLearningHome({root:document,catalog:state.catalog,curriculum:state.curriculum,storage:localStorage,lang:state.lang,now:new Date()});
-  if(state.exam.length&&!$('#questionStage').classList.contains('hidden'))renderQuestion();
-}
-
-function shuffled(arr){
-  return [...arr].sort(()=>Math.random()-.5);
-}
-
-function sampleExam(){
-  const domains=[...new Set(state.questions.map(q=>q.domain))];
-  return shuffled(domains.flatMap(domain=>shuffled(state.questions.filter(q=>q.domain===domain)).slice(0,5)));
+  if(state.assessment&&state.currentQuestion&&!$('#questionStage').classList.contains('hidden'))renderQuestion();
 }
 
 function startExam(){
-  state.exam=sampleExam(); state.answers={}; state.index=0;
+  state.assessment=createAdaptiveAssessment(state.questions);
+  state.currentQuestion=nextAdaptiveQuestion(state.assessment,state.questions);
+  state.selectedAnswer=null;
   $('#diagnosticStart').classList.add('hidden');
   $('#resultStage').classList.add('hidden');
   $('#questionStage').classList.remove('hidden');
-  renderQuestion();
+  if(state.currentQuestion)renderQuestion();
+  else showResults();
   $('#diagnostic').scrollIntoView({behavior:'smooth'});
 }
 
 function renderQuestion(){
-  const q=state.exam[state.index],c=copy[state.lang];
-  if(!q)return;
-  $('#diagCounter').textContent=`${state.index+1} / ${state.exam.length}`;
+  const q=state.currentQuestion,c=copy[state.lang];
+  if(!q||!state.assessment)return;
+  const domainIndex=state.assessment.domainOrder.indexOf(q.domain)+1;
+  $('#diagCounter').textContent=`${domainIndex} / ${state.assessment.domainOrder.length} · ${q.domain}`;
+  $('#questionStage').dataset.questionId=q.id;
+  $('#questionStage').dataset.questionLevel=String(q.level);
   $('#questionDomain').textContent=q.domain;
   $('#questionLevel').textContent='L'+q.level;
   $('#questionTopic').textContent=q.topic;
   $('#questionText').textContent=state.lang==='tr'?q.question_tr:q.question_en;
-  $('#choiceList').innerHTML=q.choices.map((choice,i)=>`<label class="choice ${state.answers[q.id]===i?'selected':''}">
-    <input type="radio" name="answer" value="${i}" ${state.answers[q.id]===i?'checked':''}>
+  $('#choiceList').innerHTML=q.choices.map((choice,i)=>`<label class="choice ${state.selectedAnswer===i?'selected':''}">
+    <input type="radio" name="answer" value="${i}" ${state.selectedAnswer===i?'checked':''}>
     <span>${choice}</span>
   </label>`).join('');
-  $('#nextQuestion').disabled=state.answers[q.id]===undefined;
-  $('#nextQuestion').textContent=state.index===state.exam.length-1?c.finish:c.next;
+  $('#nextQuestion').disabled=state.selectedAnswer===null;
+  $('#nextQuestion').textContent=c.next;
   document.querySelectorAll('input[name="answer"]').forEach(r=>r.addEventListener('change',e=>{
-    state.answers[q.id]=Number(e.target.value); renderQuestion();
+    state.selectedAnswer=Number(e.target.value);
+    renderQuestion();
   }));
 }
 
+function advanceExam(){
+  if(!state.assessment||!state.currentQuestion||state.selectedAnswer===null)return;
+  submitAdaptiveAnswer(state.assessment,state.currentQuestion,state.selectedAnswer);
+  state.selectedAnswer=null;
+  state.currentQuestion=nextAdaptiveQuestion(state.assessment,state.questions);
+  if(state.currentQuestion)renderQuestion();
+  else showResults();
+}
+
 function showResults(){
-  const scores=computeDomainScores(state.exam,state.answers);
-  localStorage.setItem('da-learning-os-latest',JSON.stringify({date:new Date().toISOString(),scores}));
+  const scores=summarizeAdaptiveAssessment(state.assessment);
+  localStorage.setItem('da-learning-os-latest',JSON.stringify({date:new Date().toISOString(),mode:'adaptive-v1',scores}));
   $('#questionStage').classList.add('hidden');
   $('#resultStage').classList.remove('hidden');
   $('#diagCounter').textContent=copy[state.lang].completed;
-  const title=state.lang==='tr'?'Tanı sonucu':'Diagnostic result';
+  const title=state.lang==='tr'?'Adaptif seviye sonucu':'Adaptive placement result';
+  const entries=Object.entries(scores);
+  const weakest=[...entries].sort((a,b)=>Number(a[1].level.slice(1))-Number(b[1].level.slice(1)))[0];
   const note=state.lang==='tr'
-    ?'Bu skor yalnızca hızlı ön taramadır. Gerçek placement; kod, workbook, Qlik/HTML artifact, debugging, transfer ve retention kanıtlarıyla oluşur.'
-    :'This is only a quick screen. Final placement requires code, workbook, Qlik/HTML artifacts, debugging, transfer and retention evidence.';
+    ?'Bu sonuç yalnızca başlangıç seviyesini seçer. Mastery; yorumlama, üretim, debugging, transfer ve retention kanıtlarıyla ayrıca doğrulanır.'
+    :'This result only selects a starting level. Mastery is verified separately through interpretation, production, debugging, transfer and retention evidence.';
+  const recommendation=weakest
+    ?(state.lang==='tr'
+      ?`Önerilen ilk odak: ${weakest[0]} ${weakest[1].level}`
+      :`Recommended first focus: ${weakest[0]} ${weakest[1].level}`)
+    :'';
   $('#resultStage').innerHTML=`<h3>${title}</h3>
-    <div class="result-grid">${Object.entries(scores).map(([d,x])=>`<div class="result-card"><span>${d}</span><strong>${x.score}%</strong><span>${x.level} · ${x.correct}/${x.total}</span></div>`).join('')}</div>
+    <div class="result-grid">${entries.map(([d,x])=>`<div class="result-card"><span>${d}</span><strong>${x.level}</strong><span>${x.correct}/${x.total} · ${x.path.map(level=>'L'+level).join(' → ')}</span></div>`).join('')}</div>
+    ${recommendation?`<p class="fine"><strong>${recommendation}</strong></p>`:''}
     <p class="fine">${note}</p>
     <button id="restartExam" class="secondary">${state.lang==='tr'?'Tekrar Çöz':'Retake'}</button>`;
   $('#restartExam').addEventListener('click',startExam);
@@ -292,9 +308,7 @@ async function executeSql(){
 $('#languageToggle').addEventListener('click',()=>{state.lang=state.lang==='tr'?'en':'tr';applyLanguage()});
 $('#startDiagnostic').addEventListener('click',startExam);
 $('#startExamTop')?.addEventListener('click',startExam);
-$('#nextQuestion').addEventListener('click',()=>{
-  if(state.index<state.exam.length-1){state.index++;renderQuestion()}else showResults();
-});
+$('#nextQuestion').addEventListener('click',advanceExam);
 $('#runSql').addEventListener('click',executeSql);
 $('#resetSql').addEventListener('click',()=>{
   $('#sqlEditor').value=DEFAULT_SQL;
