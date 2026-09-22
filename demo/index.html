@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Data Analyst Learning OS demo: mastery, XP, seviye, streak, Daily Challenge, SQL Lab ve analist vaka çalışmaları.">
+  <meta name="robots" content="index,follow">
+  <title>Data Analyst Learning OS — Demo</title>
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    body{background:#f7f9fc}
+    .demo-shell{max-width:1240px;margin:0 auto;padding:28px 24px 64px}
+    .demo-top{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:24px;padding:14px 0}
+    .demo-brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--text)}
+    .demo-brand .logo{width:40px;height:40px}
+    .demo-brand strong,.demo-brand small{display:block}.demo-brand small{font-size:11px;color:var(--muted)}
+    .demo-actions{display:flex;gap:9px;flex-wrap:wrap}.demo-actions a{text-decoration:none}
+    .demo-note{margin-bottom:18px;padding:11px 14px;border:1px solid #cbdaf4;border-radius:11px;background:#edf4ff;color:#315884;font-size:12px}
+    .demo-hero{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(290px,.65fr);gap:14px}
+    .demo-main-card{padding:28px 30px;border-left:5px solid var(--blue)}
+    .demo-main-card .eyebrow{margin-bottom:8px}.demo-main-card h1{max-width:780px;margin:0;font-size:clamp(30px,4vw,50px);line-height:1.06;letter-spacing:-.04em}
+    .demo-main-card p{max-width:760px;margin:15px 0 22px;color:var(--muted)}
+    .demo-tags{display:flex;flex-wrap:wrap;gap:7px}.demo-tags span{padding:5px 8px;border-radius:6px;background:#edf3ff;color:#315884;font-size:11px}
+    .demo-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .demo-stat{padding:18px;border:1px solid var(--line);border-radius:14px;background:#fff}
+    .demo-stat span,.demo-stat strong,.demo-stat small{display:block}.demo-stat span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}.demo-stat strong{margin-top:5px;font-size:26px}.demo-stat small{margin-top:3px;font-size:10px;color:var(--muted)}
+    .demo-section{padding-top:30px}.demo-section-head{display:flex;align-items:end;justify-content:space-between;gap:14px;margin-bottom:14px}.demo-section-head h2{margin:0;font-size:22px;letter-spacing:-.025em}.demo-section-head p{margin:0;color:var(--muted);font-size:12px}
+    .demo-focus{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr);gap:14px}
+    .demo-challenge{padding:22px 24px}.demo-challenge .meta{display:flex;gap:7px;flex-wrap:wrap}.demo-challenge .meta span{padding:4px 7px;border-radius:6px;background:#edf3ff;color:#315884;font-size:10px}.demo-challenge h3{margin:12px 0 8px;font-size:20px}.demo-challenge p{margin:0;color:var(--muted);font-size:13px}.demo-reward{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px;padding-top:14px;border-top:1px solid var(--line);font-size:12px}.demo-reward strong{color:var(--blue)}
+    .demo-level{padding:22px}.demo-level h3{margin:0 0 4px}.demo-level p{margin:0 0 18px;color:var(--muted);font-size:12px}.demo-progress{height:7px;border-radius:999px;background:#e7edf5;overflow:hidden}.demo-progress span{display:block;height:100%;width:46%;background:var(--blue)}.demo-progress-meta{display:flex;justify-content:space-between;margin-top:7px;color:var(--muted);font-size:10px}
+    .demo-track-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.demo-track{padding:18px;border:1px solid var(--line);border-radius:14px;background:#fff}.demo-track-head{display:flex;justify-content:space-between;gap:10px;align-items:center}.demo-track h3{margin:0;font-size:16px}.demo-track b{font-size:13px;color:var(--blue)}.demo-track p{min-height:42px;margin:8px 0 12px;color:var(--muted);font-size:12px}.demo-track .demo-progress{height:4px}.demo-track small{display:block;margin-top:7px;color:var(--muted);font-size:10px}
+    .demo-mastery{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}.demo-mastery div{padding:10px;border:1px solid var(--line);border-radius:10px;background:#fafbfd}.demo-mastery span,.demo-mastery strong{display:block}.demo-mastery span{font-size:10px;color:var(--muted)}.demo-mastery strong{margin-top:3px;font-size:15px}
+    .demo-labs{display:grid;grid-template-columns:1fr 1fr;gap:14px}.demo-lab{padding:22px}.demo-lab h3{margin:0 0 5px}.demo-lab>p{margin:0 0 14px;color:var(--muted);font-size:12px}.demo-code{padding:15px;border:1px solid var(--line);border-radius:10px;background:#f3f6fb;color:#24415f;font:12px/1.6 Consolas,monospace;white-space:pre-wrap}.demo-result{margin-top:10px;border:1px solid var(--line);border-radius:10px;overflow:hidden}.demo-result div{display:grid;grid-template-columns:1fr 1fr 1fr;padding:8px 10px;border-bottom:1px solid var(--line);font-size:11px}.demo-result div:last-child{border-bottom:0}.demo-result .head{background:#eaf1fc;font-weight:700}
+    .demo-case{display:grid;gap:10px;padding:22px}.demo-case h3,.demo-case p{margin:0}.demo-case p{color:var(--muted);font-size:12px}.demo-case-line{padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fafbfd}.demo-case-line span,.demo-case-line strong{display:block}.demo-case-line span{font-size:10px;color:var(--muted)}.demo-case-line strong{margin-top:3px;font-size:12px}
+    .demo-footer{margin-top:34px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;color:var(--muted);font-size:11px}
+    @media(max-width:900px){.demo-hero,.demo-focus,.demo-labs{grid-template-columns:1fr}.demo-track-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:620px){.demo-shell{padding:16px 14px 42px}.demo-top{align-items:flex-start;flex-direction:column}.demo-actions{width:100%}.demo-actions a{flex:1;text-align:center}.demo-main-card{padding:22px 18px}.demo-stat-grid,.demo-track-grid,.demo-mastery{grid-template-columns:1fr 1fr}.demo-section-head{align-items:flex-start;flex-direction:column}.demo-footer{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <main class="demo-shell">
+    <header class="demo-top">
+      <a class="demo-brand" href="../"><span class="logo">DA</span><span><strong>Learning OS</strong><small>Data Analyst · Demo</small></span></a>
+      <div class="demo-actions"><a class="secondary" href="https://alihaydargenc.vercel.app/" target="_blank" rel="noopener">Portföye dön</a><a class="primary" href="../">Gerçek çalışma alanını aç</a></div>
+    </header>
+
+    <div class="demo-note"><strong>Demo modu:</strong> Aşağıdaki ilerleme, XP ve mastery değerleri temsili bir öğrenen profiline aittir. Bu sayfa kişisel ilerleme verisine yazmaz.</div>
+
+    <section class="demo-hero">
+      <article class="panel demo-main-card">
+        <div class="eyebrow">MASTERY TABANLI ÖĞRENME SİSTEMİ</div>
+        <h1>Veri analistliği için yalnız ders değil, ölçülebilir öğrenme döngüsü.</h1>
+        <p>SQL, Qlik Sense, Python, Excel, HTML ve Technical English hatlarını; doğrulanmış kanıt, tekrar, vaka çalışması ve günlük görevlerle tek çalışma alanında birleştirir.</p>
+        <div class="demo-tags"><span>Verified evidence</span><span>Adaptive mastery</span><span>Daily Challenge</span><span>XP & Level</span><span>Study streak</span><span>Retention</span></div>
+      </article>
+      <div class="demo-stat-grid">
+        <article class="demo-stat"><span>Seviye</span><strong>04</strong><small>XP'den türetilen öğrenme seviyesi</small></article>
+        <article class="demo-stat"><span>Toplam XP</span><strong>1.840</strong><small>Doğrulanmış çalışmalar</small></article>
+        <article class="demo-stat"><span>Çalışma serisi</span><strong>5 gün</strong><small>Aktif streak</small></article>
+        <article class="demo-stat"><span>Mastered konu</span><strong>18</strong><small>Çok boyutlu kanıtla</small></article>
+      </div>
+    </section>
+
+    <section class="demo-section">
+      <div class="demo-section-head"><div><h2>Bugünkü öğrenme odağı</h2><p>Sistem sıradaki çalışmayı ilerleme ve zayıf boyutlara göre öne çıkarır.</p></div></div>
+      <div class="demo-focus">
+        <article class="panel demo-challenge">
+          <div class="meta"><span>DAILY CHALLENGE</span><span>SQL</span><span>Orta</span><span>+100 XP</span></div>
+          <h3>Otel gelirindeki en büyük günlük düşüşü bul</h3>
+          <p><code>LAG()</code> kullanarak her otel için günlük gelir değişimini hesapla; en büyük düşüşü tespit et ve sonucun neyi kanıtlayıp neyi kanıtlamadığını yorumla.</p>
+          <div class="demo-reward"><span>Kanıt: SQL sonucu + yorum</span><strong>Production & Interpretation</strong></div>
+        </article>
+        <article class="panel demo-level">
+          <h3>Level 4 ilerlemesi</h3>
+          <p>Bir sonraki seviyeye doğrulanmış çalışmalarla ilerler.</p>
+          <div class="demo-progress"><span></span></div>
+          <div class="demo-progress-meta"><span>1.840 XP</span><span>2.250 XP</span></div>
+          <div class="demo-mastery">
+            <div><span>Knowledge</span><strong>%78</strong></div>
+            <div><span>Interpretation</span><strong>%64</strong></div>
+            <div><span>Production</span><strong>%72</strong></div>
+            <div><span>Transfer</span><strong>%58</strong></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="demo-section">
+      <div class="demo-section-head"><div><h2>Eğitim hatları</h2><p>Her hat ders, uygulama, doğrulama ve tekrar yaşam döngüsüne bağlanır.</p></div><p>Temsili ilerleme</p></div>
+      <div class="demo-track-grid">
+        <article class="demo-track"><div class="demo-track-head"><h3>SQL</h3><b>%72</b></div><p>Sorgulama, pencere fonksiyonları, analitik challenge ve DuckDB Lab.</p><div class="demo-progress"><span style="width:72%"></span></div><small>Mastery odağı: Transfer</small></article>
+        <article class="demo-track"><div class="demo-track-head"><h3>Qlik Sense</h3><b>%61</b></div><p>Set analysis, KPI mantığı, tarih kontrolü ve raporlama senaryoları.</p><div class="demo-progress"><span style="width:61%"></span></div><small>Mastery odağı: Interpretation</small></article>
+        <article class="demo-track"><div class="demo-track-head"><h3>Python</h3><b>%48</b></div><p>Analiz akışı, veri işleme ve doğrulanabilir uygulama görevleri.</p><div class="demo-progress"><span style="width:48%"></span></div><small>Mastery odağı: Production</small></article>
+        <article class="demo-track"><div class="demo-track-head"><h3>Excel</h3><b>%64</b></div><p>Formüller, veri modeli, iş senaryosu ve analitik problem çözme.</p><div class="demo-progress"><span style="width:64%"></span></div><small>Mastery odağı: Transfer</small></article>
+        <article class="demo-track"><div class="demo-track-head"><h3>HTML</h3><b>%70</b></div><p>DOM, yapı, semantik ve tarayıcı içinde uygulamalı HTML laboratuvarı.</p><div class="demo-progress"><span style="width:70%"></span></div><small>Mastery odağı: Knowledge</small></article>
+        <article class="demo-track"><div class="demo-track-head"><h3>Technical English</h3><b>%55</b></div><p>Analist bağlamında okuma, yorumlama ve teknik iletişim görevleri.</p><div class="demo-progress"><span style="width:55%"></span></div><small>Mastery odağı: Interpretation</small></article>
+      </div>
+    </section>
+
+    <section class="demo-section">
+      <div class="demo-section-head"><div><h2>Uygulama ve doğrulama</h2><p>Bilmekten çok, doğru sonucu üretebilmek ve açıklayabilmek ölçülür.</p></div></div>
+      <div class="demo-labs">
+        <article class="panel demo-lab">
+          <h3>SQL Lab</h3>
+          <p>Tarayıcı içi DuckDB ile sorgu sonucu doğrulanır; yalnız yazılan SQL metni değil, üretilen sonuç değerlendirilir.</p>
+          <div class="demo-code">SELECT HOTEL, BUSINESS_DATE,
+  REVENUE_EUR - LAG(REVENUE_EUR)
+  OVER(PARTITION BY HOTEL ORDER BY BUSINESS_DATE)
+  AS REVENUE_CHANGE
+FROM hotel_daily;</div>
+          <div class="demo-result">
+            <div class="head"><span>HOTEL</span><span>TARİH</span><span>DEĞİŞİM</span></div>
+            <div><span>Carya</span><span>18.09</span><span>-€42.600</span></div>
+            <div><span>Crown</span><span>20.09</span><span>-€31.850</span></div>
+          </div>
+        </article>
+        <article class="panel demo-case">
+          <h3>Analist vaka çalışması</h3>
+          <p>SQL çıktısı tek başına neden iddiasına dönüştürülmez. Kullanıcı veriyi yorumlar ve yöneticiye aktarılabilir bir sonuç üretir.</p>
+          <div class="demo-case-line"><span>1 · Veri kanıtı</span><strong>İki otelde en büyük günlük gelir düşüşü doğrulandı.</strong></div>
+          <div class="demo-case-line"><span>2 · Yorum</span><strong>Düşüşün günü ve tutarı görülüyor; nedeni için ek kanıt gerekiyor.</strong></div>
+          <div class="demo-case-line"><span>3 · Sonraki kontrol</span><strong>Segment, rezervasyon kaynağı ve iptal dağılımı incelenmeli.</strong></div>
+          <div class="demo-case-line"><span>4 · Mastery evidence</span><strong>Production + Interpretation + Transfer kanıtı oluşturulur.</strong></div>
+        </article>
+      </div>
+    </section>
+
+    <footer class="demo-footer"><span>Data Analyst Learning OS · ürün demosu</span><span>Örnek veriler gerçek kullanıcı ilerlemesini temsil etmez.</span></footer>
+  </main>
+</body>
+</html>
