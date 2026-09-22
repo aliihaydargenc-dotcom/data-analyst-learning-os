@@ -898,6 +898,42 @@ ORDER BY OPTION_ID;`);
   assert.ok(mobileLearningUx.completeHeight>=44);
   assert.equal(mobileLearningUx.contextClosed,true);
 
+  // Needs-review recovery: runtime derives a targeted transfer remediation and UI routes back to that evidence mechanism.
+  await page.goto(baseUrl+'/',{waitUntil:'domcontentloaded'});
+  await page.evaluate(()=>{
+    localStorage.setItem('da-learning-os:lesson:sql.relational-thinking.001',JSON.stringify({
+      version:5,
+      lessonId:'sql.relational-thinking.001',
+      startedAt:'2026-09-22T06:00:00.000Z',
+      updatedAt:'2026-09-22T06:00:00.000Z',
+      completedAt:'2026-09-22T06:00:00.000Z',
+      completedSections:[],
+      responses:{},
+      evidenceDrafts:{},
+      labEvidence:{},
+      verifiedEvidence:{
+        knowledge:{status:'verified',score:90,source:'browser-test',observedAt:'2026-09-22T06:00:00.000Z'},
+        interpretation:{status:'verified',score:90,source:'browser-test',observedAt:'2026-09-22T06:00:00.000Z'},
+        production:{status:'verified',score:90,source:'browser-test',observedAt:'2026-09-22T06:00:00.000Z'},
+        transfer:{status:'verified',score:50,source:'browser-test',observedAt:'2026-09-22T06:00:00.000Z'}
+      },
+      retentionDue:[],
+      retentionHistory:[],
+      assessmentHistory:[],
+      advancedHistory:[],
+      masteryInputs:{}
+    }));
+  });
+  await page.goto(baseUrl+'/lesson.html?id=sql.relational-thinking.001',{waitUntil:'domcontentloaded'});
+  await page.locator('#lessonHero').waitFor({state:'visible'});
+  assert.match(await page.locator('#masteryState').textContent(),/Gözden geçir/);
+  assert.equal(await page.locator('#masteryRemediation').isVisible(),true);
+  assert.match(await page.locator('#masteryRemediation').textContent(),/Transfer kanıtını güçlendir/);
+  assert.match(await page.locator('#masteryRemediation').textContent(),/transfer/i);
+  await page.locator('[data-remediation-open="transfer"]').click();
+  await page.locator('[data-assessment-dimension="transfer"]').waitFor({state:'visible'});
+  assert.equal(await page.locator('[data-assessment-dimension="transfer"]').evaluate(element=>element.classList.contains('remediation-focus')),true);
+
   assert.deepEqual(pageErrors,[]);
   assert.deepEqual(consoleErrors,[]);
   console.log('browser smoke: PASS');

@@ -196,4 +196,18 @@ assert.equal(expertProgress.masteryInputs.capstone,100);
 assert.equal(expertProgress.masteryInputs.architectureReview,true);
 assert.equal(expertProgress.mastery.state,'mastered');
 
+// Needs-review produces an engine-guided recovery target and returns to Mastered when the evidence is corrected.
+let weakProgress=createLessonProgress(lesson,now);
+weakProgress.completedAt=now.toISOString();
+weakProgress.retentionDue=[];
+for(const [dimension,score] of Object.entries({knowledge:90,interpretation:90,production:90,transfer:50})){
+  weakProgress=recordVerifiedEvidence(lesson,weakProgress,dimension,score,'unit-test',now);
+}
+assert.equal(weakProgress.mastery.state,'needs_review');
+assert.equal(weakProgress.mastery.remediation.mode,'transfer-heavy');
+assert.deepEqual(weakProgress.mastery.remediation.targets.map(item=>item.dimension),['transfer']);
+weakProgress=recordVerifiedEvidence(lesson,weakProgress,'transfer',100,'unit-test',now);
+assert.equal(weakProgress.mastery.state,'mastered');
+assert.equal(weakProgress.mastery.remediation,null);
+
 console.log('lesson runtime tests: PASS');

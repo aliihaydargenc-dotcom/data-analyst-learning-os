@@ -12,3 +12,40 @@ export function weightedScore(evidence,weights=DEFAULT_WEIGHTS){for(const key of
 export function evaluateMastery(level,evidence){const p=MASTERY_PROFILES[level];if(!p)throw new Error(`Unknown mastery level: ${level}`);const weighted=weightedScore(evidence),failures=[];for(const[d,f]of Object.entries(p.floors))if(!valid(evidence[d])||evidence[d]<f)failures.push({dimension:d,required:f,actual:evidence[d]??null});if(p.rubricMin!==undefined&&(typeof evidence.rubricMin!=='number'||evidence.rubricMin<p.rubricMin))failures.push({dimension:'rubricMin',required:p.rubricMin,actual:evidence.rubricMin??null});if(p.capstoneMin!==undefined&&(!valid(evidence.capstone)||evidence.capstone<p.capstoneMin))failures.push({dimension:'capstone',required:p.capstoneMin,actual:evidence.capstone??null});if(p.architectureReview&&evidence.architectureReview!==true)failures.push({dimension:'architectureReview',required:true,actual:evidence.architectureReview??false});if(weighted<p.weightedMin)failures.push({dimension:'weighted',required:p.weightedMin,actual:weighted});return{passed:failures.length===0,level,weighted,failures};}
 export function adaptiveDepth(e){for(const k of['knowledge','interpretation','production','transfer'])if(!valid(e[k]))throw new Error('All adaptive-depth scores must be 0–100');if(e.knowledge>=90&&e.interpretation>=90&&e.production>=85&&e.transfer>=80)return'compression';if(e.knowledge>=85&&e.interpretation>=80&&e.production<75)return'guided-production';if(e.production>=85&&e.transfer<70)return'transfer-heavy';if(e.knowledge<70||e.interpretation<70)return'full-foundation';return'targeted-remediation';}
 export function nextRetentionIntervalDays(history=[],criticality='normal'){if(history.length===0)return 1;if(history.at(-1)?.passed!==true)return 1;let streak=0;for(let i=history.length-1;i>=0&&history[i]?.passed===true;i--)streak++;const plan=criticality==='high'?[1,3,7,14,30,60]:[1,3,7,14,30];return plan[Math.min(streak,plan.length-1)];}
+
+const CORE_MASTERY_DIMENSIONS=Object.freeze(['knowledge','interpretation','production','transfer']);
+const ADVANCED_FAILURES=new Set(['rubricMin','capstone','architectureReview']);
+
+export function buildRemediationPlan(evidence,evaluation){
+  if(!evaluation||evaluation.passed===true)return null;
+  const failures=Array.isArray(evaluation.failures)?evaluation.failures:[];
+  const nonWeighted=failures.filter(item=>item?.dimension&&item.dimension!=='weighted');
+  let targets=nonWeighted.map(item=>({
+    dimension:item.dimension,
+    required:item.required,
+    actual:item.actual??null
+  }));
+  if(targets.length===0&&failures.some(item=>item?.dimension==='weighted')){
+    const weakest=CORE_MASTERY_DIMENSIONS
+      .map(dimension=>({dimension,score:evidence?.[dimension]}))
+      .filter(item=>valid(item.score))
+      .sort((a,b)=>a.score-b.score)[0];
+    if(weakest)targets=[{dimension:weakest.dimension,required:null,actual:weakest.score}];
+  }
+  const targetNames=new Set(targets.map(item=>item.dimension));
+  let mode='targeted-remediation';
+  if(targetNames.has('retention')){
+    mode='retention-retrieval';
+  }else if([...targetNames].some(name=>ADVANCED_FAILURES.has(name))){
+    mode='advanced-review';
+  }else if(CORE_MASTERY_DIMENSIONS.some(name=>targetNames.has(name))){
+    const candidate=adaptiveDepth(evidence);
+    mode=candidate==='compression'?'targeted-remediation':candidate;
+  }
+  return {
+    mode,
+    targets,
+    weighted:evaluation.weighted??null,
+    level:evaluation.level??null
+  };
+}

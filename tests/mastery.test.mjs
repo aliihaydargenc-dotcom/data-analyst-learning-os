@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
-import {weightedScore,evaluateMastery,adaptiveDepth,nextRetentionIntervalDays} from '../mastery-engine.mjs';
+import {weightedScore,evaluateMastery,adaptiveDepth,nextRetentionIntervalDays,buildRemediationPlan} from '../mastery-engine.mjs';
 assert.equal(weightedScore({knowledge:100,interpretation:100,production:100,transfer:100}),100);
 assert.equal(evaluateMastery('L3',{knowledge:92,interpretation:90,production:88,transfer:84}).passed,true);
-const weak=evaluateMastery('L3',{knowledge:96,interpretation:92,production:91,transfer:55});assert.equal(weak.passed,false);assert.ok(weak.failures.some(x=>x.dimension==='transfer'));
+const weakEvidence={knowledge:96,interpretation:92,production:91,transfer:55};const weak=evaluateMastery('L3',weakEvidence);assert.equal(weak.passed,false);assert.ok(weak.failures.some(x=>x.dimension==='transfer'));
+const weakPlan=buildRemediationPlan(weakEvidence,weak);assert.equal(weakPlan.mode,'transfer-heavy');assert.deepEqual(weakPlan.targets.map(x=>x.dimension),['transfer']);
 const l5=evaluateMastery('L5',{knowledge:90,interpretation:90,production:92,transfer:88,retention:85});assert.equal(l5.passed,false);assert.ok(l5.failures.some(x=>x.dimension==='rubricMin'));
 const l5Passed=evaluateMastery('L5',{knowledge:90,interpretation:90,production:92,transfer:88,retention:85,rubricMin:4});assert.equal(l5Passed.passed,true);
 const expertPassed=evaluateMastery('Expert',{knowledge:90,interpretation:90,production:95,transfer:92,retention:90,rubricMin:4,capstone:90,architectureReview:true});assert.equal(expertPassed.passed,true);
+const expertWeakEvidence={knowledge:90,interpretation:90,production:95,transfer:92,retention:90,rubricMin:3,capstone:80,architectureReview:false};const expertWeak=evaluateMastery('Expert',expertWeakEvidence);const expertPlan=buildRemediationPlan(expertWeakEvidence,expertWeak);assert.equal(expertPlan.mode,'advanced-review');assert.deepEqual(expertPlan.targets.map(x=>x.dimension),['rubricMin','capstone','architectureReview']);
 assert.equal(adaptiveDepth({knowledge:95,interpretation:92,production:90,transfer:84}),'compression');
 assert.equal(adaptiveDepth({knowledge:90,interpretation:85,production:60,transfer:70}),'guided-production');
 assert.equal(adaptiveDepth({knowledge:82,interpretation:80,production:90,transfer:55}),'transfer-heavy');
