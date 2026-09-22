@@ -18,12 +18,15 @@ assert.equal(challenge.difficulty,'Orta');
 assert.equal(challenge.dimension,'production');
 assert.match(challenge.href,/source=daily-challenge/);
 assert.match(challenge.href,/day=2026-09-22/);
+assert.match(challenge.href,/focus=production/);
+assert.equal(challenge.xpEventId,'daily:2026-09-22:sql.window.001:production');
 
 snapshot.diagnosticTargets=[{lessonId:'sql.window.001',dimension:'transfer'}];
 const targeted=buildDailyChallenge(snapshot,{lang:'en',now:new Date(2026,8,22,10,0,0)});
 assert.equal(targeted.dimension,'transfer');
 assert.equal(targeted.dimensionLabel,'Transfer');
 assert.match(targeted.href,/focus=transfer/);
+assert.equal(targeted.xpEventId,'daily:2026-09-22:sql.window.001:transfer');
 assert.match(targeted.task,/Transfer the/);
 
 console.log('daily challenge: PASS');

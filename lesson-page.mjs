@@ -6,6 +6,7 @@ import {
 import {buildMasteryAssessment} from './mastery-assessment.mjs';
 import {buildAdvancedMasteryChallenge} from './advanced-mastery.mjs';
 import {installPageTransitions} from './page-transition.mjs';
+import {syncLessonXp} from './xp-system.mjs';
 
 const $=selector=>document.querySelector(selector);
 const params=new URLSearchParams(location.search);
@@ -70,13 +71,24 @@ const labels={
 
 function storageKey(){return `da-learning-os:lesson:${state.lesson.id}`;}
 
+function readStoredProgress(){
+  try{return JSON.parse(localStorage.getItem(storageKey())||'null')}catch{return null}
+}
+
 function loadProgress(){
-  let value=null;
-  try{value=JSON.parse(localStorage.getItem(storageKey())||'null')}catch{}
-  state.progress=normalizeLessonProgress(state.lesson,value);
+  state.progress=normalizeLessonProgress(state.lesson,readStoredProgress());
 }
 
 function persistProgress(){
+  const previousProgress=readStoredProgress();
+  syncLessonXp({
+    storage:localStorage,
+    lesson:state.lesson,
+    previousProgress,
+    nextProgress:state.progress,
+    context:{source:params.get('source'),day:params.get('day'),focus:params.get('focus')},
+    now:new Date()
+  });
   localStorage.setItem(storageKey(),JSON.stringify(state.progress));
 }
 

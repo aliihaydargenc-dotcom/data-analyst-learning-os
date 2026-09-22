@@ -19,8 +19,10 @@ try{
   assert.equal(await page.locator('#courseGrid .course-card').count(),6);
   assert.equal(await page.locator('#skillMatrixGrid .skill-matrix-card').count(),6);
   assert.equal(await page.locator('#dailyChallengeCard [data-daily-challenge]').count(),1);
+  assert.equal(await page.locator('[data-learning-stat="xp"]').count(),1);
   assert.match(await page.locator('#dailyChallengeCard').textContent(),/Günün analist görevi|SQL Server|Başlangıç/);
   assert.match(await page.locator('#dailyChallengeCard a').getAttribute('href'),/source=daily-challenge/);
+  assert.match(await page.locator('#dailyChallengeCard a').getAttribute('href'),/focus=production/);
   assert.equal(await page.locator('#skillMatrixGrid [data-skill-track="sql"] .skill-drilldown').count(),1);
   assert.equal(await page.locator('#skillMatrixGrid [data-skill-track="sql"] .skill-topic').count(),12);
   assert.equal(await page.locator('#courseGrid [data-track="sql"] .course-lesson').count(),12);
