@@ -20,11 +20,15 @@ export function compareResultSets(actual,expected){
 
   const actualRows=actual?.rows||[];
   const expectedRows=expected?.rows||[];
-  if(actualRows.length!==expectedRows.length){
+  const actualTotal=Number.isFinite(actual?.totalRows)?actual.totalRows:null;
+  const expectedTotal=Number.isFinite(expected?.totalRows)?expected.totalRows:null;
+  const actualCount=actualTotal??actualRows.length;
+  const expectedCount=expectedTotal??expectedRows.length;
+  if(actualCount!==expectedCount){
     errors.push({
       type:'row_count',
-      expected:expectedRows.length,
-      actual:actualRows.length
+      expected:expectedCount,
+      actual:actualCount
     });
   }
 

@@ -1,19 +1,12 @@
-import {checkSqlStructure} from './core.mjs';
 import {createAdaptiveAssessment,nextAdaptiveQuestion,submitAdaptiveAnswer,summarizeAdaptiveAssessment} from './adaptive-assessment.mjs';
+import {SQL_CHALLENGES,evaluateSqlChallenge} from './sql-challenges.mjs';
 import {renderLearningHome} from './learning-home.mjs';
 import {installPageTransitions} from './page-transition.mjs';
 
-const DEFAULT_SQL=`SELECT
-    HOTEL,
-    BUSINESS_DATE,
-    REVENUE_EUR,
-    LAG(REVENUE_EUR) OVER (
-        PARTITION BY HOTEL
-        ORDER BY BUSINESS_DATE
-    ) AS PREV_DAY_REVENUE
-FROM hotel_daily;`;
+const SQL_VALIDATION_MAX_ROWS=2000;
 
-const state={lang:'tr',questions:[],assessment:null,currentQuestion:null,selectedAnswer:null,roadmap:null,curriculum:null,catalog:null,duckdbReady:false,duckdbInfo:null};
+
+const state={lang:'tr',questions:[],assessment:null,currentQuestion:null,selectedAnswer:null,roadmap:null,curriculum:null,catalog:null,duckdbReady:false,duckdbInfo:null,sqlChallengeIndex:0,sqlChallengePassed:false};
 const $=s=>document.querySelector(s);
 const setText=(selector,value)=>{const element=$(selector);if(element)element.textContent=value;};
 let sqlLabModulePromise=null;
@@ -33,7 +26,7 @@ const copy={
     duckIdle:'DuckDB · hazır',duckLoading:'DuckDB yükleniyor…',
     sandbox:'Bu aşamada tek bir SELECT / WITH / EXPLAIN sorgusu çalıştırılır. Dataset tarayıcı belleğinde açılır.',
     outputTitle:'Sorgu Sonucu',empty:'Sorguyu çalıştırdığında gerçek DuckDB sonucu burada görünecek.',
-    challengeOk:'Challenge yapısı uygun.',challengeMissing:'Sorgu çalıştı; challenge için eksik:',
+    challengeOk:'Challenge geçti.',challengeMissing:'Challenge tamamlanmadı.',nextChallenge:'Sonraki Challenge',challengeDone:'SQL challenge seti tamamlandı.',
     rows:'satır',shown:'gösteriliyor',queryFailed:'Sorgu çalıştırılamadı.'
   },
   en:{
@@ -49,7 +42,7 @@ const copy={
     duckIdle:'DuckDB · ready',duckLoading:'Loading DuckDB…',
     sandbox:'This stage runs one SELECT / WITH / EXPLAIN statement at a time. The dataset is loaded into browser memory.',
     outputTitle:'Query Result',empty:'Run a query to see the real DuckDB result here.',
-    challengeOk:'Challenge structure is valid.',challengeMissing:'Query ran; missing challenge criteria:',
+    challengeOk:'Challenge passed.',challengeMissing:'Challenge not complete.',nextChallenge:'Next Challenge',challengeDone:'SQL challenge set completed.',
     rows:'rows',shown:'shown',queryFailed:'Query could not be executed.'
   }
 };
@@ -122,7 +115,6 @@ function applyLanguage(){
   setText('#startDiagnostic',c.start);
   setText('#startExamTop',c.topStart);
   setText('#roadmapTitle',c.roadmap);
-  setText('#sqlTask',c.sqlTask);
   setText('#runSql',c.runSql);
   setText('#resetSql',c.reset);
   setText('#sandboxNote',c.sandbox);
@@ -130,6 +122,7 @@ function applyLanguage(){
   const sqlEmpty=$('#sqlEmpty');
   if(sqlEmpty&&!sqlEmpty.classList.contains('hidden'))sqlEmpty.textContent=c.empty;
   updateDuckdbStatus();
+  renderSqlChallenge(false);
   const diagCounter=$('#diagCounter');
   if(diagCounter&&!state.assessment)diagCounter.textContent=c.ready;
   renderTracks();
@@ -219,6 +212,50 @@ function renderRoadmap(){
   </article>`).join('');
 }
 
+function currentSqlChallenge(){
+  return SQL_CHALLENGES[state.sqlChallengeIndex]||SQL_CHALLENGES[0];
+}
+
+function challengeCheckLabel(id){
+  const tr={columns:'Kolonlar',row_count:'Satır sayısı',values_order:'Değer + sıra',required_sql:'SQL yapısı'};
+  const en={columns:'Columns',row_count:'Row count',values_order:'Values + order',required_sql:'SQL structure'};
+  return (state.lang==='tr'?tr:en)[id]||id;
+}
+
+function renderSqlChallenge(resetEditor=false){
+  const challenge=currentSqlChallenge();
+  if(!challenge)return;
+  const meta=$('#sqlChallengeMeta');
+  if(meta)meta.textContent=`${String(state.sqlChallengeIndex+1).padStart(2,'0')}/${String(SQL_CHALLENGES.length).padStart(2,'0')} · ${challenge.difficulty} · ${challenge.skills.join(' · ')}`;
+  setText('#sqlTask',state.lang==='tr'?challenge.task_tr:challenge.task_en);
+  const next=$('#nextSqlChallenge');
+  if(next){
+    next.textContent=copy[state.lang].nextChallenge;
+    next.hidden=!state.sqlChallengePassed||state.sqlChallengeIndex>=SQL_CHALLENGES.length-1;
+  }
+  if(resetEditor){
+    $('#sqlEditor').value=challenge.starterSql;
+    state.sqlChallengePassed=false;
+    if(next)next.hidden=true;
+  }
+}
+
+function resetSqlChallenge(){
+  renderSqlChallenge(true);
+  $('#sqlResult').textContent='';
+  $('#sqlError').textContent='';
+  $('#sqlMeta').textContent='';
+  clearSqlTable();
+  $('#sqlEmpty').classList.remove('hidden');
+  $('#sqlEmpty').textContent=copy[state.lang].empty;
+}
+
+function nextSqlChallenge(){
+  if(!state.sqlChallengePassed||state.sqlChallengeIndex>=SQL_CHALLENGES.length-1)return;
+  state.sqlChallengeIndex++;
+  resetSqlChallenge();
+}
+
 function clearSqlTable(){
   $('#sqlTable thead').replaceChildren();
   $('#sqlTable tbody').replaceChildren();
@@ -278,21 +315,31 @@ async function executeSql(){
     state.duckdbInfo=info;
     updateDuckdbStatus();
 
+    const challenge=currentSqlChallenge();
     const sql=$('#sqlEditor').value;
-    const result=await lab.runSql(sql,{maxRows:100});
-    renderSqlTable(result);
+    const result=await lab.runSql(sql,{maxRows:SQL_VALIDATION_MAX_ROWS});
+    const expected=await lab.runSql(challenge.referenceSql,{maxRows:SQL_VALIDATION_MAX_ROWS});
+    const evaluation=evaluateSqlChallenge({challenge,sql,actual:result,expected});
+    const visibleResult={...result,rows:result.rows.slice(0,100),truncated:result.totalRows>100};
+    renderSqlTable(visibleResult);
 
     const formattedRows=new Intl.NumberFormat(state.lang==='tr'?'tr-TR':'en-US').format(result.totalRows);
-    $('#sqlMeta').textContent=`${formattedRows} ${c.rows} · ${result.elapsedMs} ms${result.truncated?' · 100 '+c.shown:''}`;
+    $('#sqlMeta').textContent=`${formattedRows} ${c.rows} · ${result.elapsedMs} ms${result.totalRows>100?' · 100 '+c.shown:''}`;
 
-    const structure=checkSqlStructure(sql);
-    if(structure.ok){
-      feedback.textContent=c.challengeOk;
+    const checks=evaluation.checks.map(check=>`${challengeCheckLabel(check.id)} ${check.passed?'✓':'✕'}`).join(' · ');
+    state.sqlChallengePassed=evaluation.passed;
+    if(evaluation.passed){
+      const finalChallenge=state.sqlChallengeIndex===SQL_CHALLENGES.length-1;
+      feedback.textContent=`${evaluation.score}/100 · ${finalChallenge?c.challengeDone:c.challengeOk} · ${checks}`;
       feedback.style.color='var(--green)';
     }else{
-      feedback.textContent=`${c.challengeMissing} ${structure.missing.join(', ')}`;
+      const missing=evaluation.missingSql.length
+        ?` · ${state.lang==='tr'?'Eksik yapı':'Missing structure'}: ${evaluation.missingSql.join(', ')}`
+        :'';
+      feedback.textContent=`${evaluation.score}/100 · ${c.challengeMissing} · ${checks}${missing}`;
       feedback.style.color='var(--blue)';
     }
+    renderSqlChallenge(false);
   }catch(err){
     console.error(err);
     clearSqlTable();
@@ -310,15 +357,8 @@ $('#startDiagnostic').addEventListener('click',startExam);
 $('#startExamTop')?.addEventListener('click',startExam);
 $('#nextQuestion').addEventListener('click',advanceExam);
 $('#runSql').addEventListener('click',executeSql);
-$('#resetSql').addEventListener('click',()=>{
-  $('#sqlEditor').value=DEFAULT_SQL;
-  $('#sqlResult').textContent='';
-  $('#sqlError').textContent='';
-  $('#sqlMeta').textContent='';
-  clearSqlTable();
-  $('#sqlEmpty').classList.remove('hidden');
-  $('#sqlEmpty').textContent=copy[state.lang].empty;
-});
+$('#resetSql').addEventListener('click',resetSqlChallenge);
+$('#nextSqlChallenge').addEventListener('click',nextSqlChallenge);
 
 async function init(){
   try{
@@ -328,7 +368,7 @@ async function init(){
     state.curriculum=await c.json();
     state.catalog=await l.json();
     applyLanguage();
-    clearSqlTable();
+    resetSqlChallenge();
   }catch(err){
     console.error(err);
     $('#diagCounter').textContent='Data load error';
