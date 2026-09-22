@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Hesap · Data Analyst Learning OS</title>
+  <link rel="stylesheet" href="/auth.css">
+</head>
+<body>
+  <main class="auth-shell">
+    <section class="auth-intro">
+      <a class="auth-brand" href="/demo/"><span class="auth-logo">DA</span><span><strong>Learning OS</strong><small>Data Analyst</small></span></a>
+      <h1>Öğrenme ilerlemen artık hesabına bağlı.</h1>
+      <p>Mastery, XP, Level, Streak, ders kanıtları ve vaka çalışmaları cihazdan bağımsız olarak kendi hesabında tutulur.</p>
+      <div class="auth-points"><span>6 eğitim hattı</span><span>Doğrulanmış mastery kanıtı</span><span>Bulut senkronizasyonu</span></div>
+    </section>
+    <section class="auth-card">
+      <h2 data-title>Hesap</h2><p data-lead></p>
+      <div class="auth-alert error" data-alert hidden></div>
+      <div data-form-host></div>
+      <div class="auth-links" data-links></div>
+      <div class="auth-note" data-note hidden></div>
+    </section>
+  </main>
+  <script type="module">
+    import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+    const supabase=createClient("https://mudlekwkoxbkkauxberv.supabase.co","sb_publishable_gwyoygp8B-OBdXrLXbc6ZA_MGk9rvWx",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+    const path=location.pathname.replace(/\/+$/,"")||"/";
+    const title=document.querySelector("[data-title]"),lead=document.querySelector("[data-lead]"),host=document.querySelector("[data-form-host]"),links=document.querySelector("[data-links]"),note=document.querySelector("[data-note]"),alertBox=document.querySelector("[data-alert]");
+
+    function show(message,type="error"){alertBox.hidden=false;alertBox.className="auth-alert "+type;alertBox.textContent=message}
+    function setNote(message){if(!message)return;note.hidden=false;note.textContent=message}
+    function safeReturnTo(){const v=new URLSearchParams(location.search).get("returnTo")||"/";return v.startsWith("/")&&!v.startsWith("//")?v:"/"}
+    function setPage(config){document.title=config.title+" · Data Analyst Learning OS";title.textContent=config.title;lead.textContent=config.lead;host.innerHTML=config.form;links.innerHTML=config.links||"";setNote(config.note||"")}
+    async function activeProfile(userId){const {data}=await supabase.from("profiles").select("active").eq("id",userId).maybeSingle();return data}
+
+    if(path==="/giris"){
+      setPage({title:"Giriş Yap",lead:"Kendi öğrenme alanına e-posta ve şifrenle devam et.",form:'<form class="auth-form"><label>E-posta<input name="email" type="email" autocomplete="email" required></label><label>Şifre<input name="password" type="password" autocomplete="current-password" required></label><button class="auth-button" type="submit">Çalışma Alanını Aç</button></form>',links:'<a href="/sifremi-unuttum">Şifremi unuttum</a><a href="/demo/">Demo alanını incele</a>',note:"Yeni hesaplar yönetici davetiyle oluşturulur."});
+      const q=new URLSearchParams(location.search);if(q.get("hata"))show(q.get("hata"));if(q.get("mesaj"))show(q.get("mesaj"),"success");
+      const {data:{session}}=await supabase.auth.getSession();if(session&&(await activeProfile(session.user.id))?.active)location.replace(safeReturnTo());
+      host.querySelector("form").addEventListener("submit",async e=>{e.preventDefault();const button=e.currentTarget.querySelector("button");button.disabled=true;const fd=new FormData(e.currentTarget);const email=String(fd.get("email")||"").trim().toLowerCase();const password=String(fd.get("password")||"");const {data,error}=await supabase.auth.signInWithPassword({email,password});if(error||!data.user){show("E-posta veya şifre hatalı.");button.disabled=false;return}const profile=await activeProfile(data.user.id);if(!profile?.active){await supabase.auth.signOut();show("Bu hesap Learning OS için aktif değil.");button.disabled=false;return}location.replace(safeReturnTo())});
+    }
+
+    if(path==="/sifremi-unuttum"){
+      setPage({title:"Şifremi Unuttum",lead:"Hesabına bağlı e-posta adresini gir.",form:'<form class="auth-form"><label>E-posta<input name="email" type="email" autocomplete="email" required></label><button class="auth-button" type="submit">Şifre Yenileme Bağlantısı Gönder</button></form>',links:'<a href="/giris">← Giriş ekranına dön</a>',note:"Güvenlik nedeniyle sistemde kayıtlı olup olmadığına dair farklı mesaj gösterilmez."});
+      host.querySelector("form").addEventListener("submit",async e=>{e.preventDefault();const button=e.currentTarget.querySelector("button");button.disabled=true;const email=String(new FormData(e.currentTarget).get("email")||"").trim().toLowerCase();const {data,error}=await supabase.functions.invoke("request-password-reset",{body:{email}});button.disabled=false;if(error||data?.error){show(data?.error||"Şifre yenileme isteği gönderilemedi.");return}show("Eğer bu e-posta sistemde kayıtlı ve aktifse, şifre yenileme bağlantısı gönderildi. Gelen kutunu ve spam klasörünü kontrol et.","success")});
+    }
+
+    if(path==="/sifre-yenile"||path==="/davet"){
+      const invite=path==="/davet";
+      setPage({title:invite?"Davetini Tamamla":"Yeni Şifre Belirle",lead:invite?"Learning OS hesabını etkinleştirmek için şifreni belirle.":"E-postandaki güvenli bağlantı doğrulandıktan sonra yeni şifreni belirle.",form:'<form class="auth-form"><p data-session-note>Bağlantı doğrulanıyor…</p><label>Yeni şifre<input name="password" type="password" autocomplete="new-password" minlength="8" required></label><label>Yeni şifre tekrar<input name="confirm_password" type="password" autocomplete="new-password" minlength="8" required></label><button class="auth-button" type="submit" disabled>'+(invite?"Hesabı Etkinleştir":"Şifreyi Güncelle")+'</button></form>',links:invite?'<a href="/demo/">Demo alanına dön</a>':'<a href="/giris">← Giriş ekranına dön</a>'});
+      const form=host.querySelector("form"),button=form.querySelector("button"),sessionNote=form.querySelector("[data-session-note]");
+      async function enable(){const {data:{session}}=await supabase.auth.getSession();if(session){button.disabled=false;sessionNote.textContent=invite?"Davet doğrulandı. Hesabınız için bir şifre belirleyin.":"Bağlantı doğrulandı. Yeni şifrenizi belirleyin.";return true}return false}
+      if(!(await enable())){show(invite?"Davet bağlantısı geçersiz veya süresi dolmuş.":"Şifre yenileme bağlantısı geçersiz veya süresi dolmuş.");supabase.auth.onAuthStateChange(async(event,session)=>{if(session&&(event==="PASSWORD_RECOVERY"||event==="SIGNED_IN")){alertBox.hidden=true;await enable()}})}
+      form.addEventListener("submit",async e=>{e.preventDefault();button.disabled=true;const fd=new FormData(form),password=String(fd.get("password")||""),confirm=String(fd.get("confirm_password")||"");if(password.length<8){show("Şifre en az 8 karakter olmalıdır.");button.disabled=false;return}if(password!==confirm){show("Şifreler eşleşmiyor.");button.disabled=false;return}const {error}=await supabase.auth.updateUser({password});if(error){show("Şifre güncellenemedi. Bağlantıyı yeniden açmayı deneyin.");button.disabled=false;return}show(invite?"Hesabınız hazır. Çalışma alanı açılıyor…":"Şifreniz güncellendi. Giriş ekranına yönlendiriliyorsunuz…","success");setTimeout(()=>location.replace(invite?"/":"/giris?mesaj="+encodeURIComponent("Şifre güncellendi.")),550)});
+    }
+
+    if(path==="/kurulum"){
+      setPage({title:"İlk Yönetici Kurulumu",lead:"Bu ekran yalnız ilk Learning OS yöneticisini oluşturmak için bir kez çalışır.",form:'<form class="auth-form"><label>Kurulum kodu<input name="setup_code" type="password" required></label><label>Ad soyad<input name="full_name" autocomplete="name" required></label><label>E-posta<input name="email" type="email" autocomplete="email" required></label><label>Şifre<input name="password" type="password" autocomplete="new-password" minlength="8" required></label><button class="auth-button" type="submit">Yönetici Hesabını Oluştur</button></form>',links:'<a href="/demo/">Demo alanına dön</a>',note:"İlk yönetici oluşturulduktan sonra kurulum kodu otomatik olarak geçersiz olur."});
+      host.querySelector("form").addEventListener("submit",async e=>{e.preventDefault();const button=e.currentTarget.querySelector("button"),fd=new FormData(e.currentTarget),body={setupCode:String(fd.get("setup_code")||"").trim(),fullName:String(fd.get("full_name")||"").trim(),email:String(fd.get("email")||"").trim().toLowerCase(),password:String(fd.get("password")||"")};if(body.password.length<8){show("Şifre en az 8 karakter olmalıdır.");return}button.disabled=true;const {data,error}=await supabase.functions.invoke("bootstrap-admin",{body});if(error||data?.error){show(data?.error||"İlk yönetici hesabı oluşturulamadı.");button.disabled=false;return}const result=await supabase.auth.signInWithPassword({email:body.email,password:body.password});if(result.error){show("Hesap oluşturuldu. Giriş ekranından oturum açın.","success");button.disabled=false;return}location.replace("/")});
+    }
+  </script>
+</body>
+</html>

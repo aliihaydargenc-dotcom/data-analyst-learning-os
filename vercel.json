@@ -1,12 +1,3 @@
 {
-  "cleanUrls": true,
-  "trailingSlash": false,
-  "rewrites": [
-    {"source": "/giris", "destination": "/auth.html"},
-    {"source": "/sifremi-unuttum", "destination": "/auth.html"},
-    {"source": "/sifre-yenile", "destination": "/auth.html"},
-    {"source": "/davet", "destination": "/auth.html"},
-    {"source": "/kurulum", "destination": "/auth.html"},
-    {"source": "/admin", "destination": "/admin.html"}
-  ]
+  "cleanUrls": true
 }
