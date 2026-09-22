@@ -1,3 +1,5 @@
+import {dailyChallengeRewardForLevel,dailyChallengeXpEventId} from './xp-system.mjs';
+
 const TRACK_CONTEXT={
   sql:{tr:'otel gelir verisinde',en:'in hotel revenue data'},
   qlik:{tr:'bir Qlik yönetim raporunda',en:'in a Qlik management report'},
@@ -15,12 +17,12 @@ const DIMENSION_LABELS={
 };
 
 const DIFFICULTY={
-  L1:{tr:'Başlangıç',en:'Beginner',minutes:5,xp:80},
-  L2:{tr:'Başlangıç+',en:'Beginner+',minutes:7,xp:100},
-  L3:{tr:'Orta',en:'Intermediate',minutes:10,xp:120},
-  L4:{tr:'İleri',en:'Advanced',minutes:12,xp:140},
-  L5:{tr:'İleri',en:'Advanced',minutes:15,xp:160},
-  Expert:{tr:'Expert',en:'Expert',minutes:18,xp:180}
+  L1:{tr:'Başlangıç',en:'Beginner',minutes:5},
+  L2:{tr:'Başlangıç+',en:'Beginner+',minutes:7},
+  L3:{tr:'Orta',en:'Intermediate',minutes:10},
+  L4:{tr:'İleri',en:'Advanced',minutes:12},
+  L5:{tr:'İleri',en:'Advanced',minutes:15},
+  Expert:{tr:'Expert',en:'Expert',minutes:18}
 };
 
 function appendQuery(href,key,value){
@@ -66,7 +68,7 @@ export function buildDailyChallenge(snapshot,{lang='tr',now=new Date()}={}){
   const difficulty=DIFFICULTY[level]||DIFFICULTY.L3;
   const topic=snapshot.title(record.entry,locale);
   let href=record.entry.runtime||`lesson.html?id=${encodeURIComponent(record.entry.id)}`;
-  if(target)href=appendQuery(href,'focus',dimension);
+  href=appendQuery(href,'focus',dimension);
   href=appendQuery(href,'source','daily-challenge');
   href=appendQuery(href,'day',dateKey);
 
@@ -82,7 +84,8 @@ export function buildDailyChallenge(snapshot,{lang='tr',now=new Date()}={}){
     dimensionLabel:DIMENSION_LABELS[dimension]?.[locale]||dimension,
     difficulty:difficulty[locale],
     estimatedMinutes:difficulty.minutes,
-    rewardXp:difficulty.xp,
+    rewardXp:dailyChallengeRewardForLevel(level),
+    xpEventId:dailyChallengeXpEventId({day:dateKey,lessonId:record.entry.id,dimension}),
     task:taskFor({topic,track:record.entry.track,dimension,lang:locale}),
     href
   };
