@@ -5,8 +5,9 @@ import {
   createLessonProgress,normalizeLessonProgress,canCompleteSection,
   completionPercent,completeSection,buildRetentionSchedule,saveEvidenceDraft,
   labPassed,recordLabAttempt,recordCaseLabAttempt,recordPythonLabAttempt,recordHtmlLabAttempt,
-  completeRetentionReview,recordVerifiedEvidence
+  completeRetentionReview,recordVerifiedEvidence,recordMasteryAssessment
 } from '../lesson-runtime.mjs';
+import {buildMasteryAssessment,evaluateMasteryAssessment} from '../mastery-assessment.mjs';
 
 const lesson=JSON.parse(fs.readFileSync('content/lessons/sql.relational-thinking.001.json','utf8'));
 const result=validateLessonStructure(lesson);
@@ -26,7 +27,7 @@ assert.ok(brokenResult.errors.includes('layer:transfer'));
 const now=new Date('2026-09-21T12:00:00.000Z');
 let progress=createLessonProgress(lesson,now);
 assert.equal(progress.lessonId,lesson.id);
-assert.equal(progress.version,3);
+assert.equal(progress.version,4);
 assert.deepEqual(progress.labEvidence,{});
 assert.deepEqual(progress.verifiedEvidence,{});
 assert.equal(progress.mastery.state,'learning');
@@ -51,6 +52,20 @@ assert.equal(progress.retentionDue.length,3);
 assert.equal(progress.retentionDue[0].day,1);
 assert.equal(progress.retentionDue[1].day,7);
 assert.equal(progress.retentionDue[2].day,30);
+
+const assessment=buildMasteryAssessment(lesson);
+const assessmentAnswers=Object.fromEntries(assessment.dimensions.flatMap(group=>group.items.map(item=>[item.id,item.answerId])));
+const assessmentEvaluation=evaluateMasteryAssessment(lesson,assessmentAnswers);
+assert.equal(assessmentEvaluation.complete,true);
+const assessmentResult=recordMasteryAssessment(lesson,progress,assessmentAnswers,now);
+assert.equal(assessmentResult.ok,true);
+progress=assessmentResult.progress;
+assert.equal(progress.assessmentHistory.length,1);
+assert.equal(progress.verifiedEvidence.knowledge.score,100);
+assert.equal(progress.verifiedEvidence.interpretation.score,100);
+assert.equal(progress.verifiedEvidence.production.score,100);
+assert.equal(progress.verifiedEvidence.transfer.score,100);
+assert.equal(progress.mastery.state,'mastered');
 
 const schedule=buildRetentionSchedule(lesson,'2026-09-21T12:00:00.000Z');
 assert.equal(schedule[0].dueAt,'2026-09-22T12:00:00.000Z');

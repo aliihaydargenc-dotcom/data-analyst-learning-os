@@ -1,4 +1,5 @@
 import {evaluateMastery,MASTERY_PROFILES} from './mastery-engine.mjs';
+import {evaluateMasteryAssessment,hasSemanticProductionLab,MASTERY_ASSESSMENT_VERSION} from './mastery-assessment.mjs';
 
 export const REQUIRED_LAYERS=Object.freeze([
   'mental_model','worked_example','guided_practice','independent_practice','debugging','transfer','retention'
@@ -42,7 +43,7 @@ export function lessonLayerSummary(lesson){
 
 export function createLessonProgress(lesson,now=new Date()){
   return {
-    version:3,
+    version:4,
     lessonId:lesson.id,
     startedAt:now.toISOString(),
     updatedAt:now.toISOString(),
@@ -54,6 +55,7 @@ export function createLessonProgress(lesson,now=new Date()){
     verifiedEvidence:{},
     retentionDue:[],
     retentionHistory:[],
+    assessmentHistory:[],
     masteryInputs:{},
     mastery:{
       evaluated:false,passed:false,state:'learning',weighted:null,failures:[],
@@ -71,7 +73,7 @@ export function normalizeLessonProgress(lesson,value,now=new Date()){
   const next={
     ...base,
     ...value,
-    version:3,
+    version:4,
     lessonId:lesson.id,
     completedSections:completed,
     responses:{...(value.responses||{})},
@@ -80,6 +82,7 @@ export function normalizeLessonProgress(lesson,value,now=new Date()){
     verifiedEvidence:{...(value.verifiedEvidence||{})},
     retentionDue:Array.isArray(value.retentionDue)?value.retentionDue:[],
     retentionHistory:Array.isArray(value.retentionHistory)?value.retentionHistory:[],
+    assessmentHistory:Array.isArray(value.assessmentHistory)?value.assessmentHistory:[],
     masteryInputs:{...(value.masteryInputs||{})}
   };
   return refreshMastery(lesson,next,now);
@@ -151,6 +154,40 @@ export function recordVerifiedEvidence(lesson,progress,dimension,score,source='a
   next.verifiedEvidence[dimension]={status:'verified',score,source,observedAt:now.toISOString()};
   next.updatedAt=now.toISOString();
   return refreshMastery(lesson,next,now);
+}
+
+export function recordMasteryAssessment(lesson,progress,answers={},now=new Date()){
+  const next=normalizeLessonProgress(lesson,progress,now);
+  if(!next.completedAt) return {ok:false,reason:'lesson_incomplete',progress:next,evaluation:null};
+  const evaluation=evaluateMasteryAssessment(lesson,answers);
+  if(!evaluation||evaluation.lessonId!==lesson.id||evaluation.version!==MASTERY_ASSESSMENT_VERSION||evaluation.complete!==true){
+    return {ok:false,reason:'invalid_assessment',progress:next,evaluation};
+  }
+  const expected=['knowledge','interpretation','transfer'];
+  if(!hasSemanticProductionLab(lesson)) expected.splice(2,0,'production');
+  for(const dimension of expected){
+    const result=evaluation.dimensions?.[dimension];
+    if(!result||!validScore(result.score)||!Number.isInteger(result.total)||result.total<1||result.answered!==result.total){
+      return {ok:false,reason:'invalid_assessment',progress:next,evaluation};
+    }
+  }
+  for(const dimension of expected){
+    const result=evaluation.dimensions[dimension];
+    next.verifiedEvidence[dimension]={
+      status:'verified',score:result.score,source:'mastery-assessment-v1',
+      observedAt:now.toISOString(),correct:result.correct,total:result.total
+    };
+  }
+  next.assessmentHistory=[...(next.assessmentHistory||[]),{
+    version:evaluation.version,completedAt:now.toISOString(),
+    dimensions:Object.fromEntries(expected.map(dimension=>[dimension,{
+      score:evaluation.dimensions[dimension].score,
+      correct:evaluation.dimensions[dimension].correct,
+      total:evaluation.dimensions[dimension].total
+    }]))
+  }].slice(-20);
+  next.updatedAt=now.toISOString();
+  return {ok:true,reason:null,progress:refreshMastery(lesson,next,now),evaluation};
 }
 
 export function completeRetentionReview(lesson,progress,day,{response='',verified=false,passed=null,source='retrieval-response'}={},now=new Date()){

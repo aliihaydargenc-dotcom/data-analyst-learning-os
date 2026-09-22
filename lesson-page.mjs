@@ -1,8 +1,9 @@
 import {
   createLessonProgress,normalizeLessonProgress,completeSection,completionPercent,
   sectionNeedsResponse,saveEvidenceDraft,recordLabAttempt,recordCaseLabAttempt,recordPythonLabAttempt,recordHtmlLabAttempt,labPassed,
-  completeRetentionReview,lessonLabId
+  completeRetentionReview,lessonLabId,recordMasteryAssessment
 } from './lesson-runtime.mjs';
+import {buildMasteryAssessment} from './mastery-assessment.mjs';
 
 const $=selector=>document.querySelector(selector);
 const params=new URLSearchParams(location.search);
@@ -35,7 +36,7 @@ const labels={
     pythonIdle:'Çalıştırılmadı',pythonLoading:'Python runtime hazırlanıyor…',pythonRun:'Python testlerini çalıştır',pythonReset:'Sıfırla',pythonPass:'Semantic Python Lab geçti.',pythonFail:'Semantic Python Lab geçmedi.',pythonRequired:'Bu bağımsız üretim bölümü için önce Semantic Python Lab’ı geçirmen gerekiyor.',pythonError:'Python lab çalıştırılamadı.',pythonPassed:'Python kanıtı · geçti',htmlIdle:'Çalıştırılmadı',htmlRun:'DOM testlerini çalıştır',htmlReset:'Sıfırla',htmlPass:'Semantic HTML DOM Lab geçti.',htmlFail:'Semantic HTML DOM Lab geçmedi.',htmlRequired:'Bu bağımsız üretim bölümü için önce Semantic HTML DOM Lab’ı geçirmen gerekiyor.',htmlError:'HTML DOM lab çalıştırılamadı.',htmlPassed:'HTML DOM kanıtı · geçti',
     masteryLearning:'Öğreniliyor',masteryAwaiting:'Kanıt bekliyor',masteryReadyRetention:'Tekrar bekliyor',masteryRetentionDue:'Tekrar zamanı',masteryMastered:'Mastery doğrulandı',masteryNeedsReview:'Gözden geçir',
     masteryVerified:'doğrulanmış boyut',retentionComplete:'Tekrarı tamamla',retentionResponse:'Geri çağırma yanıtın',retentionResponsePlaceholder:'Kaynaklara bakmadan çözümünü ve gerekçeni yaz.',retentionCompleted:'tamamlandı',retentionNotDue:'henüz vadesi gelmedi',
-    retentionLabRequired:'Bu retention kanıtı için semantic labı vade tarihinden sonra yeniden çalıştır.',retentionSaved:'Retention kanıtı kaydedildi.',retentionNeedsResponse:'En az 20 karakterlik bir geri çağırma yanıtı yaz.'
+    retentionLabRequired:'Bu retention kanıtı için semantic labı vade tarihinden sonra yeniden çalıştır.',retentionSaved:'Retention kanıtı kaydedildi.',retentionNeedsResponse:'En az 20 karakterlik bir geri çağırma yanıtı yaz.',assessmentTitle:'Mastery Assessment',assessmentIntro:'Knowledge, interpretation ve transfer burada cevap anahtarlı görevlerle doğrulanır. Serbest metin taslağı doğruluk kanıtı sayılmaz.',assessmentLocked:'Assessment, dersin tüm bölümleri tamamlandıktan sonra açılır.',assessmentRun:'Değerlendir ve kanıtı doğrula',assessmentMissing:'Tüm assessment sorularını yanıtla.',assessmentSaved:'Assessment doğrulandı.',assessmentProduction:'Production semantic lab tarafından doğrulanır.',assessmentFallbackProduction:'Bu derste semantic lab olmadığı için production boyutu yapılandırılmış assessment ile doğrulanır.',verified:'Doğrulandı',notVerified:'Henüz doğrulanmadı'
   },
   en:{
     loading:'Loading',progress:'Progress',estimate:'Estimated study',minutes:'min',
@@ -60,7 +61,7 @@ const labels={
     pythonIdle:'Not run',pythonLoading:'Preparing Python runtime…',pythonRun:'Run Python tests',pythonReset:'Reset',pythonPass:'Semantic Python Lab passed.',pythonFail:'Semantic Python Lab did not pass.',pythonRequired:'Pass the Semantic Python Lab before completing this independent-production section.',pythonError:'Python lab could not be executed.',pythonPassed:'Python evidence · passed',htmlIdle:'Not run',htmlRun:'Run DOM tests',htmlReset:'Reset',htmlPass:'Semantic HTML DOM Lab passed.',htmlFail:'Semantic HTML DOM Lab did not pass.',htmlRequired:'Pass the Semantic HTML DOM Lab before completing this independent-production section.',htmlError:'HTML DOM lab could not be executed.',htmlPassed:'HTML DOM evidence · passed',
     masteryLearning:'Learning',masteryAwaiting:'Waiting for evidence',masteryReadyRetention:'Waiting for review',masteryRetentionDue:'Review due',masteryMastered:'Mastery verified',masteryNeedsReview:'Needs review',
     masteryVerified:'verified dimensions',retentionComplete:'Complete review',retentionResponse:'Retrieval response',retentionResponsePlaceholder:'Solve and explain from memory before checking sources.',retentionCompleted:'completed',retentionNotDue:'not due yet',
-    retentionLabRequired:'Re-run the semantic lab after this review becomes due.',retentionSaved:'Retention evidence saved.',retentionNeedsResponse:'Write at least 20 characters of retrieval evidence.'
+    retentionLabRequired:'Re-run the semantic lab after this review becomes due.',retentionSaved:'Retention evidence saved.',retentionNeedsResponse:'Write at least 20 characters of retrieval evidence.',assessmentTitle:'Mastery Assessment',assessmentIntro:'Knowledge, interpretation, and transfer are verified here with answer-keyed tasks. Free-text drafts are not correctness evidence.',assessmentLocked:'The assessment unlocks after every lesson section is complete.',assessmentRun:'Evaluate and verify evidence',assessmentMissing:'Answer every assessment question.',assessmentSaved:'Assessment evidence verified.',assessmentProduction:'Production is verified by the semantic lab.',assessmentFallbackProduction:'This lesson has no semantic lab, so production is verified by a structured assessment fallback.',verified:'Verified',notVerified:'Not verified yet'
   }
 };
 
@@ -409,6 +410,55 @@ function runLessonCaseLab(){
   $('#lessonCaseLabStatus').textContent=passed?l.labPassed:l.caseFail;
 }
 
+function renderMasteryAssessment(){
+  const root=$('#masteryAssessment');
+  if(!root)return;
+  const l=labels[state.lang];
+  const assessment=buildMasteryAssessment(state.lesson);
+  const latest=state.progress.assessmentHistory?.at(-1)||null;
+  if(!state.progress.completedAt){
+    root.innerHTML=`<div class="assessment-head"><div><span class="eyebrow">VERIFIED MULTIDIMENSIONAL EVIDENCE</span><h3>${escapeHtml(l.assessmentTitle)}</h3><p>${escapeHtml(l.assessmentIntro)}</p></div></div><div class="assessment-lock">${escapeHtml(l.assessmentLocked)}</div>`;
+    return;
+  }
+  const productionFallback=assessment.dimensions.some(group=>group.dimension==='production');
+  root.innerHTML=`<div class="assessment-head"><div><span class="eyebrow">VERIFIED MULTIDIMENSIONAL EVIDENCE</span><h3>${escapeHtml(l.assessmentTitle)}</h3><p>${escapeHtml(l.assessmentIntro)}</p><small>${escapeHtml(productionFallback?l.assessmentFallbackProduction:l.assessmentProduction)}</small></div></div>
+    <div class="assessment-groups">${assessment.dimensions.map(group=>{
+      const evidence=state.progress.verifiedEvidence?.[group.dimension];
+      return `<section class="assessment-group" data-assessment-dimension="${escapeHtml(group.dimension)}"><header><strong>${escapeHtml(group.dimension)}</strong><span>${evidence?`${escapeHtml(l.verified)} · ${evidence.score}%`:escapeHtml(l.notVerified)}</span></header>
+        ${group.items.map((item,index)=>`<fieldset class="assessment-question" data-assessment-question="${escapeHtml(item.id)}"><legend>${index+1}. ${escapeHtml(state.lang==='tr'?item.prompt_tr:item.prompt_en)}</legend>
+          ${item.options.map(option=>`<label><input type="radio" name="assessment-${escapeHtml(item.id)}" value="${escapeHtml(option.id)}"><span>${escapeHtml(state.lang==='tr'?option.label_tr:option.label_en)}</span></label>`).join('')}
+        </fieldset>`).join('')}</section>`;
+    }).join('')}</div>
+    <div class="assessment-actions"><button id="runMasteryAssessment" class="primary">${escapeHtml(l.assessmentRun)}</button><p id="masteryAssessmentFeedback"></p></div>
+    ${latest?`<div class="assessment-last">${Object.entries(latest.dimensions||{}).map(([dimension,result])=>`<span><strong>${escapeHtml(dimension)}</strong> ${result.score}%</span>`).join('')}</div>`:''}`;
+  $('#runMasteryAssessment')?.addEventListener('click',()=>{
+    const answers={};
+    for(const group of assessment.dimensions){
+      for(const item of group.items){
+        const selected=document.querySelector(`input[name="assessment-${CSS.escape(item.id)}"]:checked`);
+        if(selected)answers[item.id]=selected.value;
+      }
+    }
+    const result=recordMasteryAssessment(state.lesson,state.progress,answers);
+    if(result.reason==='invalid_assessment'){
+      $('#masteryAssessmentFeedback').textContent=l.assessmentMissing;
+      $('#masteryAssessmentFeedback').style.color='var(--red)';
+      return;
+    }
+    if(!result.ok){
+      $('#masteryAssessmentFeedback').textContent=result.reason==='lesson_incomplete'?l.assessmentLocked:l.assessmentMissing;
+      $('#masteryAssessmentFeedback').style.color='var(--red)';
+      return;
+    }
+    state.progress=result.progress;
+    persistProgress();
+    renderEvidence();
+    renderRetention();
+    const feedback=$('#masteryAssessmentFeedback');
+    if(feedback){feedback.textContent=l.assessmentSaved;feedback.style.color='var(--green)';}
+  });
+}
+
 function renderEvidence(){
   const l=labels[state.lang];
   $('#evidenceTitle').textContent=l.evidenceTitle;
@@ -420,14 +470,18 @@ function renderEvidence(){
   };
   const verified=(mastery.verifiedDimensions||[]).length;
   const missing=(mastery.missingDimensions||[]);
+  const failures=(mastery.failures||[]).map(item=>`${item.dimension}: ${item.actual??'—'} / ${item.required}`);
   $('#masteryState').innerHTML=`<div><span class="eyebrow">ENGINE STATE</span><strong>${escapeHtml(stateLabels[mastery.state]||l.masteryLearning)}</strong></div>
-    <div><span>${verified} ${escapeHtml(l.masteryVerified)}</span>${mastery.evaluated&&mastery.weighted!==null?`<strong>${mastery.weighted}%</strong>`:''}${missing.length?`<small>${escapeHtml(missing.join(' · '))}</small>`:''}</div>`;
-  $('#evidenceGrid').innerHTML=state.lesson.mastery_evidence.map(item=>`<article class="evidence-card">
-    <header><span>${item.dimension}</span><strong>${item.weight}%</strong></header>
-    <p>${escapeHtml(item.task_tr)}</p>
-    <textarea data-dimension="${item.dimension}" placeholder="${l.responsePlaceholder}">${escapeHtml(state.progress.evidenceDrafts[item.dimension]||'')}</textarea>
-    <small data-evidence-status="${item.dimension}"></small>
-  </article>`).join('');
+    <div><span>${verified} ${escapeHtml(l.masteryVerified)}</span>${mastery.evaluated&&mastery.weighted!==null?`<strong>${mastery.weighted}%</strong>`:''}${missing.length?`<small>${escapeHtml(missing.join(' · '))}</small>`:''}${failures.length?`<small>${escapeHtml(failures.join(' · '))}</small>`:''}</div>`;
+  $('#evidenceGrid').innerHTML=state.lesson.mastery_evidence.map(item=>{
+    const evidence=state.progress.verifiedEvidence?.[item.dimension];
+    return `<article class="evidence-card">
+      <header><span>${item.dimension}</span><strong>${item.weight}%</strong></header>
+      <p>${escapeHtml(item.task_tr)}</p>
+      <textarea data-dimension="${item.dimension}" placeholder="${l.responsePlaceholder}">${escapeHtml(state.progress.evidenceDrafts[item.dimension]||'')}</textarea>
+      <small data-evidence-status="${item.dimension}">${evidence?`${escapeHtml(l.verified)} · ${evidence.score}% · ${escapeHtml(evidence.source||'verified')}`:escapeHtml(l.notVerified)}</small>
+    </article>`;
+  }).join('');
 
   document.querySelectorAll('.evidence-card textarea').forEach(textarea=>{
     textarea.addEventListener('input',()=>{
@@ -435,9 +489,10 @@ function renderEvidence(){
       state.progress=saveEvidenceDraft(state.lesson,state.progress,dimension,textarea.value);
       persistProgress();
       const status=document.querySelector(`[data-evidence-status="${dimension}"]`);
-      status.textContent=l.draftSaved;
+      if(status&&!state.progress.verifiedEvidence?.[dimension]) status.textContent=l.draftSaved;
     });
   });
+  renderMasteryAssessment();
 }
 
 function renderRetention(){
