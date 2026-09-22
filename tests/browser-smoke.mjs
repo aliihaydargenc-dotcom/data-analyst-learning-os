@@ -848,6 +848,27 @@ ORDER BY OPTION_ID;`);
   assert.match(await page.locator('#lessonCaseLabStatus').textContent(),/geçti/);
   assert.match(await page.locator('#sequencePosition').textContent(),/12 \/ 12/);
 
+  const mobileLearningUx=await page.evaluate(()=>{
+    const body=document.querySelector('.lesson-body');
+    const rail=document.querySelector('#lessonOutline');
+    const complete=document.querySelector('#completeSection');
+    const cards=[...document.querySelectorAll('.lesson-context-card')];
+    return {
+      noHorizontalOverflow:document.documentElement.scrollWidth<=window.innerWidth+1,
+      bodyFont:Number.parseFloat(getComputedStyle(body).fontSize),
+      railDisplay:getComputedStyle(rail).display,
+      railOverflowX:getComputedStyle(rail).overflowX,
+      completeHeight:complete.getBoundingClientRect().height,
+      contextClosed:cards.every(card=>card instanceof HTMLDetailsElement&&!card.open)
+    };
+  });
+  assert.equal(mobileLearningUx.noHorizontalOverflow,true,`mobile viewport overflowed: scrollWidth=${await page.evaluate(()=>document.documentElement.scrollWidth)} viewport=${await page.evaluate(()=>window.innerWidth)}`);
+  assert.ok(mobileLearningUx.bodyFont>=16);
+  assert.equal(mobileLearningUx.railDisplay,'flex');
+  assert.match(mobileLearningUx.railOverflowX,/auto|scroll/);
+  assert.ok(mobileLearningUx.completeHeight>=44);
+  assert.equal(mobileLearningUx.contextClosed,true);
+
   assert.deepEqual(pageErrors,[]);
   assert.deepEqual(consoleErrors,[]);
   console.log('browser smoke: PASS');

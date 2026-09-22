@@ -79,6 +79,24 @@ function localText(obj,key){
   return state.lang==='tr'?(obj[`${key}_tr`]??obj[key]??''):(obj[`${key}_en`]??obj[`${key}_tr`]??obj[key]??'');
 }
 
+function configureResponsiveLessonUi(){
+  const compact=window.matchMedia('(max-width:700px)').matches;
+  document.querySelectorAll('.lesson-context-card').forEach(card=>{
+    if(card instanceof HTMLDetailsElement) card.open=!compact;
+  });
+}
+
+function centerActiveOutlineStep(){
+  if(!window.matchMedia('(max-width:900px)').matches) return;
+  const rail=$('#lessonOutline');
+  const active=rail?.querySelector('.outline-item.active');
+  if(!rail||!active) return;
+  requestAnimationFrame(()=>{
+    const left=active.offsetLeft-(rail.clientWidth-active.clientWidth)/2;
+    rail.scrollTo({left:Math.max(0,left),behavior:'smooth'});
+  });
+}
+
 function renderHero(){
   const l=labels[state.lang],lesson=state.lesson;
   $('#lessonStatus').textContent=lesson.status==='production'?l.production:l.candidate;
@@ -112,6 +130,7 @@ function renderOutline(){
     renderOutline();
     window.scrollTo({top:document.querySelector('.lesson-workspace').offsetTop-72,behavior:'smooth'});
   }));
+  centerActiveOutlineStep();
 }
 
 function detailBlock(title,items){
@@ -543,6 +562,7 @@ async function init(){
     $('#masteryEvidence').classList.remove('hidden');
     $('#lessonSources').classList.remove('hidden');
     renderAll();
+    configureResponsiveLessonUi();
   }catch(error){
     console.error(error);
     $('#lessonError').textContent=error instanceof Error?error.message:String(error);

@@ -43,14 +43,20 @@
     </section>
 
     <section id="lessonContext" class="lesson-context hidden">
-      <article class="panel lesson-context-card">
-        <span class="eyebrow" id="whyLabel">NEDEN ÖNEMLİ?</span>
+      <details class="panel lesson-context-card" open>
+        <summary>
+          <span class="eyebrow" id="whyLabel">NEDEN ÖNEMLİ?</span>
+          <span class="context-toggle" aria-hidden="true"></span>
+        </summary>
         <p id="whyText"></p>
-      </article>
-      <article class="panel lesson-context-card">
-        <span class="eyebrow" id="objectivesLabel">HEDEFLER</span>
+      </details>
+      <details class="panel lesson-context-card" open>
+        <summary>
+          <span class="eyebrow" id="objectivesLabel">HEDEFLER</span>
+          <span class="context-toggle" aria-hidden="true"></span>
+        </summary>
         <ul id="objectiveList"></ul>
-      </article>
+      </details>
     </section>
 
     <section id="lessonWorkspace" class="lesson-workspace hidden">
