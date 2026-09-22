@@ -15,12 +15,36 @@ page.on('console',msg=>{
 try{
   await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded',timeout:120000});
 
+  await page.locator('#learningContinue .continue-card').waitFor({state:'visible'});
+  assert.equal(await page.locator('#courseGrid .course-card').count(),6);
+  assert.equal(await page.locator('#courseGrid [data-track="sql"] .course-lesson').count(),12);
+  assert.match(await page.locator('#continueLearning').getAttribute('href'),/sql\.relational-thinking\.001/);
+  assert.match(await page.locator('#learningStats').textContent(),/0\/72/);
+  assert.match(await page.locator('#learningStats').textContent(),/Değerlendirilmedi/);
+
+  await page.setViewportSize({width:390,height:844});
+  const learningHomeMobile=await page.evaluate(()=>({
+    noHorizontalOverflow:document.documentElement.scrollWidth<=window.innerWidth+1,
+    scrollWidth:document.documentElement.scrollWidth,
+    viewportWidth:window.innerWidth,
+    overflowers:[...document.querySelectorAll('body *')].map(element=>{
+      const rect=element.getBoundingClientRect();
+      return {tag:element.tagName,id:element.id,className:element.className,left:Math.round(rect.left),right:Math.round(rect.right),width:Math.round(rect.width)};
+    }).filter(item=>item.right>window.innerWidth+1||item.left<-1).slice(0,12),
+    courseColumns:getComputedStyle(document.querySelector('#courseGrid')).gridTemplateColumns,
+    continueHeight:document.querySelector('#continueLearning').getBoundingClientRect().height
+  }));
+  assert.equal(learningHomeMobile.noHorizontalOverflow,true,`home overflow: scrollWidth=${learningHomeMobile.scrollWidth} viewport=${learningHomeMobile.viewportWidth} offenders=${JSON.stringify(learningHomeMobile.overflowers)}`);
+  assert.equal(learningHomeMobile.courseColumns.trim().split(/\s+/).length,1);
+  assert.ok(learningHomeMobile.continueHeight>=44);
+  await page.setViewportSize({width:1280,height:900});
+
   await page.locator('#trackGrid .track-card').first().waitFor({state:'visible'});
   assert.equal(await page.locator('#trackGrid .track-card').count(),6);
   await page.locator('#curriculumGrid .curriculum-card').first().waitFor({state:'visible'});
   assert.equal(await page.locator('#curriculumGrid .curriculum-card').count(),6);
   assert.equal(await page.locator('#curriculumGrid .level-step').count(),36); 
-  assert.equal(await page.getByText('HTML & Web Foundations',{exact:true}).count(),2);
+  assert.equal(await page.getByText('HTML & Web Foundations',{exact:true}).count(),3);
 
   await page.locator('#runSql').click();
   await page.locator('#sqlTable tbody tr').first().waitFor({state:'visible',timeout:120000});
