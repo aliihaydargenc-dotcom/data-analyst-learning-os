@@ -917,7 +917,7 @@ ORDER BY OPTION_ID;`);
         production:{status:'verified',score:90,source:'browser-test',observedAt:'2026-09-22T06:00:00.000Z'},
         transfer:{status:'verified',score:50,source:'browser-test',observedAt:'2026-09-22T06:00:00.000Z'}
       },
-      retentionDue:[],
+      retentionDue:[{id:'recovery-browser-1',day:1,intervalDays:1,evidence:'adaptive-retention-recovery',dueAt:'2099-01-01T00:00:00.000Z',status:'pending',kind:'adaptive-recovery',sourceReviewId:'scheduled-1'}],
       retentionHistory:[],
       assessmentHistory:[],
       advancedHistory:[],
@@ -930,6 +930,8 @@ ORDER BY OPTION_ID;`);
   assert.equal(await page.locator('#masteryRemediation').isVisible(),true);
   assert.match(await page.locator('#masteryRemediation').textContent(),/Transfer kanıtını güçlendir/);
   assert.match(await page.locator('#masteryRemediation').textContent(),/transfer/i);
+  assert.match(await page.locator('#retentionList').textContent(),/R\+1/);
+  assert.match(await page.locator('#retentionList').textContent(),/Kurtarma tekrarı/);
   await page.locator('[data-remediation-open="transfer"]').click();
   await page.locator('[data-assessment-dimension="transfer"]').waitFor({state:'visible'});
   assert.equal(await page.locator('[data-assessment-dimension="transfer"]').evaluate(element=>element.classList.contains('remediation-focus')),true);
