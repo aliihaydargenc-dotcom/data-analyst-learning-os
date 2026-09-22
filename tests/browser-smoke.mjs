@@ -18,6 +18,9 @@ try{
   await page.locator('#learningContinue .continue-card').waitFor({state:'visible'});
   assert.equal(await page.locator('#courseGrid .course-card').count(),6);
   assert.equal(await page.locator('#skillMatrixGrid .skill-matrix-card').count(),6);
+  assert.equal(await page.locator('#dailyChallengeCard [data-daily-challenge]').count(),1);
+  assert.match(await page.locator('#dailyChallengeCard').textContent(),/Günün analist görevi|SQL Server|Başlangıç/);
+  assert.match(await page.locator('#dailyChallengeCard a').getAttribute('href'),/source=daily-challenge/);
   assert.equal(await page.locator('#skillMatrixGrid [data-skill-track="sql"] .skill-drilldown').count(),1);
   assert.equal(await page.locator('#skillMatrixGrid [data-skill-track="sql"] .skill-topic').count(),12);
   assert.equal(await page.locator('#courseGrid [data-track="sql"] .course-lesson').count(),12);
@@ -48,6 +51,7 @@ try{
   await page.locator('#objectiveFocus').waitFor({state:'visible'});
   assert.equal(await page.locator('#objectiveFocus .objective-focus-item').count(),2);
   assert.match(await page.locator('#objectiveFocus .objective-focus-item').first().getAttribute('href'),/focus=interpretation/);
+  assert.match(await page.locator('#dailyChallengeCard a').getAttribute('href'),/focus=interpretation/);
   assert.match(await page.locator('#skillMatrixGrid [data-skill-track="sql"]').textContent(),/90%/);
   assert.match(await page.locator('#skillMatrixGrid [data-skill-track="sql"] .skill-matrix-foot a').getAttribute('href'),/focus=interpretation/);
   assert.match(await page.locator('#skillMatrixGrid [data-skill-track="sql"] [data-skill-topic="sql.relational-thinking.001"]').getAttribute('href'),/focus=interpretation/);

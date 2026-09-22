@@ -222,3 +222,22 @@ html{scroll-padding-top:100px}button,input,textarea{accent-color:var(--blue)}
 @keyframes page-transition-spin{to{transform:rotate(360deg)}}
 @media(max-width:680px){.objective-focus{padding:12px}.objective-focus-item{padding:10px 8px}.page-transition-card{padding:12px 15px}}
 @media(prefers-reduced-motion:reduce){.page-transition{transition:none}.page-transition-spinner{animation:none;border-top-color:#d5deeb}}
+
+
+/* Daily analyst mission */
+.home-page .daily-challenge-section{padding:32px 0 0}
+.home-page .daily-challenge-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:28px;align-items:center;padding:22px 24px;border:1px solid #cbdaf4;border-radius:14px;background:#fff}
+.home-page .daily-challenge-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:9px}
+.home-page .daily-challenge-meta span{font-size:11px;color:#315884;background:#edf3ff;border-radius:6px;padding:3px 7px}
+.home-page .daily-challenge-copy h3{margin:0;font-size:18px;letter-spacing:-.015em}
+.home-page .daily-challenge-copy p{max-width:820px;margin:8px 0 7px;color:var(--muted);font-size:14px;line-height:1.55}
+.home-page .daily-challenge-copy small{font-size:12px;color:var(--muted)}
+.home-page .daily-challenge-action{display:grid;justify-items:end;gap:6px;min-width:150px}
+.home-page .daily-challenge-action span{font-size:12px;color:var(--muted)}
+.home-page .daily-challenge-action strong{font-size:15px}
+.home-page .daily-challenge-action a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border-radius:10px;text-decoration:none;white-space:nowrap}
+@media(max-width:680px){
+ .home-page .daily-challenge-card{grid-template-columns:1fr;gap:18px;padding:18px}
+ .home-page .daily-challenge-action{justify-items:stretch;min-width:0}
+ .home-page .daily-challenge-action a{width:100%}
+}
