@@ -1,4 +1,5 @@
 import {aggregateTrackMastery} from './track-mastery.mjs';
+import {buildObjectiveMasteryAnalytics,aggregateObjectiveMastery,prioritizeObjectiveTargets} from './objective-mastery.mjs';
 
 const TRACK_ORDER=['sql','qlik','python','excel','html','english'];
 
@@ -67,6 +68,13 @@ export function buildLearningSnapshot({catalog,curriculum,storage,now=new Date()
     const progress=safeParse(storage?.getItem?.(`da-learning-os:lesson:${entry.id}`));
     const retention=progressStatus(progress,now);
     const activity=hasActivity(progress);
+    const priorDefinitions=(progress?.objectiveAnalytics?.objectives||[]).map(item=>({
+      dimension:item.dimension,task_tr:item.taskTr,task_en:item.taskEn,weight:item.weight
+    }));
+    const objectiveAnalytics=buildObjectiveMasteryAnalytics({
+      lessonId:entry.id,level:entry.level,track:entry.track,topic:titleFor(entry,moduleMap,'tr'),
+      verifiedEvidence:progress?.verifiedEvidence||{},masteryEvidence:priorDefinitions
+    });
     return {
       entry,
       progress,
@@ -76,6 +84,7 @@ export function buildLearningSnapshot({catalog,curriculum,storage,now=new Date()
       updatedAt:progress?.updatedAt||progress?.completedAt||progress?.startedAt||null,
       evidenceDrafts:substantiveDraftCount(progress),
       labPassed:Object.values(progress?.labEvidence||{}).some(item=>item?.passed===true),
+      objectiveAnalytics,
       retention
     };
   });
@@ -104,6 +113,8 @@ export function buildLearningSnapshot({catalog,curriculum,storage,now=new Date()
     const evaluatedMastery=lessons.filter(item=>item.progress?.mastery?.evaluated===true).length;
     const awardedMastery=lessons.filter(item=>item.progress?.mastery?.passed===true).length;
     const rollup=aggregateTrackMastery(lessons);
+    const objectiveAnalytics=aggregateObjectiveMastery(lessons);
+    const objectiveTargets=prioritizeObjectiveTargets(objectiveAnalytics,{limit:4});
     return {
       id:trackId,
       name:trackMap.get(trackId)?.name||TRACK_FALLBACK[trackId]||trackId,
@@ -122,7 +133,9 @@ export function buildLearningSnapshot({catalog,curriculum,storage,now=new Date()
       masteredCount:rollup.masteredCount,
       masteryPercent:rollup.masteryPercent,
       masteryBlockingCount:rollup.blockingCount,
-      masteryTarget:rollup.blockingRecords[0]||null
+      masteryTarget:rollup.blockingRecords[0]||null,
+      objectiveAnalytics,
+      objectiveTargets
     };
   });
 
@@ -136,6 +149,8 @@ export function buildLearningSnapshot({catalog,curriculum,storage,now=new Date()
   const masteryStates=records.reduce((acc,item)=>{acc[item.masteryState]=(acc[item.masteryState]||0)+1;return acc;},{});
   const trackMasteryStates=tracks.reduce((acc,track)=>{acc[track.masteryState]=(acc[track.masteryState]||0)+1;return acc;},{});
   const masteredTracks=tracks.filter(track=>track.masteryState==='mastered').length;
+  const objectiveAnalytics=aggregateObjectiveMastery(records);
+  const diagnosticTargets=prioritizeObjectiveTargets(objectiveAnalytics,{limit:12});
 
   return {
     entries,records,tracks,moduleMap,
@@ -143,6 +158,7 @@ export function buildLearningSnapshot({catalog,curriculum,storage,now=new Date()
     retentionDue,retentionUpcoming,
     completedLessons,totalLessons:records.length,activeTracks,evidenceDrafts,
     masteryEvaluated,masteryAwarded,masteryStates,trackMasteryStates,masteredTracks,
+    objectiveAnalytics,diagnosticTargets,
     title:(entry,lang='tr')=>titleFor(entry,moduleMap,lang)
   };
 }

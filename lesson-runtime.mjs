@@ -2,6 +2,7 @@ import {evaluateMastery,MASTERY_PROFILES,buildRemediationPlan,nextRetentionInter
 import {evaluateMasteryAssessment,hasSemanticProductionLab,MASTERY_ASSESSMENT_VERSION} from './mastery-assessment.mjs';
 import {evaluateAdvancedMasteryChallenge,advancedRequirementsForLevel,ADVANCED_MASTERY_VERSION} from './advanced-mastery.mjs';
 import {recordMasteryDecision} from './mastery-ledger.mjs';
+import {buildObjectiveMasteryAnalytics} from './objective-mastery.mjs';
 
 export const REQUIRED_LAYERS=Object.freeze([
   'mental_model','worked_example','guided_practice','independent_practice','debugging','transfer','retention'
@@ -61,6 +62,10 @@ export function createLessonProgress(lesson,now=new Date()){
     advancedHistory:[],
     masteryHistory:[],
     masteryInputs:{},
+    objectiveAnalytics:buildObjectiveMasteryAnalytics({
+      lessonId:lesson.id,level:lesson.level,track:lesson.track||String(lesson.id||'').split('.')[0],
+      verifiedEvidence:{},masteryEvidence:lesson.mastery_evidence||[]
+    }),
     mastery:{
       evaluated:false,passed:false,state:'learning',weighted:null,failures:[],
       missingDimensions:['knowledge','interpretation','production','transfer'],
@@ -166,6 +171,13 @@ export function refreshMastery(lesson,progress,now=new Date()){
       :0,
     updatedAt:now.toISOString()
   };
+  next.objectiveAnalytics=buildObjectiveMasteryAnalytics({
+    lessonId:lesson.id,
+    level:lesson.level,
+    track:lesson.track||String(lesson.id||'').split('.')[0],
+    verifiedEvidence:next.verifiedEvidence,
+    masteryEvidence:lesson.mastery_evidence||[]
+  });
   next.masteryHistory=recordMasteryDecision(next.masteryHistory,previousMastery,next.mastery,{
     verifiedEvidence:next.verifiedEvidence,
     masteryInputs:next.masteryInputs,
