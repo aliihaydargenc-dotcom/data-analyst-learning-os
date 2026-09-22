@@ -29,6 +29,7 @@
         <a href="#skillMatrix">Beceriler</a>
         <a href="#diagnostic">Seviye</a>
         <a href="#sql-lab">SQL Lab</a>
+        <a href="#caseStudies">Projeler</a>
       </nav>
       <button id="languageToggle" class="ghost">EN</button>
     </header>
@@ -51,6 +52,21 @@
           <h2 id="dailyChallengeTitle">Günün analist görevi</h2>
         </div>
         <div id="dailyChallengeCard"></div>
+      </section>
+
+      <section id="caseStudies" class="block case-study-section">
+        <div class="section-title"><h2 id="caseTitle">Vaka çalışması</h2></div>
+        <article class="panel case-study-panel">
+          <h3 id="caseHeading">Otel gelir düşüşünü incele</h3>
+          <p id="caseIntro">SQL Lab’daki üçüncü görevi çöz. Her otelin en büyük günlük gelir düşüşünü bul, ardından yöneticiye kısa bir bulgu yaz.</p>
+          <a class="secondary" id="caseOpenLab" href="#sql-lab">SQL görevine git</a>
+          <label for="caseInterpretation" id="caseInterpretationLabel">Bu veri hangi sonucu destekler?</label>
+          <select id="caseInterpretation"><option value="">Seç</option><option value="correlation-not-cause">Düşüşün günü ve tutarı görülebilir; nedeni ek kanıt gerektirir.</option><option value="proven-cause">Düşüşün nedenini yalnız bu sorgu kanıtlar.</option></select>
+          <label for="caseMemo" id="caseMemoLabel">Yönetici özeti (en az 60 karakter)</label>
+          <textarea id="caseMemo" rows="4" placeholder="İki otelin bulgusunu ve neden için gerekli ek kontrolü yaz."></textarea>
+          <button id="saveCaseStudy" class="primary">Vaka çalışmasını doğrula</button>
+          <p id="caseFeedback" role="status"></p>
+        </article>
       </section>
 
       <section id="skillMatrix" class="block skill-matrix-section">
@@ -110,9 +126,11 @@ FROM hotel_daily;</textarea>
                 <div class="lab-actions">
                   <button id="runSql" class="primary">SQL'i Çalıştır</button>
                   <button id="resetSql" class="secondary">Sıfırla</button>
+                  <button id="sqlHint" class="secondary">İpucu 1</button>
                   <button id="nextSqlChallenge" class="secondary" hidden>Sonraki Challenge</button>
                   <span id="sqlResult"></span>
                 </div>
+                <pre id="sqlHintContent" class="sql-hint-content" aria-live="polite" hidden></pre>
               </div>
             </div>
 

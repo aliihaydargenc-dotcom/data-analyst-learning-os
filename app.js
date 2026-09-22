@@ -2,11 +2,14 @@ import {createAdaptiveAssessment,nextAdaptiveQuestion,submitAdaptiveAnswer,summa
 import {SQL_CHALLENGES,evaluateSqlChallenge} from './sql-challenges.mjs';
 import {renderLearningHome} from './learning-home.mjs';
 import {installPageTransitions} from './page-transition.mjs';
+import {awardXp} from './xp-system.mjs';
+import {sqlHintStep,sqlChallengeReward} from './sql-hints.mjs';
+import {CASE_STUDY_KEY,evaluateRevenueCase} from './case-study.mjs';
 
 const SQL_VALIDATION_MAX_ROWS=2000;
 
 
-const state={lang:'tr',questions:[],assessment:null,currentQuestion:null,selectedAnswer:null,roadmap:null,curriculum:null,catalog:null,duckdbReady:false,duckdbInfo:null,sqlChallengeIndex:0,sqlChallengePassed:false};
+const state={lang:'tr',questions:[],assessment:null,currentQuestion:null,selectedAnswer:null,roadmap:null,curriculum:null,catalog:null,duckdbReady:false,duckdbInfo:null,sqlChallengeIndex:0,sqlChallengePassed:false,sqlHintStep:0,hintSteps:{},caseRows:null,caseSqlVerified:false};
 const $=s=>document.querySelector(s);
 const setText=(selector,value)=>{const element=$(selector);if(element)element.textContent=value;};
 let sqlLabModulePromise=null;
@@ -117,6 +120,16 @@ function applyLanguage(){
   setText('#roadmapTitle',c.roadmap);
   setText('#runSql',c.runSql);
   setText('#resetSql',c.reset);
+  setText('#caseTitle',state.lang==='tr'?'Vaka çalışması':'Case study');
+  setText('#caseHeading',state.lang==='tr'?'Otel gelir düşüşünü incele':'Investigate hotel revenue decline');
+  setText('#caseIntro',state.lang==='tr'?'SQL Lab’daki üçüncü görevi çöz. Her otelin en büyük günlük gelir düşüşünü bul, ardından yöneticiye kısa bir bulgu yaz.':'Solve the third SQL Lab challenge. Find the largest daily revenue decline for each hotel, then write a short management finding.');
+  setText('#caseOpenLab',state.lang==='tr'?'SQL görevine git':'Open SQL challenge');
+  setText('#caseInterpretationLabel',state.lang==='tr'?'Bu veri hangi sonucu destekler?':'What does this data support?');
+  setText('#caseMemoLabel',state.lang==='tr'?'Yönetici özeti (en az 60 karakter)':'Management summary (at least 60 characters)');
+  setText('#saveCaseStudy',state.lang==='tr'?'Vaka çalışmasını kaydet':'Save case study');
+  $('#caseInterpretation').options[0].text=state.lang==='tr'?'Seç':'Select';
+  $('#caseInterpretation').options[1].text=state.lang==='tr'?'Düşüşün günü ve tutarı görülebilir; nedeni ek kanıt gerektirir.':'The date and amount are known; cause requires more evidence.';
+  $('#caseInterpretation').options[2].text=state.lang==='tr'?'Düşüşün nedenini yalnız bu sorgu kanıtlar.':'This query proves the cause of the decline.';
   setText('#sandboxNote',c.sandbox);
   setText('#sqlOutputTitle',c.outputTitle);
   const sqlEmpty=$('#sqlEmpty');
@@ -236,8 +249,21 @@ function renderSqlChallenge(resetEditor=false){
   if(resetEditor){
     $('#sqlEditor').value=challenge.starterSql;
     state.sqlChallengePassed=false;
+    $('#sqlHintContent').hidden=state.sqlHintStep===0;
     if(next)next.hidden=true;
   }
+  const hint=$('#sqlHint');
+  hint.textContent=state.sqlHintStep<2?`${state.lang==='tr'?'İpucu':'Hint'} ${state.sqlHintStep+1}`:state.lang==='tr'?'Çözümü göster':'Show solution';
+  hint.disabled=state.sqlHintStep>=3;
+  if(state.sqlHintStep)$('#sqlHintContent').textContent=sqlHintStep(challenge,state.sqlHintStep,state.lang);
+}
+
+function revealSqlHint(){
+  if(state.sqlHintStep>=3)return;
+  state.sqlHintStep++;
+  state.hintSteps[currentSqlChallenge().id]=state.sqlHintStep;
+  $('#sqlHintContent').hidden=false;
+  renderSqlChallenge(false);
 }
 
 function resetSqlChallenge(){
@@ -253,7 +279,22 @@ function resetSqlChallenge(){
 function nextSqlChallenge(){
   if(!state.sqlChallengePassed||state.sqlChallengeIndex>=SQL_CHALLENGES.length-1)return;
   state.sqlChallengeIndex++;
+  state.sqlHintStep=state.hintSteps[currentSqlChallenge().id]||0;
   resetSqlChallenge();
+}
+
+function saveCaseStudy(){
+  const memo=$('#caseMemo').value;
+  const interpretation=$('#caseInterpretation').value;
+  const result=evaluateRevenueCase({sqlVerified:state.caseSqlVerified,rows:state.caseRows,interpretation,memo});
+  if(!result.passed){
+    $('#caseFeedback').textContent=state.lang==='tr'?'Önce SQL Lab’daki üçüncü görevi doğrula; sonra kanıta dayalı seçeneği işaretleyip özeti tamamla.':'Verify the third SQL challenge, select the evidence-based interpretation, then complete the summary.';
+    return;
+  }
+  localStorage.setItem(CASE_STUDY_KEY,JSON.stringify({memo:memo.trim(),interpretation,rows:state.caseRows,completedAt:new Date().toISOString()}));
+  awardXp(localStorage,{id:'case-study:revenue-drop',kind:'case-study',xp:150,source:'sql-result-evaluator'});
+  $('#caseFeedback').textContent=state.lang==='tr'?'SQL ve seçim doğrulandı; yazılı yorum taslak olarak kaydedildi.':'SQL and choice verified; written interpretation saved as a draft.';
+  if(state.catalog&&state.curriculum)renderLearningHome({root:document,catalog:state.catalog,curriculum:state.curriculum,storage:localStorage,lang:state.lang,now:new Date()});
 }
 
 function clearSqlTable(){
@@ -328,7 +369,14 @@ async function executeSql(){
 
     const checks=evaluation.checks.map(check=>`${challengeCheckLabel(check.id)} ${check.passed?'✓':'✕'}`).join(' · ');
     state.sqlChallengePassed=evaluation.passed;
+    if(state.sqlChallengeIndex===2){
+      state.caseSqlVerified=evaluation.passed;
+      state.caseRows=evaluation.passed?result.rows:null;
+    }
     if(evaluation.passed){
+      const reward=sqlChallengeReward(state.sqlHintStep);
+      if(reward)awardXp(localStorage,{id:`sql-challenge:${challenge.id}`,kind:'sql-challenge',xp:reward,source:'sql-result-evaluator'});
+      if(state.catalog&&state.curriculum)renderLearningHome({root:document,catalog:state.catalog,curriculum:state.curriculum,storage:localStorage,lang:state.lang,now:new Date()});
       const finalChallenge=state.sqlChallengeIndex===SQL_CHALLENGES.length-1;
       feedback.textContent=`${evaluation.score}/100 · ${finalChallenge?c.challengeDone:c.challengeOk} · ${checks}`;
       feedback.style.color='var(--green)';
@@ -358,10 +406,21 @@ $('#startExamTop')?.addEventListener('click',startExam);
 $('#nextQuestion').addEventListener('click',advanceExam);
 $('#runSql').addEventListener('click',executeSql);
 $('#resetSql').addEventListener('click',resetSqlChallenge);
+$('#sqlHint').addEventListener('click',revealSqlHint);
 $('#nextSqlChallenge').addEventListener('click',nextSqlChallenge);
+$('#caseOpenLab').addEventListener('click',()=>{state.sqlChallengeIndex=2;state.sqlHintStep=state.hintSteps[currentSqlChallenge().id]||0;resetSqlChallenge();});
+$('#saveCaseStudy').addEventListener('click',saveCaseStudy);
 
 async function init(){
   try{
+    try{
+      const saved=JSON.parse(localStorage.getItem(CASE_STUDY_KEY)||'null');
+      if(saved?.memo){
+        $('#caseMemo').value=saved.memo;
+        $('#caseInterpretation').value=saved.interpretation||'';
+        $('#caseFeedback').textContent='Kaydedildi · Saved';
+      }
+    }catch{/* Ignore invalid local case data. */}
     const [q,r,c,l]=await Promise.all([fetch('./data/question-bank.json'),fetch('./data/roadmap.json'),fetch('./content/curriculum.json'),fetch('./content/lesson-catalog.json')]);
     state.questions=await q.json();
     state.roadmap=await r.json();
