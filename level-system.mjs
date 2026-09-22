@@ -31,7 +31,7 @@ export function analystLevelFromXp(totalXp=0){
   const xpIntoLevel=xp-current.minXp;
   const xpForLevel=isMax?0:next.minXp-current.minXp;
   const xpToNext=isMax?0:Math.max(0,next.minXp-xp);
-  const progressPercent=isMax?100:Math.max(0,Math.min(100,Math.round((xpIntoLevel/xpForLevel)*100)));
+  const progressPercent=isMax?100:Math.max(0,Math.min(99,Math.floor((xpIntoLevel/xpForLevel)*100)));
 
   return {
     ...current,
