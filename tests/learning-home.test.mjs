@@ -35,7 +35,30 @@ assert.equal(snapshot.retentionDue.length,1);
 assert.equal(snapshot.records.find(item=>item.entry.id==='sql.one.001').masteryState,'retention_due');
 assert.equal(snapshot.masteryStates.retention_due,1);
 assert.equal(snapshot.tracks.find(track=>track.id==='sql').progressPercent,50);
+assert.equal(snapshot.tracks.find(track=>track.id==='sql').masteryState,'retention_due');
+assert.equal(snapshot.tracks.find(track=>track.id==='sql').masteredCount,0);
 assert.equal(snapshot.tracks.find(track=>track.id==='sql').level,'L2');
 assert.equal(snapshot.evidenceDrafts,1);
 assert.equal(snapshot.masteryEvaluated,false);
+
+const masteredStorage=new MemoryStorage({
+  'da-learning-os:lesson:sql.one.001':JSON.stringify({
+    lessonId:'sql.one.001',startedAt:'2026-09-20T08:00:00Z',updatedAt:'2026-09-20T09:00:00Z',
+    completedAt:'2026-09-20T09:00:00Z',completedSections:['a'],evidenceDrafts:{},labEvidence:{},retentionDue:[],
+    mastery:{evaluated:true,passed:true,state:'mastered'}
+  }),
+  'da-learning-os:lesson:sql.two.001':JSON.stringify({
+    lessonId:'sql.two.001',startedAt:'2026-09-21T08:00:00Z',updatedAt:'2026-09-21T09:00:00Z',
+    completedAt:'2026-09-21T09:00:00Z',completedSections:['a'],evidenceDrafts:{},labEvidence:{},retentionDue:[],
+    mastery:{evaluated:true,passed:true,state:'mastered'}
+  })
+});
+snapshot=buildLearningSnapshot({catalog,curriculum,storage:masteredStorage,now:new Date('2026-09-22T06:00:00Z')});
+const masteredSql=snapshot.tracks.find(track=>track.id==='sql');
+assert.equal(masteredSql.masteryState,'mastered');
+assert.equal(masteredSql.masteredCount,2);
+assert.equal(masteredSql.masteryPercent,100);
+assert.equal(snapshot.masteredTracks,1);
+assert.equal(snapshot.trackMasteryStates.mastered,1);
+
 console.log('learning home: PASS');
