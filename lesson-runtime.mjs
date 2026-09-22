@@ -1,4 +1,4 @@
-import {evaluateMastery,MASTERY_PROFILES,buildRemediationPlan} from './mastery-engine.mjs';
+import {evaluateMastery,MASTERY_PROFILES,buildRemediationPlan,nextRetentionIntervalDays} from './mastery-engine.mjs';
 import {evaluateMasteryAssessment,hasSemanticProductionLab,MASTERY_ASSESSMENT_VERSION} from './mastery-assessment.mjs';
 import {evaluateAdvancedMasteryChallenge,advancedRequirementsForLevel,ADVANCED_MASTERY_VERSION} from './advanced-mastery.mjs';
 
@@ -246,9 +246,13 @@ export function recordAdvancedMasteryChallenge(lesson,progress,answers={},now=ne
   return {ok:true,reason:null,progress:refreshMastery(lesson,next,now),evaluation};
 }
 
-export function completeRetentionReview(lesson,progress,day,{response='',verified=false,passed=null,source='retrieval-response'}={},now=new Date()){
+export function completeRetentionReview(lesson,progress,reviewKey,{response='',verified=false,passed=null,source='retrieval-response'}={},now=new Date()){
   const next=normalizeLessonProgress(lesson,progress,now);
-  const index=(next.retentionDue||[]).findIndex(item=>Number(item?.day)===Number(day)&&item?.status!=='completed');
+  const index=(next.retentionDue||[]).findIndex(item=>{
+    if(item?.status==='completed')return false;
+    if(String(item?.id||'')===String(reviewKey))return true;
+    return Number.isFinite(Number(reviewKey))&&Number(item?.day)===Number(reviewKey);
+  });
   if(index<0) return {ok:false,reason:'review_not_found',progress:next};
   const item=next.retentionDue[index];
   const dueAt=new Date(item.dueAt||0).getTime();
@@ -256,6 +260,7 @@ export function completeRetentionReview(lesson,progress,day,{response='',verifie
   if(!verified&&!responseIsSubstantive(response)) return {ok:false,reason:'response_required',progress:next};
   const completed={
     ...item,
+    id:item.id||('scheduled-'+Number(item.day||0)),
     status:'completed',
     completedAt:now.toISOString(),
     response:responseIsSubstantive(response)?response.trim():'',
@@ -266,13 +271,33 @@ export function completeRetentionReview(lesson,progress,day,{response='',verifie
   next.retentionDue=[...next.retentionDue];
   next.retentionDue[index]=completed;
   next.retentionHistory=[...(next.retentionHistory||[]),{
+    id:completed.id,
     day:Number(item.day||0),dueAt:item.dueAt,completedAt:completed.completedAt,
-    verified:completed.verified,passed:completed.passed,source
+    verified:completed.verified,passed:completed.passed,source,kind:item.kind||'scheduled'
   }];
   if(completed.verified&&typeof completed.passed==='boolean'){
     next.verifiedEvidence.retention={
       status:'verified',score:completed.passed?100:0,source,observedAt:now.toISOString()
     };
+    if(completed.passed===false){
+      const existingRecovery=next.retentionDue.some(entry=>entry?.status!=='completed'&&entry?.kind==='adaptive-recovery');
+      if(!existingRecovery){
+        const criticality=['L5','Expert'].includes(lesson?.level)?'high':'normal';
+        const intervalDays=nextRetentionIntervalDays(next.retentionHistory,criticality);
+        const due=new Date(now);
+        due.setUTCDate(due.getUTCDate()+intervalDays);
+        next.retentionDue.push({
+          id:'recovery-'+now.getTime()+'-'+next.retentionHistory.length,
+          day:intervalDays,
+          intervalDays,
+          evidence:'adaptive-retention-recovery',
+          dueAt:due.toISOString(),
+          status:'pending',
+          kind:'adaptive-recovery',
+          sourceReviewId:completed.id
+        });
+      }
+    }
   }
   next.updatedAt=now.toISOString();
   return {ok:true,reason:null,progress:refreshMastery(lesson,next,now)};
@@ -373,9 +398,10 @@ export function buildRetentionSchedule(lesson,completedAt){
   const retention=(lesson.sections||[]).find(section=>section.layer==='retention');
   const schedule=retention?.schedule||[];
   return schedule.map(item=>{
+    const day=Number(item.day||0);
     const due=new Date(origin);
-    due.setUTCDate(due.getUTCDate()+Number(item.day||0));
-    return {day:Number(item.day||0),evidence:item.evidence||'',dueAt:due.toISOString(),status:'pending'};
+    due.setUTCDate(due.getUTCDate()+day);
+    return {id:'scheduled-'+day,day,evidence:item.evidence||'',dueAt:due.toISOString(),status:'pending',kind:'scheduled'};
   });
 }
 

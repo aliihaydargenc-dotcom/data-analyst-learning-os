@@ -70,6 +70,8 @@ assert.equal(progress.mastery.state,'mastered');
 
 const schedule=buildRetentionSchedule(lesson,'2026-09-21T12:00:00.000Z');
 assert.equal(schedule[0].dueAt,'2026-09-22T12:00:00.000Z');
+assert.equal(schedule[0].id,'scheduled-1');
+assert.equal(schedule[0].kind,'scheduled');
 assert.equal(schedule[2].dueAt,'2026-10-21T12:00:00.000Z');
 
 for(const dimension of ['knowledge','interpretation','production','transfer']){
@@ -209,5 +211,44 @@ assert.deepEqual(weakProgress.mastery.remediation.targets.map(item=>item.dimensi
 weakProgress=recordVerifiedEvidence(lesson,weakProgress,'transfer',100,'unit-test',now);
 assert.equal(weakProgress.mastery.state,'mastered');
 assert.equal(weakProgress.mastery.remediation,null);
+
+// Failed verified retention creates a spaced adaptive recovery checkpoint and can recover mastery.
+const retentionLesson=JSON.parse(fs.readFileSync('content/lessons/sql.model-quality.001.json','utf8'));
+let retentionProgress=createLessonProgress(retentionLesson,now);
+retentionProgress.completedAt=now.toISOString();
+retentionProgress.retentionDue=[{
+  id:'scheduled-1',day:1,evidence:'quality-retrieval',
+  dueAt:now.toISOString(),status:'pending',kind:'scheduled'
+}];
+for(const dimension of ['knowledge','interpretation','production','transfer']){
+  retentionProgress=recordVerifiedEvidence(retentionLesson,retentionProgress,dimension,100,'unit-test',now);
+}
+const failedRetention=completeRetentionReview(
+  retentionLesson,retentionProgress,'scheduled-1',
+  {verified:true,passed:false,source:'semantic-lab:test'},
+  now
+);
+assert.equal(failedRetention.ok,true);
+retentionProgress=failedRetention.progress;
+assert.equal(retentionProgress.verifiedEvidence.retention.score,0);
+assert.equal(retentionProgress.mastery.state,'needs_review');
+assert.equal(retentionProgress.mastery.remediation.mode,'retention-retrieval');
+const recovery=retentionProgress.retentionDue.find(item=>item.kind==='adaptive-recovery'&&item.status==='pending');
+assert.ok(recovery);
+assert.equal(recovery.intervalDays,1);
+assert.equal(recovery.dueAt,'2026-09-22T12:00:00.000Z');
+const recoveryDue=new Date(recovery.dueAt);
+retentionProgress=normalizeLessonProgress(retentionLesson,retentionProgress,recoveryDue);
+assert.equal(retentionProgress.mastery.state,'retention_due');
+const passedRecovery=completeRetentionReview(
+  retentionLesson,retentionProgress,recovery.id,
+  {verified:true,passed:true,source:'semantic-lab:test-recovery'},
+  recoveryDue
+);
+assert.equal(passedRecovery.ok,true);
+retentionProgress=passedRecovery.progress;
+assert.equal(retentionProgress.verifiedEvidence.retention.score,100);
+assert.equal(retentionProgress.mastery.state,'mastered');
+assert.equal(retentionProgress.retentionDue.filter(item=>item.kind==='adaptive-recovery'&&item.status==='pending').length,0);
 
 console.log('lesson runtime tests: PASS');
