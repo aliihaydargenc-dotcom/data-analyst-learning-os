@@ -8,7 +8,7 @@
     "test:mastery": "node tests/mastery.test.mjs",
     "test:learning-home": "node tests/learning-home.test.mjs",
     "validate:academy": "node scripts/validate-academy.mjs",
-    "test": "npm run test:core && npm run test:mastery && npm run test:mastery-assessment && npm run test:advanced-mastery && npm run test:learning-home && npm run test:lesson-runtime && npm run test:sql-evaluator && npm run test:python-lab && npm run test:excel-case-lab && npm run test:html-lab && npm run test:english-case-lab && npm run validate:academy && npm run validate:screening && npm run validate:lessons",
+    "test": "npm run test:core && npm run test:mastery && npm run test:mastery-assessment && npm run test:advanced-mastery && npm run test:targeted-remediation && npm run test:learning-home && npm run test:lesson-runtime && npm run test:sql-evaluator && npm run test:python-lab && npm run test:excel-case-lab && npm run test:html-lab && npm run test:english-case-lab && npm run validate:academy && npm run validate:screening && npm run validate:lessons",
     "test:browser": "node tests/browser-smoke.mjs",
     "validate:screening": "node scripts/validate-screening.mjs",
     "test:lesson-runtime": "node tests/lesson-runtime.test.mjs",
@@ -19,7 +19,8 @@
     "test:html-lab": "node tests/html-lab-config.test.mjs",
     "test:english-case-lab": "node tests/english-case-lab-config.test.mjs",
     "test:mastery-assessment": "node tests/mastery-assessment.test.mjs",
-    "test:advanced-mastery": "node tests/advanced-mastery.test.mjs"
+    "test:advanced-mastery": "node tests/advanced-mastery.test.mjs",
+    "test:targeted-remediation": "node tests/targeted-remediation.test.mjs"
   },
   "devDependencies": {
     "playwright": "1.63.0"

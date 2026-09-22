@@ -934,7 +934,8 @@ ORDER BY OPTION_ID;`);
   assert.match(await page.locator('#retentionList').textContent(),/Kurtarma tekrarı/);
   await page.locator('[data-remediation-open="transfer"]').click();
   await page.locator('[data-assessment-dimension="transfer"]').waitFor({state:'visible'});
-  assert.equal(await page.locator('[data-assessment-dimension="transfer"]').evaluate(element=>element.classList.contains('remediation-focus')),true);
+  assert.equal(await page.locator('#masteryAssessment [data-assessment-dimension]').count(),1);
+  assert.equal(await page.locator('#masteryAssessment [data-assessment-dimension]').getAttribute('data-assessment-dimension'),'transfer');
 
   assert.deepEqual(pageErrors,[]);
   assert.deepEqual(consoleErrors,[]);

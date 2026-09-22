@@ -1,14 +1,14 @@
 import {
   createLessonProgress,normalizeLessonProgress,completeSection,completionPercent,
   sectionNeedsResponse,saveEvidenceDraft,recordLabAttempt,recordCaseLabAttempt,recordPythonLabAttempt,recordHtmlLabAttempt,labPassed,
-  completeRetentionReview,lessonLabId,recordMasteryAssessment,recordAdvancedMasteryChallenge
+  completeRetentionReview,lessonLabId,recordMasteryAssessment,recordAdvancedMasteryChallenge,recordTargetedMasteryAssessment,recordTargetedAdvancedMasteryChallenge
 } from './lesson-runtime.mjs';
 import {buildMasteryAssessment} from './mastery-assessment.mjs';
 import {buildAdvancedMasteryChallenge} from './advanced-mastery.mjs';
 
 const $=selector=>document.querySelector(selector);
 const params=new URLSearchParams(location.search);
-const state={lang:'tr',catalog:null,entry:null,lesson:null,sources:null,progress:null,sectionIndex:0};
+const state={lang:'tr',catalog:null,entry:null,lesson:null,sources:null,progress:null,sectionIndex:0,remediationAssessmentDimensions:null,remediationAdvancedGates:null};
 let sqlLabModulePromise=null;
 let pythonLabModulePromise=null;
 let htmlLabModulePromise=null;
@@ -415,7 +415,7 @@ function renderMasteryAssessment(){
   const root=$('#masteryAssessment');
   if(!root)return;
   const l=labels[state.lang];
-  const assessment=buildMasteryAssessment(state.lesson);
+  const assessment=buildMasteryAssessment(state.lesson,state.remediationAssessmentDimensions);
   const latest=state.progress.assessmentHistory?.at(-1)||null;
   if(!state.progress.completedAt){
     root.innerHTML=`<div class="assessment-head"><div><span class="eyebrow">VERIFIED MULTIDIMENSIONAL EVIDENCE</span><h3>${escapeHtml(l.assessmentTitle)}</h3><p>${escapeHtml(l.assessmentIntro)}</p></div></div><div class="assessment-lock">${escapeHtml(l.assessmentLocked)}</div>`;
@@ -440,7 +440,9 @@ function renderMasteryAssessment(){
         if(selected)answers[item.id]=selected.value;
       }
     }
-    const result=recordMasteryAssessment(state.lesson,state.progress,answers);
+    const result=state.remediationAssessmentDimensions?.length
+      ?recordTargetedMasteryAssessment(state.lesson,state.progress,state.remediationAssessmentDimensions,answers)
+      :recordMasteryAssessment(state.lesson,state.progress,answers);
     if(result.reason==='invalid_assessment'){
       $('#masteryAssessmentFeedback').textContent=l.assessmentMissing;
       $('#masteryAssessmentFeedback').style.color='var(--red)';
@@ -452,6 +454,7 @@ function renderMasteryAssessment(){
       return;
     }
     state.progress=result.progress;
+    state.remediationAssessmentDimensions=null;
     persistProgress();
     renderEvidence();
     renderRetention();
@@ -464,7 +467,7 @@ function renderAdvancedMastery(){
   const root=$('#advancedMastery');
   if(!root)return;
   const l=labels[state.lang];
-  const challenge=buildAdvancedMasteryChallenge(state.lesson);
+  const challenge=buildAdvancedMasteryChallenge(state.lesson,state.remediationAdvancedGates);
   if(challenge.gates.length===0){
     root.classList.add('hidden');
     root.innerHTML='';
@@ -497,13 +500,16 @@ function renderAdvancedMastery(){
         if(selected)answers[item.id]=selected.value;
       }
     }
-    const result=recordAdvancedMasteryChallenge(state.lesson,state.progress,answers);
+    const result=state.remediationAdvancedGates?.length
+      ?recordTargetedAdvancedMasteryChallenge(state.lesson,state.progress,state.remediationAdvancedGates,answers)
+      :recordAdvancedMasteryChallenge(state.lesson,state.progress,answers);
     if(!result.ok){
       $('#advancedMasteryFeedback').textContent=result.reason==='lesson_incomplete'?l.advancedLocked:l.advancedMissing;
       $('#advancedMasteryFeedback').style.color='var(--red)';
       return;
     }
     state.progress=result.progress;
+    state.remediationAdvancedGates=null;
     persistProgress();
     renderEvidence();
     renderRetention();
@@ -554,7 +560,21 @@ function renderRemediation(){
       return '<article class="remediation-target" data-remediation-dimension="'+escapeHtml(target.dimension)+'"><div><strong>'+escapeHtml(target.dimension)+'</strong><small>'+escapeHtml(l.remediationActual)+': '+escapeHtml(actual)+' · '+escapeHtml(l.remediationRequired)+': '+escapeHtml(required)+'</small></div><button class="secondary" data-remediation-open="'+escapeHtml(target.dimension)+'">'+escapeHtml(l.remediationOpen)+'</button></article>';
     }).join('')+'</div>';
   root.querySelectorAll('[data-remediation-open]').forEach(button=>button.addEventListener('click',()=>{
-    const target=remediationTargetElement(button.dataset.remediationOpen);
+    const dimension=button.dataset.remediationOpen;
+    if(['knowledge','interpretation','transfer'].includes(dimension)||(dimension==='production'&&!lessonLabId(state.lesson))){
+      state.remediationAssessmentDimensions=[dimension];
+      renderMasteryAssessment();
+      $('#masteryAssessment')?.scrollIntoView({behavior:'smooth',block:'start'});
+      return;
+    }
+    const gate=dimension==='rubricMin'?'rubric':dimension==='capstone'?'capstone':dimension==='architectureReview'?'architectureReview':null;
+    if(gate){
+      state.remediationAdvancedGates=[gate];
+      renderAdvancedMastery();
+      $('#advancedMastery')?.scrollIntoView({behavior:'smooth',block:'start'});
+      return;
+    }
+    const target=remediationTargetElement(dimension);
     if(!target)return;
     document.querySelectorAll('.remediation-focus').forEach(element=>element.classList.remove('remediation-focus'));
     target.classList.add('remediation-focus');

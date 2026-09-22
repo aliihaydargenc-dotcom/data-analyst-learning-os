@@ -209,6 +209,41 @@ export function recordMasteryAssessment(lesson,progress,answers={},now=new Date(
   return {ok:true,reason:null,progress:refreshMastery(lesson,next,now),evaluation};
 }
 
+export function recordTargetedMasteryAssessment(lesson,progress,dimensions=[],answers={},now=new Date()){
+  const next=normalizeLessonProgress(lesson,progress,now);
+  if(!next.completedAt) return {ok:false,reason:'lesson_incomplete',progress:next,evaluation:null};
+  const allowed=['knowledge','interpretation','transfer',...(!hasSemanticProductionLab(lesson)?['production']:[])];
+  const requested=(dimensions||[]).filter(Boolean);
+  const targets=[...new Set(requested.filter(dimension=>allowed.includes(dimension)))];
+  if(!targets.length||targets.length!==requested.length){
+    return {ok:false,reason:'invalid_assessment_scope',progress:next,evaluation:null};
+  }
+  const evaluation=evaluateMasteryAssessment(lesson,answers,targets);
+  if(!evaluation||evaluation.lessonId!==lesson.id||evaluation.version!==MASTERY_ASSESSMENT_VERSION||evaluation.complete!==true){
+    return {ok:false,reason:'invalid_assessment',progress:next,evaluation};
+  }
+  for(const dimension of targets){
+    const result=evaluation.dimensions?.[dimension];
+    if(!result||!validScore(result.score)||!Number.isInteger(result.total)||result.total<1||result.answered!==result.total){
+      return {ok:false,reason:'invalid_assessment',progress:next,evaluation};
+    }
+    next.verifiedEvidence[dimension]={
+      status:'verified',score:result.score,source:'mastery-remediation-v1',
+      observedAt:now.toISOString(),correct:result.correct,total:result.total
+    };
+  }
+  next.assessmentHistory=[...(next.assessmentHistory||[]),{
+    version:evaluation.version,completedAt:now.toISOString(),scope:targets,remediation:true,
+    dimensions:Object.fromEntries(targets.map(dimension=>[dimension,{
+      score:evaluation.dimensions[dimension].score,
+      correct:evaluation.dimensions[dimension].correct,
+      total:evaluation.dimensions[dimension].total
+    }]))
+  }].slice(-20);
+  next.updatedAt=now.toISOString();
+  return {ok:true,reason:null,progress:refreshMastery(lesson,next,now),evaluation};
+}
+
 export function recordAdvancedMasteryChallenge(lesson,progress,answers={},now=new Date()){
   const next=normalizeLessonProgress(lesson,progress,now);
   if(!next.completedAt) return {ok:false,reason:'lesson_incomplete',progress:next,evaluation:null};
@@ -241,6 +276,42 @@ export function recordAdvancedMasteryChallenge(lesson,progress,answers={},now=ne
       const key=gate==='rubric'?'rubricMin':gate==='capstone'?'capstone':'architectureReview';
       return [key,evaluation.inputs[key]];
     }))
+  }].slice(-20);
+  next.updatedAt=now.toISOString();
+  return {ok:true,reason:null,progress:refreshMastery(lesson,next,now),evaluation};
+}
+
+export function recordTargetedAdvancedMasteryChallenge(lesson,progress,gates=[],answers={},now=new Date()){
+  const next=normalizeLessonProgress(lesson,progress,now);
+  if(!next.completedAt) return {ok:false,reason:'lesson_incomplete',progress:next,evaluation:null};
+  const allowed=advancedRequirementsForLevel(lesson?.level);
+  const requested=(gates||[]).filter(Boolean);
+  const targets=[...new Set(requested.filter(gate=>allowed.includes(gate)))];
+  if(!targets.length||targets.length!==requested.length){
+    return {ok:false,reason:'invalid_advanced_scope',progress:next,evaluation:null};
+  }
+  const evaluation=evaluateAdvancedMasteryChallenge(lesson,answers,targets);
+  if(!evaluation||evaluation.lessonId!==lesson.id||evaluation.version!==ADVANCED_MASTERY_VERSION||evaluation.complete!==true){
+    return {ok:false,reason:'invalid_advanced_assessment',progress:next,evaluation};
+  }
+  if(targets.includes('rubric')){
+    const value=evaluation.inputs?.rubricMin;
+    if(!(typeof value==='number'&&value>=1&&value<=5))return {ok:false,reason:'invalid_advanced_assessment',progress:next,evaluation};
+    next.masteryInputs.rubricMin=value;
+  }
+  if(targets.includes('capstone')){
+    const value=evaluation.inputs?.capstone;
+    if(!validScore(value))return {ok:false,reason:'invalid_advanced_assessment',progress:next,evaluation};
+    next.masteryInputs.capstone=value;
+  }
+  if(targets.includes('architectureReview')){
+    const value=evaluation.inputs?.architectureReview;
+    if(typeof value!=='boolean')return {ok:false,reason:'invalid_advanced_assessment',progress:next,evaluation};
+    next.masteryInputs.architectureReview=value;
+  }
+  next.advancedHistory=[...(next.advancedHistory||[]),{
+    version:evaluation.version,completedAt:now.toISOString(),scope:targets,remediation:true,
+    results:evaluation.results,inputs:evaluation.inputs
   }].slice(-20);
   next.updatedAt=now.toISOString();
   return {ok:true,reason:null,progress:refreshMastery(lesson,next,now),evaluation};
