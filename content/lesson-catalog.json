@@ -1,5 +1,5 @@
 {
-  "version": "1.4.0",
+  "version": "1.5.0",
   "production_lessons": [
     {
       "id": "sql.relational-thinking.001",
@@ -600,6 +600,126 @@
       "path": "content/lessons/html.accessibility-peer-review.001.json",
       "status": "production-candidate",
       "runtime": "lesson.html?id=html.accessibility-peer-review.001"
+    },
+    {
+      "id": "english.core-vocabulary.001",
+      "module_id": "english.core-vocabulary",
+      "track": "english",
+      "level": "L1",
+      "order": 61,
+      "path": "content/lessons/english.core-vocabulary.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=english.core-vocabulary.001"
+    },
+    {
+      "id": "english.task-reading.001",
+      "module_id": "english.task-reading",
+      "track": "english",
+      "level": "L1",
+      "order": 62,
+      "path": "content/lessons/english.task-reading.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=english.task-reading.001"
+    },
+    {
+      "id": "english.docs-errors.001",
+      "module_id": "english.docs-errors",
+      "track": "english",
+      "level": "L2",
+      "order": 63,
+      "path": "content/lessons/english.docs-errors.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=english.docs-errors.001"
+    },
+    {
+      "id": "english.requirement-clarification.001",
+      "module_id": "english.requirement-clarification",
+      "track": "english",
+      "level": "L2",
+      "order": 64,
+      "path": "content/lessons/english.requirement-clarification.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=english.requirement-clarification.001"
+    },
+    {
+      "id": "english.insight-writing.001",
+      "module_id": "english.insight-writing",
+      "track": "english",
+      "level": "L3",
+      "order": 65,
+      "path": "content/lessons/english.insight-writing.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=english.insight-writing.001"
+    },
+    {
+      "id": "english.issue-pr-writing.001",
+      "module_id": "english.issue-pr-writing",
+      "track": "english",
+      "level": "L3",
+      "order": 66,
+      "path": "content/lessons/english.issue-pr-writing.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=english.issue-pr-writing.001"
+    },
+    {
+      "id": "english.root-cause-memo.001",
+      "module_id": "english.root-cause-memo",
+      "track": "english",
+      "level": "L4",
+      "order": 67,
+      "path": "content/lessons/english.root-cause-memo.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=english.root-cause-memo.001"
+    },
+    {
+      "id": "english.stakeholder-explanation.001",
+      "module_id": "english.stakeholder-explanation",
+      "track": "english",
+      "level": "L4",
+      "order": 68,
+      "path": "content/lessons/english.stakeholder-explanation.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=english.stakeholder-explanation.001"
+    },
+    {
+      "id": "english.design-review.001",
+      "module_id": "english.design-review",
+      "track": "english",
+      "level": "L5",
+      "order": 69,
+      "path": "content/lessons/english.design-review.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=english.design-review.001"
+    },
+    {
+      "id": "english.executive-briefing.001",
+      "module_id": "english.executive-briefing",
+      "track": "english",
+      "level": "L5",
+      "order": 70,
+      "path": "content/lessons/english.executive-briefing.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=english.executive-briefing.001"
+    },
+    {
+      "id": "english.architecture-defense.001",
+      "module_id": "english.architecture-defense",
+      "track": "english",
+      "level": "Expert",
+      "order": 71,
+      "path": "content/lessons/english.architecture-defense.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=english.architecture-defense.001"
+    },
+    {
+      "id": "english.source-synthesis.001",
+      "module_id": "english.source-synthesis",
+      "track": "english",
+      "level": "Expert",
+      "order": 72,
+      "path": "content/lessons/english.source-synthesis.001.json",
+      "status": "production-candidate",
+      "runtime": "lesson.html?id=english.source-synthesis.001"
     }
   ]
 }
