@@ -28,7 +28,7 @@ assert.ok(brokenResult.errors.includes('layer:transfer'));
 const now=new Date('2026-09-21T12:00:00.000Z');
 let progress=createLessonProgress(lesson,now);
 assert.equal(progress.lessonId,lesson.id);
-assert.equal(progress.version,5);
+assert.equal(progress.version,6);
 assert.deepEqual(progress.labEvidence,{});
 assert.deepEqual(progress.verifiedEvidence,{});
 assert.equal(progress.mastery.state,'learning');
@@ -67,6 +67,9 @@ assert.equal(progress.verifiedEvidence.interpretation.score,100);
 assert.equal(progress.verifiedEvidence.production.score,100);
 assert.equal(progress.verifiedEvidence.transfer.score,100);
 assert.equal(progress.mastery.state,'mastered');
+assert.equal(progress.masteryHistory.at(-1).transition.to,'mastered');
+assert.equal(progress.masteryHistory.at(-1).evidence.knowledge.source,'mastery-assessment-v1');
+assert.equal(progress.masteryHistory.at(-1).decision.passed,true);
 
 const schedule=buildRetentionSchedule(lesson,'2026-09-21T12:00:00.000Z');
 assert.equal(schedule[0].dueAt,'2026-09-22T12:00:00.000Z');
