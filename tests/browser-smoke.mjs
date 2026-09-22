@@ -20,7 +20,8 @@ try{
   assert.equal(await page.locator('#courseGrid [data-track="sql"] .course-lesson').count(),12);
   assert.match(await page.locator('#continueLearning').getAttribute('href'),/sql\.relational-thinking\.001/);
   assert.match(await page.locator('#learningStats').textContent(),/0\/72/);
-  assert.match(await page.locator('#learningStats').textContent(),/Değerlendirilmedi/);
+  assert.match(await page.locator('#learningStats').textContent(),/Başlanmadı/);
+  assert.doesNotMatch(await page.locator('#learningStats').textContent(),/Değerlendirilmedi/);
 
   await page.setViewportSize({width:390,height:844});
   const learningHomeMobile=await page.evaluate(()=>({
