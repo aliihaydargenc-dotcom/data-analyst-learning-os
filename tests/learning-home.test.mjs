@@ -62,3 +62,24 @@ assert.equal(snapshot.masteredTracks,1);
 assert.equal(snapshot.trackMasteryStates.mastered,1);
 
 console.log('learning home: PASS');
+
+
+const objectiveStorage=new MemoryStorage({
+  'da-learning-os:lesson:sql.one.001':JSON.stringify({
+    lessonId:'sql.one.001',startedAt:'2026-09-22T05:00:00Z',updatedAt:'2026-09-22T05:30:00Z',
+    verifiedEvidence:{
+      knowledge:{score:90,source:'mastery-assessment-v1'},
+      interpretation:{score:70,source:'mastery-assessment-v1'},
+      production:{score:90,source:'semantic-sql-lab'},
+      transfer:{score:60,source:'mastery-assessment-v1'}
+    },
+    mastery:{evaluated:true,passed:false,state:'needs_review'}
+  })
+});
+snapshot=buildLearningSnapshot({catalog,curriculum,storage:objectiveStorage,now:new Date('2026-09-22T06:00:00Z')});
+const objectiveSql=snapshot.tracks.find(track=>track.id==='sql');
+assert.equal(objectiveSql.objectiveAnalytics.evaluatedCount,4);
+assert.equal(objectiveSql.objectiveAnalytics.weakCount,2);
+assert.deepEqual(objectiveSql.objectiveTargets.map(item=>item.dimension),['transfer','interpretation']);
+assert.equal(snapshot.objectiveAnalytics.total,12);
+assert.deepEqual(snapshot.diagnosticTargets.map(item=>item.dimension),['transfer','interpretation']);
