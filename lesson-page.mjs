@@ -89,9 +89,8 @@ function localText(obj,key){
 }
 
 function configureResponsiveLessonUi(){
-  const compact=window.matchMedia('(max-width:700px)').matches;
   document.querySelectorAll('.lesson-context-card').forEach(card=>{
-    if(card instanceof HTMLDetailsElement) card.open=!compact;
+    if(card instanceof HTMLDetailsElement) card.open=false;
   });
 }
 
