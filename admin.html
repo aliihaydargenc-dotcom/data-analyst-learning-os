@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="tr">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Kullanıcı Yönetimi · Data Analyst Learning OS</title><link rel="stylesheet" href="/auth.css"></head>
+<body>
+  <main class="admin-shell">
+    <header class="admin-top"><div><small>DATA ANALYST LEARNING OS</small><h1>Kullanıcı Yönetimi</h1></div><div><a class="auth-secondary" href="/">Çalışma alanı</a> <button class="auth-secondary" data-logout type="button">Çıkış</button></div></header>
+    <div class="auth-alert error" data-alert hidden></div>
+    <section class="admin-grid">
+      <article class="admin-panel"><h2>Yeni kullanıcı davet et</h2><form class="auth-form" data-invite><label>Ad soyad<input name="full_name" required></label><label>E-posta<input name="email" type="email" required></label><label>Rol<select name="role"><option value="user">Kullanıcı</option><option value="admin">Admin</option></select></label><button class="auth-button" type="submit">Davet Gönder</button></form></article>
+      <article class="admin-panel"><h2>Kullanıcılar</h2><div class="admin-list" data-list></div></article>
+    </section>
+  </main>
+  <script type="module">
+    import {createClient} from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+    const supabase=createClient("https://mudlekwkoxbkkauxberv.supabase.co","sb_publishable_gwyoygp8B-OBdXrLXbc6ZA_MGk9rvWx",{auth:{persistSession:true,autoRefreshToken:true}});
+    const list=document.querySelector("[data-list]"),form=document.querySelector("[data-invite]"),alertBox=document.querySelector("[data-alert]");
+    function show(message,type="error"){alertBox.hidden=false;alertBox.className="auth-alert "+type;alertBox.textContent=message}
+    const {data:{session}}=await supabase.auth.getSession();
+    if(!session)location.replace("/giris?returnTo=%2Fadmin");
+    const {data:me}=await supabase.from("profiles").select("active,role").eq("id",session.user.id).maybeSingle();
+    if(!me?.active||me.role!=="admin")location.replace("/giris?hata="+encodeURIComponent("Yönetici yetkisi gerekli."));
+    async function load(){
+      const {data,error}=await supabase.from("profiles").select("id,email,full_name,role,active,created_at").order("created_at",{ascending:true});
+      if(error){show("Kullanıcı listesi yüklenemedi.");return}
+      list.innerHTML="";
+      for(const user of data||[]){
+        const row=document.createElement("div");row.className="admin-user";row.dataset.id=user.id;
+        row.innerHTML='<div><strong></strong><small></small></div><select data-role><option value="user">Kullanıcı</option><option value="admin">Admin</option></select><label class="admin-state"><input data-active type="checkbox"> Aktif</label><button type="button" data-save>Kaydet</button>';
+        row.querySelector("strong").textContent=user.full_name||user.email||"Kullanıcı";row.querySelector("small").textContent=user.email||"";row.querySelector("[data-role]").value=user.role;row.querySelector("[data-active]").checked=Boolean(user.active);
+        row.querySelector("[data-save]").addEventListener("click",async()=>{const button=row.querySelector("[data-save]");button.disabled=true;const {error}=await supabase.rpc("admin_set_user_access",{p_user_id:user.id,p_active:row.querySelector("[data-active]").checked,p_role:row.querySelector("[data-role]").value});button.disabled=false;if(error){show(error.message||"Yetki güncellenemedi.");return}show("Kullanıcı yetkileri güncellendi.","success");await load()});
+        list.append(row);
+      }
+    }
+    form.addEventListener("submit",async e=>{e.preventDefault();const button=form.querySelector("button"),fd=new FormData(form);button.disabled=true;const {data,error}=await supabase.functions.invoke("invite-learning-user",{body:{email:String(fd.get("email")||"").trim().toLowerCase(),fullName:String(fd.get("full_name")||"").trim(),role:String(fd.get("role")||"user")}});button.disabled=false;if(error||data?.error){show(data?.error||"Davet gönderilemedi.");return}form.reset();show(data.email+" adresine davet gönderildi.","success");await load()});
+    document.querySelector("[data-logout]").addEventListener("click",async()=>{await supabase.auth.signOut();location.replace("/giris")});
+    await load();
+  </script>
+</body></html>

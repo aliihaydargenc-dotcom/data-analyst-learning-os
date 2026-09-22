@@ -243,3 +243,27 @@ html{scroll-padding-top:100px}button,input,textarea{accent-color:var(--blue)}
  .home-page .daily-challenge-action{justify-items:stretch;min-width:0}
  .home-page .daily-challenge-action a{width:100%}
 }
+
+
+/* Auth gate + compact account controls */
+.auth-booting > .shell,
+.auth-booting > .lesson-topbar,
+.auth-booting > .lesson-main{visibility:hidden}
+body.auth-booting::before{content:"";position:fixed;inset:0;z-index:9998;background:#f7f9fc}
+body.auth-booting::after{content:"Hesap yükleniyor…";position:fixed;left:50%;top:50%;z-index:9999;transform:translate(-50%,-50%);padding:13px 17px;border:1px solid var(--line);border-radius:14px;background:#fff;color:var(--text);box-shadow:0 14px 40px rgba(25,43,67,.12);font-size:14px;font-weight:650}
+.account-area{margin-left:auto;display:flex;align-items:center;gap:8px;min-width:0}
+.account-summary{display:grid;line-height:1.15;min-width:0}
+.account-summary strong{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.account-summary small{margin-top:3px;color:var(--muted);font-size:10px}
+.account-admin-link,.account-logout{min-height:34px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--text);font-size:11px;text-decoration:none;cursor:pointer}
+.account-admin-link:hover,.account-logout:hover{background:var(--panel-2)}
+.lesson-top-actions .account-area{margin-left:0}
+.home-page .skill-dimension small,.home-page .skill-topic small{font-size:11px}
+.home-page .skill-matrix-section,.home-page .case-study-section{padding-top:36px}
+@media(max-width:900px){.home-page .sidebar .account-area{margin-left:auto}.account-summary{display:none}}
+@media(max-width:680px){
+  .home-page .sidebar .account-area{order:2;margin-left:auto}
+  .home-page .sidebar .ghost{order:2;margin-left:0}
+  .account-admin-link{display:none}
+  .account-logout{min-height:36px}
+}
