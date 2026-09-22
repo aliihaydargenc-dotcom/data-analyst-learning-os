@@ -17,6 +17,7 @@ try{
 
   await page.locator('#learningContinue .continue-card').waitFor({state:'visible'});
   assert.equal(await page.locator('#courseGrid .course-card').count(),6);
+  assert.equal(await page.locator('#skillMatrixGrid .skill-matrix-card').count(),6);
   assert.equal(await page.locator('#courseGrid [data-track="sql"] .course-lesson').count(),12);
   assert.match(await page.locator('#continueLearning').getAttribute('href'),/sql\.relational-thinking\.001/);
   assert.match(await page.locator('#learningStats').textContent(),/0\/72/);
@@ -45,6 +46,8 @@ try{
   await page.locator('#objectiveFocus').waitFor({state:'visible'});
   assert.equal(await page.locator('#objectiveFocus .objective-focus-item').count(),2);
   assert.match(await page.locator('#objectiveFocus .objective-focus-item').first().getAttribute('href'),/focus=interpretation/);
+  assert.match(await page.locator('#skillMatrixGrid [data-skill-track="sql"]').textContent(),/90%/);
+  assert.match(await page.locator('#skillMatrixGrid [data-skill-track="sql"] .skill-matrix-foot a').getAttribute('href'),/focus=interpretation/);
   await page.evaluate(()=>localStorage.clear());
   await page.reload({waitUntil:'domcontentloaded'});
   await page.locator('#learningContinue .continue-card').waitFor({state:'visible'});
