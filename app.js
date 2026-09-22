@@ -408,7 +408,7 @@ $('#runSql').addEventListener('click',executeSql);
 $('#resetSql').addEventListener('click',resetSqlChallenge);
 $('#sqlHint').addEventListener('click',revealSqlHint);
 $('#nextSqlChallenge').addEventListener('click',nextSqlChallenge);
-$('#caseOpenLab').addEventListener('click',()=>{state.sqlChallengeIndex=2;state.sqlHintStep=state.hintSteps[currentSqlChallenge().id]||0;resetSqlChallenge();});
+$('#caseOpenLab').addEventListener('click',()=>{$('#sql-lab').open=true;state.sqlChallengeIndex=2;state.sqlHintStep=state.hintSteps[currentSqlChallenge().id]||0;resetSqlChallenge();});
 $('#saveCaseStudy').addEventListener('click',saveCaseStudy);
 
 async function init(){
