@@ -165,21 +165,31 @@ function transferItems(lesson){
 export function hasSemanticProductionLab(lesson){
   return Boolean(lesson?.lab?.id||lesson?.case_lab?.id||lesson?.python_lab?.id||lesson?.html_lab?.id);
 }
-export function buildMasteryAssessment(lesson){
-  if(!lesson?.id)throw new Error('Mastery assessment requires a lesson id');
-  const dimensions=[
+function allAssessmentDimensions(lesson){
+  return [
     {dimension:'knowledge',items:knowledgeItems(lesson)},
     {dimension:'interpretation',items:interpretationItems(lesson)},
     ...(!hasSemanticProductionLab(lesson)?[{dimension:'production',items:productionItems(lesson)}]:[]),
     {dimension:'transfer',items:transferItems(lesson)}
   ];
+}
+export function buildMasteryAssessment(lesson,requestedDimensions=null){
+  if(!lesson?.id)throw new Error('Mastery assessment requires a lesson id');
+  const all=allAssessmentDimensions(lesson);
+  const allowed=new Set(all.map(group=>group.dimension));
+  const requested=Array.isArray(requestedDimensions)&&requestedDimensions.length?[...new Set(requestedDimensions)]:null;
+  if(requested){
+    const invalid=requested.filter(dimension=>!allowed.has(dimension));
+    if(invalid.length)throw new Error(`Unsupported mastery assessment dimensions for ${lesson.id}: ${invalid.join(',')}`);
+  }
+  const dimensions=requested?all.filter(group=>requested.includes(group.dimension)):all;
   for(const dimension of dimensions){
     if(!dimension.items.length)throw new Error(`No mastery assessment items for ${lesson.id}:${dimension.dimension}`);
   }
-  return {version:MASTERY_ASSESSMENT_VERSION,lessonId:lesson.id,dimensions};
+  return {version:MASTERY_ASSESSMENT_VERSION,lessonId:lesson.id,dimensions,scope:requested||all.map(group=>group.dimension)};
 }
-export function evaluateMasteryAssessment(lesson,answers={}){
-  const assessment=buildMasteryAssessment(lesson);
+export function evaluateMasteryAssessment(lesson,answers={},requestedDimensions=null){
+  const assessment=buildMasteryAssessment(lesson,requestedDimensions);
   let complete=true;
   const dimensions={},items=[];
   for(const group of assessment.dimensions){
@@ -198,5 +208,5 @@ export function evaluateMasteryAssessment(lesson,answers={}){
       correct,total,answered
     };
   }
-  return {version:assessment.version,lessonId:assessment.lessonId,complete,dimensions,items};
+  return {version:assessment.version,lessonId:assessment.lessonId,complete,dimensions,items,scope:assessment.scope};
 }

@@ -137,17 +137,23 @@ export function advancedRequirementsForLevel(level){
   if(level==='Expert')return ['rubric','capstone','architectureReview'];
   return [];
 }
-export function buildAdvancedMasteryChallenge(lesson){
+export function buildAdvancedMasteryChallenge(lesson,requestedGates=null){
   const required=advancedRequirementsForLevel(lesson?.level);
-  if(required.length===0)return {version:ADVANCED_MASTERY_VERSION,lessonId:lesson?.id||null,level:lesson?.level||null,gates:[]};
+  if(required.length===0)return {version:ADVANCED_MASTERY_VERSION,lessonId:lesson?.id||null,level:lesson?.level||null,gates:[],scope:[]};
   if(!lesson?.id)throw new Error('Advanced mastery challenge requires a lesson id');
+  const requested=Array.isArray(requestedGates)&&requestedGates.length?[...new Set(requestedGates)]:null;
+  if(requested){
+    const invalid=requested.filter(gate=>!required.includes(gate));
+    if(invalid.length)throw new Error('Unsupported advanced mastery gates for '+lesson.id+': '+invalid.join(','));
+  }
   const signals=lessonSignals(lesson);
-  const gates=[rubricGate(lesson,signals)];
-  if(lesson.level==='Expert')gates.push(capstoneGate(lesson,signals),architectureGate(lesson,signals));
-  return {version:ADVANCED_MASTERY_VERSION,lessonId:lesson.id,level:lesson.level,gates};
+  const all=[rubricGate(lesson,signals)];
+  if(lesson.level==='Expert')all.push(capstoneGate(lesson,signals),architectureGate(lesson,signals));
+  const gates=requested?all.filter(gate=>requested.includes(gate.gate)):all;
+  return {version:ADVANCED_MASTERY_VERSION,lessonId:lesson.id,level:lesson.level,gates,scope:requested||required};
 }
-export function evaluateAdvancedMasteryChallenge(lesson,answers={}){
-  const challenge=buildAdvancedMasteryChallenge(lesson);
+export function evaluateAdvancedMasteryChallenge(lesson,answers={},requestedGates=null){
+  const challenge=buildAdvancedMasteryChallenge(lesson,requestedGates);
   let complete=true;
   const results={},items=[];
   for(const gate of challenge.gates){
@@ -170,7 +176,7 @@ export function evaluateAdvancedMasteryChallenge(lesson,answers={}){
     }
   }
   return {
-    version:challenge.version,lessonId:challenge.lessonId,level:challenge.level,complete,results,items,
+    version:challenge.version,lessonId:challenge.lessonId,level:challenge.level,complete,results,items,scope:challenge.scope,
     inputs:{
       ...(results.rubric?{rubricMin:results.rubric.rating}:{}),
       ...(results.capstone?{capstone:results.capstone.score}:{}),
