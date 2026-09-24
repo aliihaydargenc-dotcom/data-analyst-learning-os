@@ -1,11 +1,13 @@
 # Implementation status
 
-## Current package: P1 engagement completion
+## Current package: P2 analyst artifact case expansion
 
-- Streak: derived from verified XP events using the learner's local calendar; a missed day resets the active chain.
-- SQL hints: two progressive hints, then reference solution. A verified SQL answer awards 100 / 80 / 60 / 0 XP based on revealed help; reward is unique per challenge.
-- Case study pilot: hotel revenue decline investigation uses the third SQL challenge, checks result rows and an evidence based interpretation, and saves a written management summary as a draft. The summary is not automatically graded.
-- Mastery remains separate from XP, Level, Streak, and the case study.
+- Revenue-decline case study now stores five separate reviewable evidence layers: verified SQL result, structured KPI definition, generated chart data, evidence-based interpretation, and an executive-summary draft.
+- KPI and chart artifacts are derived directly from the validated SQL result instead of free-text claims.
+- The learner must identify the correct KPI definition and choose the interpretation that distinguishes observed decline from an unproven cause.
+- The executive summary remains a review draft. Presence of a draft is tracked, but the system does not claim that free text has been semantically verified.
+- Case-study XP remains separate from mastery. Saving the evidence package does not award mastery by itself.
+- Existing v1 local case drafts remain loadable; new saves use a versioned v2 payload inside the same storage key.
 
 ## Working rule
 
@@ -13,8 +15,8 @@ Develop related work locally as one package. Run tests once at the package bound
 
 ## Verification
 
-Unit suite: run locally before PR. Browser smoke: CI gate; local Chromium download may be unavailable. Confirm PR and main CI before reporting a fully delivered package.
+Unit suite: run locally before PR when the repository can be materialized. Browser smoke: CI gate. In restricted environments where the repository cannot be cloned, rely on PR CI before merge and main CI after merge.
 
 ## Next
 
-Expand the case study pilot to analyst artifacts with independently reviewable KPI, chart, interpretation, and executive summary evidence. Do not count free text length alone as verified business reasoning.
+Connect the case-study evidence package to a project/portfolio review surface with explicit reviewer status and rubric dimensions. Keep human-reviewed business writing distinct from automatically verified computation.
