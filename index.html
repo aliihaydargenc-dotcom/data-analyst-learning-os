@@ -72,13 +72,27 @@
         <div class="section-title"><h2 id="caseTitle">Vaka çalışması</h2></div>
         <article class="panel case-study-panel">
           <h3 id="caseHeading">Otel gelir düşüşünü incele</h3>
-          <p id="caseIntro">SQL Lab’daki üçüncü görevi çöz. Her otelin en büyük günlük gelir düşüşünü bul, ardından yöneticiye kısa bir bulgu yaz.</p>
+          <p id="caseIntro">SQL Lab’daki üçüncü görevi doğrula; ardından sonuçtan KPI, grafik, yorum ve yönetici özeti kanıtlarını oluştur.</p>
           <a class="secondary" id="caseOpenLab" href="#sql-lab">SQL görevine git</a>
+          <div class="case-artifact-grid">
+            <section class="case-artifact-card" aria-labelledby="caseKpiTitle">
+              <span>KPI</span><h4 id="caseKpiTitle">En büyük günlük gelir düşüşü</h4>
+              <strong id="caseKpiValue">SQL doğrulaması bekleniyor</strong>
+              <small id="caseKpiMeta">Doğrulanmış sorgudan üretilecek.</small>
+            </section>
+            <section class="case-artifact-card" aria-labelledby="caseChartTitle">
+              <span>CHART</span><h4 id="caseChartTitle">Otel bazında en büyük düşüş</h4>
+              <div id="caseChart" class="case-chart" aria-live="polite"><p>SQL doğrulaması bekleniyor.</p></div>
+            </section>
+          </div>
+          <label for="caseKpiDefinition" id="caseKpiLabel">Bu vaka için doğru KPI tanımı hangisi?</label>
+          <select id="caseKpiDefinition"><option value="">Seç</option><option value="largest-revenue-drop">Her otelde günlük gelir değişiminin en negatif olduğu değer</option><option value="highest-daily-revenue">Her oteldeki en yüksek günlük gelir</option></select>
           <label for="caseInterpretation" id="caseInterpretationLabel">Bu veri hangi sonucu destekler?</label>
           <select id="caseInterpretation"><option value="">Seç</option><option value="correlation-not-cause">Düşüşün günü ve tutarı görülebilir; nedeni ek kanıt gerektirir.</option><option value="proven-cause">Düşüşün nedenini yalnız bu sorgu kanıtlar.</option></select>
-          <label for="caseMemo" id="caseMemoLabel">Yönetici özeti (en az 60 karakter)</label>
-          <textarea id="caseMemo" rows="4" placeholder="İki otelin bulgusunu ve neden için gerekli ek kontrolü yaz."></textarea>
-          <button id="saveCaseStudy" class="primary">Vaka çalışmasını doğrula</button>
+          <label for="caseMemo" id="caseMemoLabel">Yönetici özeti (inceleme taslağı)</label>
+          <textarea id="caseMemo" rows="4" placeholder="Bulguyu, etkisini ve nedeni doğrulamak için gerekli sonraki kontrolü yaz."></textarea>
+          <div class="case-evidence"><strong id="caseChecklistTitle">Kanıt paketi</strong><ul id="caseEvidenceList"></ul></div>
+          <button id="saveCaseStudy" class="primary">Kanıt paketini kaydet</button>
           <p id="caseFeedback" role="status"></p>
         </article>
       </section>

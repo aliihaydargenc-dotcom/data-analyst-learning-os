@@ -4,12 +4,12 @@ import {renderLearningHome} from './learning-home.mjs';
 import {installPageTransitions} from './page-transition.mjs';
 import {awardXp} from './xp-system.mjs';
 import {sqlHintStep,sqlChallengeReward} from './sql-hints.mjs';
-import {CASE_STUDY_KEY,evaluateRevenueCase} from './case-study.mjs';
+import {CASE_STUDY_KEY,buildRevenueCaseArtifacts,evaluateRevenueCase} from './case-study.mjs';
 
 const SQL_VALIDATION_MAX_ROWS=2000;
 
 
-const state={lang:'tr',questions:[],assessment:null,currentQuestion:null,selectedAnswer:null,roadmap:null,curriculum:null,catalog:null,duckdbReady:false,duckdbInfo:null,sqlChallengeIndex:0,sqlChallengePassed:false,sqlHintStep:0,hintSteps:{},caseRows:null,caseSqlVerified:false};
+const state={lang:'tr',questions:[],assessment:null,currentQuestion:null,selectedAnswer:null,roadmap:null,curriculum:null,catalog:null,duckdbReady:false,duckdbInfo:null,sqlChallengeIndex:0,sqlChallengePassed:false,sqlHintStep:0,hintSteps:{},caseRows:null,caseSqlVerified:false,caseEvidence:{}};
 const $=s=>document.querySelector(s);
 const setText=(selector,value)=>{const element=$(selector);if(element)element.textContent=value;};
 let sqlLabModulePromise=null;
@@ -122,11 +122,18 @@ function applyLanguage(){
   setText('#resetSql',c.reset);
   setText('#caseTitle',state.lang==='tr'?'Vaka çalışması':'Case study');
   setText('#caseHeading',state.lang==='tr'?'Otel gelir düşüşünü incele':'Investigate hotel revenue decline');
-  setText('#caseIntro',state.lang==='tr'?'SQL Lab’daki üçüncü görevi çöz. Her otelin en büyük günlük gelir düşüşünü bul, ardından yöneticiye kısa bir bulgu yaz.':'Solve the third SQL Lab challenge. Find the largest daily revenue decline for each hotel, then write a short management finding.');
+  setText('#caseIntro',state.lang==='tr'?'SQL Lab’daki üçüncü görevi doğrula; ardından sonuçtan KPI, grafik, yorum ve yönetici özeti kanıtlarını oluştur.':'Verify the third SQL Lab challenge, then build separate KPI, chart, interpretation, and executive-summary evidence from the result.');
   setText('#caseOpenLab',state.lang==='tr'?'SQL görevine git':'Open SQL challenge');
+  setText('#caseKpiTitle',state.lang==='tr'?'En büyük günlük gelir düşüşü':'Largest daily revenue decline');
+  setText('#caseChartTitle',state.lang==='tr'?'Otel bazında en büyük düşüş':'Largest decline by hotel');
+  setText('#caseKpiLabel',state.lang==='tr'?'Bu vaka için doğru KPI tanımı hangisi?':'Which KPI definition is correct for this case?');
   setText('#caseInterpretationLabel',state.lang==='tr'?'Bu veri hangi sonucu destekler?':'What does this data support?');
-  setText('#caseMemoLabel',state.lang==='tr'?'Yönetici özeti (en az 60 karakter)':'Management summary (at least 60 characters)');
-  setText('#saveCaseStudy',state.lang==='tr'?'Vaka çalışmasını kaydet':'Save case study');
+  setText('#caseMemoLabel',state.lang==='tr'?'Yönetici özeti (inceleme taslağı)':'Executive summary (review draft)');
+  setText('#caseChecklistTitle',state.lang==='tr'?'Kanıt paketi':'Evidence package');
+  setText('#saveCaseStudy',state.lang==='tr'?'Kanıt paketini kaydet':'Save evidence package');
+  $('#caseKpiDefinition').options[0].text=state.lang==='tr'?'Seç':'Select';
+  $('#caseKpiDefinition').options[1].text=state.lang==='tr'?'Her otelde günlük gelir değişiminin en negatif olduğu değer':'The most negative day-over-day revenue change for each hotel';
+  $('#caseKpiDefinition').options[2].text=state.lang==='tr'?'Her oteldeki en yüksek günlük gelir':'The highest daily revenue for each hotel';
   $('#caseInterpretation').options[0].text=state.lang==='tr'?'Seç':'Select';
   $('#caseInterpretation').options[1].text=state.lang==='tr'?'Düşüşün günü ve tutarı görülebilir; nedeni ek kanıt gerektirir.':'The date and amount are known; cause requires more evidence.';
   $('#caseInterpretation').options[2].text=state.lang==='tr'?'Düşüşün nedenini yalnız bu sorgu kanıtlar.':'This query proves the cause of the decline.';
@@ -142,6 +149,8 @@ function applyLanguage(){
   renderMastery();
   renderCurriculum();
   renderRoadmap();
+  renderCaseArtifacts(state.caseRows);
+  updateCaseEvidence(state.caseEvidence);
   if(state.catalog&&state.curriculum)renderLearningHome({root:document,catalog:state.catalog,curriculum:state.curriculum,storage:localStorage,lang:state.lang,now:new Date()});
   if(state.assessment&&state.currentQuestion&&!$('#questionStage').classList.contains('hidden'))renderQuestion();
 }
@@ -283,17 +292,98 @@ function nextSqlChallenge(){
   resetSqlChallenge();
 }
 
+function formatCaseAmount(value){
+  if(!Number.isFinite(Number(value)))return '—';
+  return new Intl.NumberFormat(state.lang==='tr'?'tr-TR':'en-US',{maximumFractionDigits:2}).format(Number(value));
+}
+
+function renderCaseArtifacts(rows){
+  const artifacts=buildRevenueCaseArtifacts(rows);
+  const kpiValue=$('#caseKpiValue');
+  const kpiMeta=$('#caseKpiMeta');
+  const chart=$('#caseChart');
+  if(!kpiValue||!kpiMeta||!chart)return artifacts;
+
+  if(!artifacts.validRows){
+    kpiValue.textContent=state.lang==='tr'?'SQL doğrulaması bekleniyor':'Waiting for verified SQL';
+    kpiMeta.textContent=state.lang==='tr'?'Doğrulanmış sorgudan üretilecek.':'Generated from the verified query.';
+    chart.replaceChildren();
+    const empty=document.createElement('p');
+    empty.textContent=state.lang==='tr'?'SQL doğrulaması bekleniyor.':'Waiting for verified SQL.';
+    chart.appendChild(empty);
+    return artifacts;
+  }
+
+  kpiValue.textContent=`${formatCaseAmount(artifacts.kpi.value)} EUR`;
+  kpiMeta.textContent=`${artifacts.kpi.hotel} · ${artifacts.kpi.businessDate}`;
+  chart.replaceChildren();
+  const max=Math.max(...artifacts.chart.map(point=>point.magnitude),1);
+  for(const point of artifacts.chart){
+    const row=document.createElement('div');
+    row.className='case-chart-row';
+    const label=document.createElement('strong');
+    label.textContent=point.hotel;
+    const track=document.createElement('span');
+    track.className='case-chart-track';
+    const bar=document.createElement('i');
+    bar.style.width=`${Math.max(8,Math.round((point.magnitude/max)*100))}%`;
+    track.appendChild(bar);
+    const value=document.createElement('small');
+    value.textContent=`${formatCaseAmount(point.value)} EUR · ${point.businessDate}`;
+    row.append(label,track,value);
+    chart.appendChild(row);
+  }
+  return artifacts;
+}
+
+function updateCaseEvidence(evidence={}){
+  state.caseEvidence={...evidence};
+  const root=$('#caseEvidenceList');
+  if(!root)return;
+  const tr=state.lang==='tr';
+  const rows=[
+    ['sql',tr?'SQL sonucu':'SQL result'],
+    ['kpi',tr?'KPI tanımı':'KPI definition'],
+    ['chart',tr?'Grafik verisi':'Chart data'],
+    ['interpretation',tr?'Yorum':'Interpretation'],
+    ['summary',tr?'Yönetici özeti':'Executive summary']
+  ];
+  root.replaceChildren();
+  for(const [key,label] of rows){
+    const li=document.createElement('li');
+    li.dataset.caseEvidence=key;
+    const ready=Boolean(evidence[key]);
+    li.className=ready?(key==='summary'?'draft':'verified'):'pending';
+    const status=key==='summary'
+      ?(ready?(tr?'Taslak hazır':'Draft ready'):(tr?'Taslak bekleniyor':'Draft pending'))
+      :(ready?(tr?'Doğrulandı':'Verified'):(tr?'Bekliyor':'Pending'));
+    li.textContent=`${label} · ${status}`;
+    root.appendChild(li);
+  }
+}
+
 function saveCaseStudy(){
   const memo=$('#caseMemo').value;
   const interpretation=$('#caseInterpretation').value;
-  const result=evaluateRevenueCase({sqlVerified:state.caseSqlVerified,rows:state.caseRows,interpretation,memo});
+  const selectedKpi=$('#caseKpiDefinition').value;
+  const result=evaluateRevenueCase({sqlVerified:state.caseSqlVerified,rows:state.caseRows,selectedKpi,interpretation,memo});
+  renderCaseArtifacts(state.caseRows);
+  updateCaseEvidence(result.evidence);
   if(!result.passed){
-    $('#caseFeedback').textContent=state.lang==='tr'?'Önce SQL Lab’daki üçüncü görevi doğrula; sonra kanıta dayalı seçeneği işaretleyip özeti tamamla.':'Verify the third SQL challenge, select the evidence-based interpretation, then complete the summary.';
+    $('#caseFeedback').textContent=state.lang==='tr'
+      ?'Kanıt paketi tamamlanmadı. SQL sonucunu doğrula, doğru KPI tanımını ve kanıta dayalı yorumu seç, ardından yönetici özeti taslağını yaz.'
+      :'The evidence package is incomplete. Verify the SQL result, choose the correct KPI definition and evidence-based interpretation, then write the executive-summary draft.';
     return;
   }
-  localStorage.setItem(CASE_STUDY_KEY,JSON.stringify({memo:memo.trim(),interpretation,rows:state.caseRows,completedAt:new Date().toISOString()}));
+  localStorage.setItem(CASE_STUDY_KEY,JSON.stringify({
+    version:2,status:'review-draft',memo:memo.trim(),selectedKpi,interpretation,
+    rows:state.caseRows,artifacts:result.artifacts,evidence:result.evidence,
+    completedAt:new Date().toISOString()
+  }));
   awardXp(localStorage,{id:'case-study:revenue-drop',kind:'case-study',xp:150,source:'sql-result-evaluator'});
-  $('#caseFeedback').textContent=state.lang==='tr'?'SQL ve seçim doğrulandı; yazılı yorum taslak olarak kaydedildi.':'SQL and choice verified; written interpretation saved as a draft.';
+  $('#caseFeedback').textContent=state.lang==='tr'
+    ?'SQL, KPI, grafik ve yorum kanıtları doğrulandı. Yönetici özeti inceleme taslağı olarak kaydedildi; bu kayıt tek başına mastery vermez.'
+    :'SQL, KPI, chart, and interpretation evidence are verified. The executive summary is saved as a review draft; this record does not grant mastery by itself.';
   if(state.catalog&&state.curriculum)renderLearningHome({root:document,catalog:state.catalog,curriculum:state.curriculum,storage:localStorage,lang:state.lang,now:new Date()});
 }
 
@@ -372,6 +462,8 @@ async function executeSql(){
     if(state.sqlChallengeIndex===2){
       state.caseSqlVerified=evaluation.passed;
       state.caseRows=evaluation.passed?result.rows:null;
+      renderCaseArtifacts(state.caseRows);
+      updateCaseEvidence({...state.caseEvidence,sql:Boolean(evaluation.passed),chart:Boolean(evaluation.passed&&state.caseRows)});
     }
     if(evaluation.passed){
       const reward=sqlChallengeReward(state.sqlHintStep);
@@ -417,10 +509,17 @@ async function init(){
       const saved=JSON.parse(localStorage.getItem(CASE_STUDY_KEY)||'null');
       if(saved?.memo){
         $('#caseMemo').value=saved.memo;
+        $('#caseKpiDefinition').value=saved.selectedKpi||'';
         $('#caseInterpretation').value=saved.interpretation||'';
-        $('#caseFeedback').textContent='Kaydedildi · Saved';
+        state.caseRows=saved.rows||null;
+        state.caseSqlVerified=Boolean(saved.evidence?.sql||saved.artifacts?.validRows);
+        renderCaseArtifacts(state.caseRows);
+        updateCaseEvidence(saved.evidence||{});
+        $('#caseFeedback').textContent=saved.version===2?'Kanıt paketi kaydedildi · Evidence package saved':'Eski vaka taslağı yüklendi · Legacy case draft loaded';
       }
     }catch{/* Ignore invalid local case data. */}
+    renderCaseArtifacts(state.caseRows);
+    updateCaseEvidence(state.caseEvidence);
     const [q,r,c,l]=await Promise.all([fetch('./data/question-bank.json'),fetch('./data/roadmap.json'),fetch('./content/curriculum.json'),fetch('./content/lesson-catalog.json')]);
     state.questions=await q.json();
     state.roadmap=await r.json();

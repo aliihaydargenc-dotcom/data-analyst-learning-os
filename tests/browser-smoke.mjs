@@ -24,6 +24,9 @@ try{
   assert.equal(await page.locator('[data-learning-stat="streak"]').count(),1);
   assert.match(await page.locator('[data-learning-stat="streak"]').textContent(),/0 gün/);
   assert.equal(await page.locator('#caseStudies #caseMemo').count(),1);
+  assert.equal(await page.locator('#caseKpiDefinition').count(),1);
+  assert.equal(await page.locator('#caseChart').count(),1);
+  assert.equal(await page.locator('#caseEvidenceList [data-case-evidence]').count(),5);
   await page.locator('#caseOpenLab').click();
   assert.equal(await page.locator('#sql-lab').evaluate(node=>node.open),true);
   assert.match(await page.locator('#sqlTask').textContent(),/gelir düşüşünün/);
