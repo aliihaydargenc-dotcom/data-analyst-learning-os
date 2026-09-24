@@ -6,6 +6,7 @@ import {awardXp} from './xp-system.mjs';
 import {sqlHintStep,sqlChallengeReward} from './sql-hints.mjs';
 import {CASE_STUDY_KEY,buildRevenueCaseArtifacts,evaluateRevenueCase} from './case-study.mjs';
 import {PORTFOLIO_REVIEW_KEY,buildPortfolioReview,createPortfolioSubmission} from './portfolio-review.mjs';
+import {installVisualLab} from './visual-lab.mjs';
 
 const SQL_VALIDATION_MAX_ROWS=2000;
 
@@ -14,6 +15,7 @@ const state={lang:'tr',questions:[],assessment:null,currentQuestion:null,selecte
 const $=s=>document.querySelector(s);
 const setText=(selector,value)=>{const element=$(selector);if(element)element.textContent=value;};
 let sqlLabModulePromise=null;
+let visualLabController=null;
 installPageTransitions({label:()=>state.lang==='en'?'Loading…':'Yükleniyor…'});
 
 const copy={
@@ -162,6 +164,7 @@ function applyLanguage(){
   updateCaseEvidence(state.caseEvidence);
   renderPortfolioReview();
   if(state.catalog&&state.curriculum)renderLearningHome({root:document,catalog:state.catalog,curriculum:state.curriculum,storage:localStorage,lang:state.lang,now:new Date()});
+  visualLabController?.setLanguage(state.lang);
   if(state.assessment&&state.currentQuestion&&!$('#questionStage').classList.contains('hidden'))renderQuestion();
 }
 
@@ -645,6 +648,7 @@ async function init(){
     state.roadmap=await r.json();
     state.curriculum=await c.json();
     state.catalog=await l.json();
+    visualLabController=installVisualLab({root:document,lang:()=>state.lang});
     applyLanguage();
     resetSqlChallenge();
   }catch(err){

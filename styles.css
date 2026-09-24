@@ -310,3 +310,59 @@ body.auth-booting::after{content:"Hesap yükleniyor…";position:fixed;left:50%;
   .portfolio-actions .secondary,.portfolio-actions .primary{width:100%}
 }
 
+
+
+/* P3 Visual Lab */
+.visual-lab-section{padding-top:28px}
+.visual-lab-panel{padding:22px;display:grid;gap:18px;overflow:hidden}
+.visual-lab-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}
+.visual-lab-head h3{margin:5px 0 6px;font-size:24px;letter-spacing:-.025em}
+.visual-lab-head p{margin:0;max-width:720px;color:var(--muted);font-size:12px;line-height:1.6}
+.visual-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.visual-controls label{display:grid;gap:6px}
+.visual-controls label>span{font-size:10px;font-weight:750;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.visual-controls select,.visual-practice select{width:100%;min-height:42px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--text);padding:0 11px;font:inherit}
+.visual-lab-workspace{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(220px,.35fr);gap:12px}
+.visual-stage{position:relative;min-width:0;border:1px solid var(--line);border-radius:16px;background:#fff;overflow:hidden}
+.visual-chart{min-height:320px;padding:18px}
+.visual-annotation{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.visual-annotation-fallback{fill:none;stroke:currentColor;stroke-width:2;stroke-dasharray:8 7}
+.visual-inspector{padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--panel-2);align-self:stretch}
+.visual-inspector span,.visual-inspector strong,.visual-inspector small{display:block}
+.visual-inspector span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.visual-inspector strong{font-size:22px;margin-top:9px}
+.visual-inspector p{font-size:12px;line-height:1.55;color:var(--text);margin:10px 0 18px}
+.visual-inspector small{font-size:10.5px;line-height:1.5;color:var(--muted)}
+.visual-actions{display:flex;gap:9px;flex-wrap:wrap}
+.visual-actions button{min-height:42px}
+.visual-diagram{min-height:180px;padding:16px;border:1px solid var(--line);border-radius:14px;background:#fff;overflow:auto}
+.visual-diagram svg{display:block;max-width:100%;height:auto;margin:auto}
+.visual-flow-fallback{white-space:pre-wrap;margin:0;color:var(--muted);font:600 12px/1.8 ui-monospace,monospace}
+.visual-practice{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.55fr);gap:14px;padding:16px;border:1px solid var(--line);border-radius:14px;background:#fafbfd;align-items:end}
+.visual-practice>div:first-child>strong{display:block;margin-top:7px;font-size:14px;line-height:1.45}
+.visual-practice-action{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.visual-practice-action button{min-height:42px;white-space:nowrap}
+.visual-practice>p{grid-column:1/-1;margin:0;font-size:12px;line-height:1.5;color:var(--muted)}
+.visual-practice>p[data-result="correct"]{color:var(--green)}
+.visual-fallback-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:24px}
+.visual-fallback-head strong{font-size:17px}.visual-fallback-head small{font-size:10px;color:var(--muted);font-weight:800}
+.visual-fallback-list{display:grid;gap:12px}
+.visual-fallback-row{display:grid;grid-template-columns:minmax(70px,.3fr) minmax(120px,1fr) auto;gap:10px;align-items:center}
+.visual-fallback-row>span{font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.visual-fallback-row>i{position:relative;height:12px;border-radius:999px;background:var(--panel-2);overflow:hidden;border:1px solid var(--line)}
+.visual-fallback-row>i::after{content:"";display:block;width:var(--visual-width);height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--green),var(--blue))}
+.visual-fallback-row>strong{font-size:11px;min-width:34px;text-align:right}
+@media(max-width:820px){
+  .visual-lab-workspace,.visual-practice{grid-template-columns:1fr}
+  .visual-inspector{min-height:auto}
+}
+@media(max-width:620px){
+  .visual-lab-panel{padding:16px}
+  .visual-lab-head{display:grid}
+  .visual-controls{grid-template-columns:1fr}
+  .visual-chart{min-height:280px;padding:14px}
+  .visual-actions{display:grid;grid-template-columns:1fr}
+  .visual-actions button{width:100%}
+  .visual-practice-action{grid-template-columns:1fr}
+  .visual-fallback-row{grid-template-columns:64px minmax(0,1fr) 34px;gap:7px}
+}
