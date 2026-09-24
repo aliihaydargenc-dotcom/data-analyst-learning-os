@@ -29,7 +29,6 @@
         <a href="#skillMatrix">Beceriler</a>
         <a href="#diagnostic">Seviye</a>
         <a href="#sql-lab">SQL Lab</a>
-        <a href="#visualLab">Görsel Lab</a>
         <a href="#portfolioReview">Projeler</a>
       </nav>
       <button id="languageToggle" class="ghost">EN</button>
@@ -67,85 +66,6 @@
           <h2 id="skillMatrixTitle">Beceriler</h2>
         </div>
         <div id="skillMatrixGrid" class="skill-matrix-grid"></div>
-      </section>
-
-
-      <section id="visualLab" class="block visual-lab-section">
-        <div class="section-title">
-          <h2 id="visualLabTitle">Görsel Lab</h2>
-        </div>
-        <article class="panel visual-lab-panel" data-visual-lab>
-          <div class="visual-lab-head">
-            <div>
-              <span class="utility-kicker">VISUAL PRACTICE</span>
-              <h3 id="visualLabHeading">Veriden doğru görsele</h3>
-              <p id="visualLabIntro">Analiz amacını seç, uygun grafiği üret, veri akışını gör ve seçimini gerekçelendir.</p>
-            </div>
-            <span id="visualEngineStatus" class="pill">Hafif önizleme · hazır</span>
-          </div>
-
-          <div class="visual-controls">
-            <label>
-              <span id="visualIntentLabel">Analiz amacı</span>
-              <select id="visualIntent">
-                <option value="trend">Zaman içindeki değişim</option>
-                <option value="compare">Kategorileri karşılaştırma</option>
-                <option value="relationship">İki ölçü arasındaki ilişki</option>
-                <option value="share">Bütün içindeki pay</option>
-              </select>
-            </label>
-            <label>
-              <span id="visualTypeLabel">Grafik tipi</span>
-              <select id="visualChartType">
-                <option value="recommended">Önerileni kullan</option>
-                <option value="line">Line</option>
-                <option value="bar">Bar</option>
-                <option value="area">Area</option>
-                <option value="scatter">Scatter</option>
-                <option value="pie">Pie</option>
-              </select>
-            </label>
-          </div>
-
-          <div class="visual-lab-workspace">
-            <div class="visual-stage">
-              <div id="visualChart" class="visual-chart" role="img" aria-label="Veri görselleştirme önizlemesi"></div>
-              <svg id="visualAnnotation" class="visual-annotation" aria-hidden="true"></svg>
-            </div>
-            <aside class="visual-inspector">
-              <span id="visualRecommendationLabel">Öneri</span>
-              <strong id="visualRecommendation">Line chart</strong>
-              <p id="visualReason">Zaman eksenindeki değişimi ve yönü okumak için uygundur.</p>
-              <small id="visualGuardrail">Grafik seçimi mastery kanıtı değildir; burada amaç görsel muhakemeyi çalıştırmaktır.</small>
-            </aside>
-          </div>
-
-          <div class="visual-actions">
-            <button id="renderVisualChart" class="primary" type="button">Etkileşimli grafiği üret</button>
-            <button id="renderVisualFlow" class="secondary" type="button">Veri akışını göster</button>
-            <button id="annotateVisual" class="secondary" type="button">Önemli alanı vurgula</button>
-          </div>
-
-          <div id="visualDiagram" class="visual-diagram" hidden></div>
-
-          <div class="visual-practice">
-            <div>
-              <span class="utility-kicker">DECISION CHECK</span>
-              <strong id="visualPracticeQuestion">Aylık gelirin yönünü ve kırılma noktalarını göstermek için hangi grafik daha uygundur?</strong>
-            </div>
-            <div class="visual-practice-action">
-              <select id="visualPracticeChoice" aria-label="Grafik seçimi">
-                <option value="">Seç</option>
-                <option value="line">Line</option>
-                <option value="bar">Bar</option>
-                <option value="pie">Pie</option>
-                <option value="scatter">Scatter</option>
-              </select>
-              <button id="checkVisualChoice" class="secondary" type="button">Seçimi değerlendir</button>
-            </div>
-            <p id="visualPracticeFeedback" role="status"></p>
-          </div>
-        </article>
       </section>
 
       <section id="caseStudies" class="block case-study-section">

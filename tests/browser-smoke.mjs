@@ -24,11 +24,6 @@ try{
   assert.equal(await page.locator('[data-learning-stat="streak"]').count(),1);
   assert.match(await page.locator('[data-learning-stat="streak"]').textContent(),/0 gün/);
   assert.equal(await page.locator('#caseStudies #caseMemo').count(),1);
-  assert.equal(await page.locator('[data-visual-lab]').count(),1);
-  assert.equal(await page.locator('#visualIntent').inputValue(),'trend');
-  assert.equal(await page.locator('#visualChartType').inputValue(),'recommended');
-  assert.match(await page.locator('#visualRecommendation').textContent(),/LINE/);
-  assert.equal(await page.locator('#visualChart .visual-fallback-row').count(),6);
   assert.equal(await page.locator('#caseKpiDefinition').count(),1);
   assert.equal(await page.locator('#caseChart').count(),1);
   assert.equal(await page.locator('#caseEvidenceList [data-case-evidence]').count(),5);
