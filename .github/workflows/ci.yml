@@ -32,5 +32,15 @@ jobs:
           python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/learning-os-http.log 2>&1 &
           SERVER_PID=$!
           trap 'kill $SERVER_PID' EXIT
-          sleep 2
+          for attempt in {1..20}; do
+            if curl --fail --silent --show-error http://127.0.0.1:4173/ >/dev/null; then
+              break
+            fi
+            if [ "$attempt" -eq 20 ]; then
+              echo "Browser smoke server did not become ready" >&2
+              cat /tmp/learning-os-http.log >&2
+              exit 1
+            fi
+            sleep 0.5
+          done
           npm run test:browser
