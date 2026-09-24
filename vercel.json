@@ -3,11 +3,8 @@
   "cleanUrls": true,
   "git": {
     "deploymentEnabled": {
-      "feat/*": false,
-      "fix/*": false,
-      "chore/*": false,
-      "dev/*": false,
-      "batch/*": false
+      "*": false,
+      "main": true
     }
   }
 }
