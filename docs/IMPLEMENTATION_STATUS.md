@@ -1,15 +1,16 @@
 # Implementation status
 
-## Current package: P2 portfolio review surface
+## Current package: P2 real reviewer workflow
 
-- The revenue-decline case now appears as a portfolio project with a dedicated review surface.
-- Five rubric dimensions are visible: SQL correctness, KPI design, visualization accuracy, analytical reasoning, and executive communication.
-- SQL, KPI, chart, and analytical interpretation are machine-verifiable from the case evidence package.
-- Executive communication remains explicitly human-reviewed; a draft never becomes verified only because text exists.
-- A complete evidence package can be marked ready for review. This records reviewer-pending state in the learner's existing cloud-synced `da-learning-os:*` state without awarding XP or mastery.
-- Editing/resaving the case invalidates any previous reviewer-pending state so stale review status cannot survive changed artifacts.
-- The surface already models future reviewer decisions (`approved` / `changes_requested`) without pretending that a reviewer workflow exists today.
-- Package version: 0.22.0.
+- Portfolio submissions now cross a real server-side boundary: the existing cloud-synced learner state is bridged into a Supabase `portfolio_reviews` queue.
+- Reviewer identity is enforced from authenticated `profiles`: active `admin` and `reviewer` roles can decide a review; learners cannot self-approve.
+- `/reviewer` provides a protected queue with submitted evidence, rubric-specific comments, an overall decision note, and approve/request-changes actions.
+- Review decisions are written through a security-definer RPC and mirrored back into the learner's cloud state, so the existing Portfolio Review surface receives the real decision on the next sync/session.
+- `portfolio_review_history` stores immutable submission/decision snapshots. Direct authenticated insert/update/delete access to review tables is revoked.
+- Request-changes requires reviewer feedback. Approval is allowed without a mandatory prose note, while rubric comments remain available.
+- Advanced mastery eligibility is explicit and conservative: only an approved record with a real reviewer identity and review timestamp can contribute. This package does not automatically award mastery or XP.
+- Production Supabase migrations `portfolio_reviewer_workflow` and `portfolio_review_state_bridge` were applied successfully.
+- Package version: 0.23.0.
 
 ## Working rule
 
@@ -17,8 +18,8 @@ Develop related work as one package. Run the full test suite at the package boun
 
 ## Verification
 
-The package includes a dedicated portfolio-review unit test and browser-smoke coverage for draft → ready-for-review → reviewer-pending transitions. Existing case-study, XP, mastery, lesson, and academy quality gates remain in the full test chain.
+The package adds reviewer-workflow unit coverage for decision validation, feedback requirements, rubric comment normalization, and advanced-mastery eligibility. Existing portfolio-review, XP, mastery, lesson, academy, and browser quality gates remain in the full CI chain.
 
 ## Next
 
-Add a real reviewer workflow rather than a simulated decision: reviewer identity, project queue, rubric comments, approve/request-changes actions, immutable review history, and explicit rules for how reviewed project evidence can contribute to advanced mastery.
+Connect approved portfolio evidence to a dedicated advanced-mastery evidence ledger with provenance and weighting rules. Keep reviewer approval necessary but not sufficient by itself for mastery; define the exact evidence weight and retention/transfer requirements before awarding any mastery progression.
