@@ -27,6 +27,35 @@ try{
   assert.equal(await page.locator('#caseKpiDefinition').count(),1);
   assert.equal(await page.locator('#caseChart').count(),1);
   assert.equal(await page.locator('#caseEvidenceList [data-case-evidence]').count(),5);
+  assert.equal(await page.locator('#portfolioReview').count(),1);
+  assert.equal(await page.locator('#portfolioRubricList [data-portfolio-rubric]').count(),5);
+  assert.equal(await page.locator('#portfolioStatus').getAttribute('data-portfolio-status'),'draft');
+  assert.equal(await page.locator('#submitPortfolioReview').isDisabled(),true);
+
+  await page.evaluate(()=>{
+    localStorage.setItem('da-learning-os:case-study:revenue-drop:v1',JSON.stringify({
+      version:2,
+      status:'review-draft',
+      memo:'Gelir düşüşünün günü ve tutarı doğrulandı; nedeni için segment, rezervasyon ve kanal dağılımı ayrıca incelenmelidir.',
+      evidence:{sql:true,kpi:true,chart:true,interpretation:true,summary:true}
+    }));
+  });
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#portfolioStatus').waitFor({state:'visible'});
+  assert.equal(await page.locator('#portfolioStatus').getAttribute('data-portfolio-status'),'ready_for_review');
+  assert.match(await page.locator('#portfolioAutoScore').textContent(),/4 \/ 4/);
+  assert.equal(await page.locator('#submitPortfolioReview').isDisabled(),false);
+  await page.locator('#submitPortfolioReview').click();
+  assert.equal(await page.locator('#portfolioStatus').getAttribute('data-portfolio-status'),'review_pending');
+  assert.equal(await page.locator('#submitPortfolioReview').isDisabled(),true);
+  assert.match(await page.locator('#portfolioFeedback').textContent(),/reviewer bekliyor/i);
+
+  await page.evaluate(()=>{
+    localStorage.removeItem('da-learning-os:case-study:revenue-drop:v1');
+    localStorage.removeItem('da-learning-os:portfolio:revenue-drop:v1');
+  });
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#learningContinue .continue-card').waitFor({state:'visible'});
   await page.locator('#caseOpenLab').click();
   assert.equal(await page.locator('#sql-lab').evaluate(node=>node.open),true);
   assert.match(await page.locator('#sqlTask').textContent(),/gelir düşüşünün/);

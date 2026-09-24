@@ -29,7 +29,7 @@
         <a href="#skillMatrix">Beceriler</a>
         <a href="#diagnostic">Seviye</a>
         <a href="#sql-lab">SQL Lab</a>
-        <a href="#caseStudies">Projeler</a>
+        <a href="#portfolioReview">Projeler</a>
       </nav>
       <button id="languageToggle" class="ghost">EN</button>
     </header>
@@ -103,7 +103,34 @@
 
       
 
-      <section class="home-utilities" aria-label="Araçlar">
+      <section id="portfolioReview" class="block portfolio-review-section">
+        <div class="section-title">
+          <h2 id="portfolioTitle">Portfolio Review</h2>
+        </div>
+        <article class="panel portfolio-review-panel">
+          <div class="portfolio-review-head">
+            <div>
+              <span id="portfolioEyebrow">PROJECT 01</span>
+              <h3 id="portfolioProjectTitle">Otel Gelir Düşüşü Analizi</h3>
+              <p id="portfolioIntro">Vaka kanıtlarını tek projede topla ve inceleme durumunu takip et.</p>
+            </div>
+            <span id="portfolioStatus" class="portfolio-status" data-portfolio-status="draft">Taslak</span>
+          </div>
+          <div class="portfolio-summary">
+            <article><span id="portfolioAutoLabel">Otomatik doğrulama</span><strong id="portfolioAutoScore">0 / 4</strong></article>
+            <article><span id="portfolioHumanLabel">İnsan incelemesi</span><strong id="portfolioHumanStatus">Bekleniyor</strong></article>
+            <article><span id="portfolioMasteryLabel">Mastery etkisi</span><strong id="portfolioMasteryStatus">Reviewer kararı gerekli</strong></article>
+          </div>
+          <div id="portfolioRubricList" class="portfolio-rubric"></div>
+          <div class="portfolio-actions">
+            <a id="portfolioEditCase" class="secondary" href="#caseStudies">Vakayı düzenle</a>
+            <button id="submitPortfolioReview" class="primary" type="button" disabled>İncelemeye gönder</button>
+          </div>
+          <p id="portfolioFeedback" role="status"></p>
+        </article>
+      </section>
+
+            <section class="home-utilities" aria-label="Araçlar">
         <details id="diagnostic" class="panel utility-panel exam-panel">
           <summary>
             <div><span class="utility-kicker">ASSESS</span><strong id="diagTitle">Seviye Tespiti</strong></div>
