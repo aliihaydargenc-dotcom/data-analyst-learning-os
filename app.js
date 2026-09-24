@@ -5,6 +5,7 @@ import {installPageTransitions} from './page-transition.mjs';
 import {awardXp} from './xp-system.mjs';
 import {sqlHintStep,sqlChallengeReward} from './sql-hints.mjs';
 import {CASE_STUDY_KEY,buildRevenueCaseArtifacts,evaluateRevenueCase} from './case-study.mjs';
+import {PORTFOLIO_REVIEW_KEY,buildPortfolioReview,createPortfolioSubmission} from './portfolio-review.mjs';
 
 const SQL_VALIDATION_MAX_ROWS=2000;
 
@@ -131,6 +132,14 @@ function applyLanguage(){
   setText('#caseMemoLabel',state.lang==='tr'?'Yönetici özeti (inceleme taslağı)':'Executive summary (review draft)');
   setText('#caseChecklistTitle',state.lang==='tr'?'Kanıt paketi':'Evidence package');
   setText('#saveCaseStudy',state.lang==='tr'?'Kanıt paketini kaydet':'Save evidence package');
+  setText('#portfolioTitle',state.lang==='tr'?'Portfolio Review':'Portfolio Review');
+  setText('#portfolioProjectTitle',state.lang==='tr'?'Otel Gelir Düşüşü Analizi':'Hotel Revenue Decline Investigation');
+  setText('#portfolioIntro',state.lang==='tr'?'Vaka kanıtlarını tek projede topla ve inceleme durumunu takip et.':'Collect the case evidence into one project and track review readiness.');
+  setText('#portfolioAutoLabel',state.lang==='tr'?'Otomatik doğrulama':'Automatic verification');
+  setText('#portfolioHumanLabel',state.lang==='tr'?'İnsan incelemesi':'Human review');
+  setText('#portfolioMasteryLabel',state.lang==='tr'?'Mastery etkisi':'Mastery impact');
+  setText('#portfolioMasteryStatus',state.lang==='tr'?'Otomatik mastery yok':'No automatic mastery');
+  setText('#portfolioEditCase',state.lang==='tr'?'Vakayı düzenle':'Edit case');
   $('#caseKpiDefinition').options[0].text=state.lang==='tr'?'Seç':'Select';
   $('#caseKpiDefinition').options[1].text=state.lang==='tr'?'Her otelde günlük gelir değişiminin en negatif olduğu değer':'The most negative day-over-day revenue change for each hotel';
   $('#caseKpiDefinition').options[2].text=state.lang==='tr'?'Her oteldeki en yüksek günlük gelir':'The highest daily revenue for each hotel';
@@ -151,6 +160,7 @@ function applyLanguage(){
   renderRoadmap();
   renderCaseArtifacts(state.caseRows);
   updateCaseEvidence(state.caseEvidence);
+  renderPortfolioReview();
   if(state.catalog&&state.curriculum)renderLearningHome({root:document,catalog:state.catalog,curriculum:state.curriculum,storage:localStorage,lang:state.lang,now:new Date()});
   if(state.assessment&&state.currentQuestion&&!$('#questionStage').classList.contains('hidden'))renderQuestion();
 }
@@ -362,6 +372,112 @@ function updateCaseEvidence(evidence={}){
   }
 }
 
+function readStoredJson(key){
+  try{return JSON.parse(localStorage.getItem(key)||'null')}catch{return null}
+}
+
+function portfolioRubricLabel(id){
+  const tr=state.lang==='tr';
+  return ({
+    sql:tr?'SQL doğruluğu':'SQL correctness',
+    kpi:tr?'KPI tasarımı':'KPI design',
+    chart:tr?'Görselleştirme doğruluğu':'Visualization accuracy',
+    interpretation:tr?'Analitik yorum':'Analytical reasoning',
+    'executive-communication':tr?'Yönetici iletişimi':'Executive communication'
+  })[id]||id;
+}
+
+function portfolioStatusLabel(status){
+  const tr=state.lang==='tr';
+  return ({
+    draft:tr?'Taslak':'Draft',
+    ready_for_review:tr?'İncelemeye hazır':'Ready for review',
+    review_pending:tr?'Reviewer bekliyor':'Awaiting reviewer',
+    reviewed:tr?'İncelendi':'Reviewed'
+  })[status]||status;
+}
+
+function renderPortfolioReview(){
+  const caseData=readStoredJson(CASE_STUDY_KEY);
+  const reviewState=readStoredJson(PORTFOLIO_REVIEW_KEY);
+  const review=buildPortfolioReview({caseData,reviewState});
+  const status=$('#portfolioStatus');
+  const rubricRoot=$('#portfolioRubricList');
+  const button=$('#submitPortfolioReview');
+  if(!status||!rubricRoot||!button)return review;
+
+  status.dataset.portfolioStatus=review.status;
+  status.textContent=portfolioStatusLabel(review.status);
+  $('#portfolioAutoScore').textContent=`${review.automaticVerified} / ${review.automaticTotal}`;
+
+  const tr=state.lang==='tr';
+  const humanText=review.humanReviewStatus==='approved'
+    ?(tr?'Reviewer onayladı':'Reviewer approved')
+    :review.humanReviewStatus==='changes_requested'
+      ?(tr?'Revizyon istendi':'Changes requested')
+      :review.submitted
+        ?(tr?'Reviewer bekliyor':'Awaiting reviewer')
+        :review.reviewReady
+          ?(tr?'İnceleme gerekli':'Review required')
+          :(tr?'Henüz hazır değil':'Not ready yet');
+  $('#portfolioHumanStatus').textContent=humanText;
+
+  rubricRoot.replaceChildren();
+  for(const item of review.rubric){
+    const row=document.createElement('article');
+    row.className='portfolio-rubric-item';
+    row.dataset.portfolioRubric=item.id;
+    const copy=document.createElement('div');
+    const title=document.createElement('strong');
+    title.textContent=portfolioRubricLabel(item.id);
+    const meta=document.createElement('small');
+    meta.textContent=item.mode==='automatic'?(tr?'Otomatik kanıt':'Automatic evidence'):(tr?'İnsan değerlendirmesi':'Human review');
+    copy.append(title,meta);
+    const badge=document.createElement('span');
+    const badgeState=item.status==='approved'||item.status==='verified'
+      ?'verified'
+      :item.status==='changes_requested'
+        ?'changes'
+        :item.status==='review_pending'
+          ?'review'
+          :'missing';
+    badge.dataset.rubricStatus=badgeState;
+    badge.textContent=badgeState==='verified'
+      ?(tr?'Doğrulandı':'Verified')
+      :badgeState==='changes'
+        ?(tr?'Revizyon':'Changes')
+        :badgeState==='review'
+          ?(review.submitted?(tr?'Reviewer bekliyor':'Awaiting reviewer'):(tr?'İnceleme gerekli':'Review required'))
+          :(tr?'Eksik':'Missing');
+    row.append(copy,badge);
+    rubricRoot.appendChild(row);
+  }
+
+  button.disabled=!review.reviewReady||review.submitted||review.status==='reviewed';
+  button.textContent=review.submitted
+    ?(tr?'Reviewer bekliyor':'Awaiting reviewer')
+    :(tr?'İncelemeye hazır olarak işaretle':'Mark ready for review');
+
+  const feedback=$('#portfolioFeedback');
+  if(review.status==='draft')feedback.textContent=tr?'Önce vaka kanıt paketini tamamla.':'Complete the case evidence package first.';
+  else if(review.status==='ready_for_review')feedback.textContent=tr?'Otomatik kanıtlar hazır. Yönetici özeti insan değerlendirmesi gerektiriyor.':'Automatic evidence is ready. The executive summary still requires human review.';
+  else if(review.status==='review_pending')feedback.textContent=tr?'Proje reviewer bekliyor olarak işaretlendi. Bu durum XP veya mastery vermez.':'The project is marked as awaiting reviewer. This does not award XP or mastery.';
+  else feedback.textContent=tr?'Reviewer kararı kayıtlı. Mastery değerlendirmesi ayrı kalır.':'Reviewer decision recorded. Mastery assessment remains separate.';
+  return review;
+}
+
+function markPortfolioReadyForReview(){
+  const caseData=readStoredJson(CASE_STUDY_KEY);
+  const submission=createPortfolioSubmission({caseData,now:new Date()});
+  if(!submission.ok){
+    $('#portfolioFeedback').textContent=state.lang==='tr'?'Kanıt paketi tamamlanmadan proje incelemeye hazırlanamaz.':'The project cannot be prepared for review until the evidence package is complete.';
+    renderPortfolioReview();
+    return;
+  }
+  localStorage.setItem(PORTFOLIO_REVIEW_KEY,JSON.stringify(submission.state));
+  renderPortfolioReview();
+}
+
 function saveCaseStudy(){
   const memo=$('#caseMemo').value;
   const interpretation=$('#caseInterpretation').value;
@@ -380,6 +496,8 @@ function saveCaseStudy(){
     rows:state.caseRows,artifacts:result.artifacts,evidence:result.evidence,
     completedAt:new Date().toISOString()
   }));
+  localStorage.removeItem(PORTFOLIO_REVIEW_KEY);
+  renderPortfolioReview();
   awardXp(localStorage,{id:'case-study:revenue-drop',kind:'case-study',xp:150,source:'sql-result-evaluator'});
   $('#caseFeedback').textContent=state.lang==='tr'
     ?'SQL, KPI, grafik ve yorum kanıtları doğrulandı. Yönetici özeti inceleme taslağı olarak kaydedildi; bu kayıt tek başına mastery vermez.'
@@ -502,6 +620,7 @@ $('#sqlHint').addEventListener('click',revealSqlHint);
 $('#nextSqlChallenge').addEventListener('click',nextSqlChallenge);
 $('#caseOpenLab').addEventListener('click',()=>{$('#sql-lab').open=true;state.sqlChallengeIndex=2;state.sqlHintStep=state.hintSteps[currentSqlChallenge().id]||0;resetSqlChallenge();});
 $('#saveCaseStudy').addEventListener('click',saveCaseStudy);
+$('#submitPortfolioReview').addEventListener('click',markPortfolioReadyForReview);
 
 async function init(){
   try{
@@ -520,6 +639,7 @@ async function init(){
     }catch{/* Ignore invalid local case data. */}
     renderCaseArtifacts(state.caseRows);
     updateCaseEvidence(state.caseEvidence);
+    renderPortfolioReview();
     const [q,r,c,l]=await Promise.all([fetch('./data/question-bank.json'),fetch('./data/roadmap.json'),fetch('./content/curriculum.json'),fetch('./content/lesson-catalog.json')]);
     state.questions=await q.json();
     state.roadmap=await r.json();
